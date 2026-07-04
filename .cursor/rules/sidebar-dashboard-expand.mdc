@@ -1,0 +1,27 @@
+# Sidebar / Main Dashboard Expand Toggle (DO NOT REMOVE)
+
+This behavior is intentional and must be retained. Do **not** delete or “simplify away” unless the user explicitly asks.
+
+## Required behavior (toggle is on/off only for main dashboard)
+
+1. Sidebar header has an arrow toggle (`ChevronLeft`, rotates when expand mode is on).
+
+2. **Toggle ON (expand mode):**
+   - While the cursor is on the sidebar (including right after click): sidebar is **full** (labels visible) and a **fixed overlay** (`fixed inset-y-0 left-0 z-30`). Main dashboard is **full viewport width behind** the sidebar.
+   - When the cursor **leaves** the sidebar: it collapses to **icons only**, stays **in document flow**, and main dashboard stays **connected** beside the icon rail (not behind).
+   - When the cursor **enters** the sidebar again: full labels overlay and main goes **behind** again.
+   - Expand mode stays **pinned** by the toggle only — hover never turns expand mode off.
+
+3. **Toggle OFF:** restore default side-by-side layout (sidebar in document flow, always full labels). No hover icon behavior.
+
+## Implementation locations
+
+- `src/components/ui/sidebar.tsx` — `contentExpanded`, `sidebarHovered`, `setSidebarHovered`, `toggleSidebar`
+- `src/components/AppSidebar.tsx` — toggle UI; `iconOnly = contentExpanded && !sidebarHovered`; `overlayExpanded = contentExpanded && sidebarHovered`; mouse enter/leave; fixed overlay only when `overlayExpanded`
+- `src/routes/__root.tsx` — `AuthenticatedLayout` sets main content `w-full` only when `contentExpanded && sidebarHovered` (dashboard behind)
+
+## When editing sidebar or layout
+
+- Keep this UX contract working end-to-end.
+- Do not remove the header toggle or drop hover-only icon rail while expand mode is on.
+- Icon rail must remain in-flow (connected); only the full hovered sidebar overlays the dashboard.

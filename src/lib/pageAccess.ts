@@ -1,0 +1,98 @@
+/** Navigable app pages — keep in sync with AppSidebar groups. */
+
+export type PageGroup = "Main" | "Operations" | "Hospital Services" | "Administration";
+
+export type AppPage = {
+  path: string;
+  title: string;
+  group: PageGroup;
+};
+
+export const APP_PAGES: AppPage[] = [
+  { path: "/dashboard", title: "Dashboard", group: "Main" },
+  { path: "/patients", title: "Patients", group: "Main" },
+  { path: "/appointments", title: "Appointments", group: "Main" },
+  { path: "/inventory", title: "Inventory", group: "Operations" },
+  { path: "/billing", title: "Billing", group: "Operations" },
+  { path: "/philhealth", title: "PhilHealth", group: "Operations" },
+  { path: "/eclaims-monitoring", title: "eClaims Monitoring", group: "Operations" },
+  { path: "/pricelist", title: "Price List", group: "Operations" },
+  { path: "/admission", title: "Admission", group: "Hospital Services" },
+  { path: "/er", title: "Emergency Room", group: "Hospital Services" },
+  { path: "/opd", title: "OPD", group: "Hospital Services" },
+  { path: "/pharmacy", title: "Pharmacy", group: "Hospital Services" },
+  { path: "/supplies", title: "Supplies", group: "Hospital Services" },
+  { path: "/laboratory", title: "Laboratory", group: "Hospital Services" },
+  { path: "/radiology", title: "Radiology", group: "Hospital Services" },
+  { path: "/miscellaneous", title: "Miscellaneous", group: "Hospital Services" },
+  { path: "/cashier", title: "Cashier", group: "Hospital Services" },
+  { path: "/medical-records", title: "Medical Records", group: "Hospital Services" },
+  { path: "/reports", title: "Reports", group: "Administration" },
+  { path: "/settings", title: "Settings", group: "Administration" },
+];
+
+export const ALL_PAGE_PATHS = APP_PAGES.map((p) => p.path);
+
+export const PAGE_GROUPS: PageGroup[] = [
+  "Main",
+  "Operations",
+  "Hospital Services",
+  "Administration",
+];
+
+export type PageAccessUser = {
+  role: string;
+  pageAccess?: string[] | null;
+};
+
+/** Valid paths only; empty/missing means full access (legacy users). */
+export function normalizePageAccess(paths: string[] | null | undefined): string[] {
+  if (!paths || paths.length === 0) return [...ALL_PAGE_PATHS];
+  const allowed = new Set(ALL_PAGE_PATHS);
+  const next = paths.filter((p) => allowed.has(p));
+  return next.length > 0 ? next : [...ALL_PAGE_PATHS];
+}
+
+export function userHasFullPageAccess(user: PageAccessUser | undefined): boolean {
+  if (!user) return false;
+  if (user.role === "Administrator") return true;
+  const access = normalizePageAccess(user.pageAccess);
+  return access.length >= ALL_PAGE_PATHS.length;
+}
+
+export function userCanAccessPage(
+  user: PageAccessUser | undefined,
+  pathname: string
+): boolean {
+  if (!user) return false;
+  if (user.role === "Administrator") return true;
+  const access = normalizePageAccess(user.pageAccess);
+  return access.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+export function firstAllowedPage(user: PageAccessUser | undefined): string {
+  if (!user || user.role === "Administrator") return "/dashboard";
+  const access = normalizePageAccess(user.pageAccess);
+  return access[0] ?? "/dashboard";
+}
+
+export function pageAccessSummary(user: PageAccessUser | undefined): string {
+  if (!user) return "—";
+  if (user.role === "Administrator" || userHasFullPageAccess(user)) return "All pages";
+  const n = normalizePageAccess(user.pageAccess).length;
+  return `${n} of ${ALL_PAGE_PATHS.length} pages`;
+}
+
+export function parsePageAccessJson(value: unknown): string[] {
+  if (value == null) return [...ALL_PAGE_PATHS];
+  if (Array.isArray(value)) return normalizePageAccess(value.map(String));
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) return normalizePageAccess(parsed.map(String));
+    } catch {
+      // ignore
+    }
+  }
+  return [...ALL_PAGE_PATHS];
+}
