@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useStore } from "@/lib/store";
 import { getSession } from "@/lib/auth/authService";
-import { userCanAccessPage } from "@/lib/pageAccess";
+import { resolveAccessUser, userCanAccessPage } from "@/lib/pageAccess";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
@@ -52,7 +52,7 @@ const opsItems = [
   { title: "Billing", url: "/billing", icon: Receipt },
   { title: "PhilHealth", url: "/philhealth", icon: ShieldCheck },
   { title: "eClaims Monitoring", url: "/eclaims-monitoring", icon: Send },
-  { title: "Price List", url: "/pricelist", icon: Tags },
+  { title: "PhilHealth Case Rates", url: "/pricelist", icon: Tags },
 ];
 const clinicalItems = [
   { title: "Admission", url: "/admission", icon: Bed },
@@ -95,6 +95,7 @@ export function AppSidebar() {
   const authedUserDetail = store.users.find(
     (u) => u.username.toLowerCase() === store.authedUser?.toLowerCase()
   );
+  const accessUser = resolveAccessUser(store, sessionUser);
   const fullName =
     sessionUser?.fullName || authedUserDetail?.fullName || store.authedUser || "User";
   const role = sessionUser?.role || authedUserDetail?.role || "Staff";
@@ -104,10 +105,6 @@ export function AppSidebar() {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-
-  const accessUser = authedUserDetail ?? (sessionUser
-    ? { role: sessionUser.role, pageAccess: undefined as string[] | undefined }
-    : undefined);
 
   const filterItems = <T extends { url: string }>(items: T[]) =>
     items.filter((item) => userCanAccessPage(accessUser, item.url));

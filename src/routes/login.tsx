@@ -18,11 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth/useAuth";
+import { getSession } from "@/lib/auth/authService";
 import {
   isLoginFormValid,
   validateLoginForm,
   type LoginFieldErrors,
 } from "@/lib/auth/validation";
+import { firstAllowedPage, resolveAccessUser } from "@/lib/pageAccess";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/login")({
@@ -59,8 +61,10 @@ function LoginPage() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    if (state.authedUser) navigate({ to: "/dashboard" });
-  }, [state.authedUser, navigate]);
+    if (!state.authedUser) return;
+    const accessUser = resolveAccessUser(state, getSession()?.user);
+    navigate({ to: firstAllowedPage(accessUser) });
+  }, [state.authedUser, state.users, navigate, state]);
 
   const showFieldError = (field: keyof LoginFieldErrors) =>
     (touched[field] || submitted) && fieldErrors[field];
@@ -77,7 +81,13 @@ function LoginPage() {
 
     if (result.success) {
       toast.success(`Welcome back, ${result.user?.fullName ?? username}`);
-      navigate({ to: "/dashboard" });
+      navigate({
+        to: firstAllowedPage(
+          result.user
+            ? { role: result.user.role, pageAccess: result.user.pageAccess }
+            : undefined
+        ),
+      });
       return;
     }
 

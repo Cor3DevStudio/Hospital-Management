@@ -30,9 +30,69 @@ export function LineField({
   );
 }
 
+export function EditableLineField({
+  label,
+  value,
+  tall,
+  editable,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  tall?: boolean;
+  editable?: boolean;
+  onChange?: (value: string) => void;
+}) {
+  if (!editable || !onChange) {
+    return <LineField label={label} value={value} tall={tall} />;
+  }
+
+  return (
+    <div className={`cf-line-field cf-line-field--editable${tall ? " cf-line-field--tall" : ""}`}>
+      <input
+        type="text"
+        className="cf-line-field__value cf-line-field__input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+      />
+      <div className="cf-line-field__label">{label}</div>
+    </div>
+  );
+}
+
 export function Check({ label, checked }: { label: string; checked: boolean }) {
   return (
     <label className="cf-check">
+      <span className={`cf-check__box${checked ? " is-checked" : ""}`}>{checked ? "X" : ""}</span>
+      <span>{label}</span>
+    </label>
+  );
+}
+
+export function EditableCheck({
+  label,
+  checked,
+  editable,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  editable?: boolean;
+  onChange?: (checked: boolean) => void;
+}) {
+  if (!editable || !onChange) {
+    return <Check label={label} checked={checked} />;
+  }
+
+  return (
+    <label className="cf-check cf-check--editable">
+      <input
+        type="checkbox"
+        className="cf-check__input sr-only"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       <span className={`cf-check__box${checked ? " is-checked" : ""}`}>{checked ? "X" : ""}</span>
       <span>{label}</span>
     </label>
@@ -76,7 +136,7 @@ export function CfOfficialHeader({
   formCode,
   formTitle,
 }: {
-  formCode: "CF-1" | "CF-2" | "CF-3" | "CF-4" | "CF-5";
+  formCode: "CF-1" | "CF-2" | "CF-3" | "CF-4" | "CF-5" | "CSF";
   formTitle: string;
 }) {
   return (

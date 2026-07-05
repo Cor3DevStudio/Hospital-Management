@@ -1,5 +1,6 @@
 import type { Admission, Bill, HospitalInfo, Patient } from "@/lib/store";
 import { getAgeYears, getFullName } from "@/lib/forms/fillFormTemplate";
+import { escapeXml, xmlBool } from "@/lib/philhealth/xmlEscape";
 
 export type Cf4FormData = {
   hciName: string;
@@ -67,4 +68,49 @@ export function buildCf4FormData(input: {
     pastMedicalHistory: "",
     physicianName: upper(admission?.attendingDoctor) || getFullName(patient),
   };
+}
+
+export function buildCf4XmlPayload(input: {
+  bill: Bill;
+  patient?: Patient;
+  hospital: HospitalInfo;
+  admission?: Admission;
+  claimId?: string;
+  overrides?: Partial<Cf4FormData>;
+}): string {
+  const d = { ...buildCf4FormData(input), ...input.overrides };
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<ClaimForm4>
+  <DocumentType>CF4</DocumentType>
+  <ClaimId>${escapeXml(input.claimId || "")}</ClaimId>
+  <BillId>${escapeXml(input.bill.id)}</BillId>
+  <Hospital>
+    <Name>${escapeXml(d.hciName)}</Name>
+    <AccreditationNo>${escapeXml(d.hciAccreditation)}</AccreditationNo>
+    <Address>${escapeXml(d.hciAddress)}</Address>
+  </Hospital>
+  <Patient>
+    <LastName>${escapeXml(d.patLast)}</LastName>
+    <FirstName>${escapeXml(d.patFirst)}</FirstName>
+    <MiddleName>${escapeXml(d.patMiddle)}</MiddleName>
+    <PIN>${escapeXml(d.patientPin)}</PIN>
+    <Age>${escapeXml(d.patientAge)}</Age>
+    <SexMale>${xmlBool(d.sexMale)}</SexMale>
+    <SexFemale>${xmlBool(d.sexFemale)}</SexFemale>
+  </Patient>
+  <ClinicalSummary>
+    <ChiefComplaint>${escapeXml(d.chiefComplaint)}</ChiefComplaint>
+    <AdmittingDiagnosis>${escapeXml(d.admitDiagnosis)}</AdmittingDiagnosis>
+    <DischargeDiagnosis>${escapeXml(d.dischDiagnosis)}</DischargeDiagnosis>
+    <CaseRateCode1>${escapeXml(d.caseRate1)}</CaseRateCode1>
+    <CaseRateCode2>${escapeXml(d.caseRate2)}</CaseRateCode2>
+    <DateAdmitted>${escapeXml(d.admitDate)}</DateAdmitted>
+    <DateDischarged>${escapeXml(d.dischargeDate)}</DateDischarged>
+    <HistoryOfPresentIllness>${escapeXml(d.historyIllness)}</HistoryOfPresentIllness>
+    <PastMedicalHistory>${escapeXml(d.pastMedicalHistory)}</PastMedicalHistory>
+    <AttendingPhysician>${escapeXml(d.physicianName)}</AttendingPhysician>
+  </ClinicalSummary>
+</ClaimForm4>
+`;
 }

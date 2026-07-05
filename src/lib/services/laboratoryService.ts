@@ -1,12 +1,45 @@
 import { resolveLineItemPrice } from "@/lib/services/billingService";
 import { postServiceCharge } from "@/lib/services/chargePostingService";
-import { uid, todayISO, type AppState, type LaboratoryRecord } from "@/lib/store";
+import { createPriceItem } from "@/lib/services/priceListService";
+import { uid, todayISO, type AppState, type LaboratoryRecord, type PriceItem } from "@/lib/store";
+
+/** Seed common lab tests when the Hospital Prices catalog has none yet. */
+export const DEFAULT_LAB_TESTS: { code: string; description: string; amount: number }[] = [
+  { code: "LAB-CBC", description: "Complete Blood Count", amount: 350 },
+  { code: "LAB-UA", description: "Urinalysis", amount: 200 },
+  { code: "LAB-FBS", description: "Fasting Blood Sugar", amount: 180 },
+];
+
+/** Seed effective date so default catalog items price on any order date. */
+const DEFAULT_PRICE_EFFECTIVE_DATE = "1900-01-01";
+
+export function getLabPriceItems(state: AppState): PriceItem[] {
+  return state.prices
+    .filter((p) => String(p.category).toLowerCase() === "laboratory")
+    .sort((a, b) => a.description.localeCompare(b.description));
+}
+
+export function ensureDefaultLabPrices(state: AppState): AppState {
+  if (getLabPriceItems(state).length > 0) return state;
+  let next = state;
+  for (const test of DEFAULT_LAB_TESTS) {
+    next = createPriceItem(next, {
+      code: test.code,
+      description: test.description,
+      caseRate: test.amount,
+      category: "Laboratory",
+      effectiveDate: DEFAULT_PRICE_EFFECTIVE_DATE,
+    });
+  }
+  return next;
+}
 
 export function createLabOrder(
   state: AppState,
   form: Omit<LaboratoryRecord, "id">,
   postCharge = true
 ): { state: AppState; record: LaboratoryRecord } | { error: string } {
+  const working = ensureDefaultLabPrices(state);
   const chargeDate = form.requestDate || todayISO();
   const qty = form.quantity && form.quantity > 0 ? form.quantity : 1;
 
@@ -15,9 +48,9 @@ export function createLabOrder(
 
   if (postCharge) {
     if (!form.priceItemId) {
-      return { error: "Select a lab test from the Price List to charge" };
+      return { error: "Select a lab test from Hospital Prices to charge" };
     }
-    unitPrice = resolveLineItemPrice(state, {
+    unitPrice = resolveLineItemPrice(working, {
       priceItemId: form.priceItemId,
       asOfDate: chargeDate,
     });
@@ -36,11 +69,12 @@ export function createLabOrder(
     requestDate: chargeDate,
   };
 
-  let next: AppState = { ...state, laboratoryRecords: [...state.laboratoryRecords, record] };
+  let next: AppState = { ...working, laboratoryRecords: [...working.laboratoryRecords, record] };
 
   if (postCharge && form.priceItemId && unitPrice > 0) {
+    const priceItem = working.prices.find((p) => p.id === form.priceItemId);
     const charge = postServiceCharge(next, form.patientId, {
-      description: form.testName,
+      description: form.testName || priceItem?.description || "Laboratory",
       category: "Lab",
       qty,
       unitPrice,

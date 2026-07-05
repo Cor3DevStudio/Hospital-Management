@@ -1,9 +1,11 @@
 import type { Admission, Bill, HospitalInfo, Patient } from "@/lib/store";
-import { buildCf2FormData } from "@/components/philhealth/buildCf2Values";
+import { buildCf2FormData, type Cf2FormData } from "@/components/philhealth/buildCf2Values";
+import { mergeCf2FormData } from "@/lib/services/claimFormService";
 import {
   CfOfficialHeader,
-  Check,
   DigitBoxes,
+  EditableCheck,
+  EditableLineField,
   Label,
   LineField,
   PartBar,
@@ -15,16 +17,38 @@ export type OfficialCF2SheetProps = {
   patient: Patient | undefined;
   hospital: HospitalInfo;
   admission?: Admission;
+  editable?: boolean;
+  overrides?: Partial<Cf2FormData>;
+  onFieldChange?: (field: keyof Cf2FormData, value: string | boolean) => void;
 };
 
 /**
  * PhilHealth CF-2 (Claim Form 2, Revised September 2018).
  * Same sheet template/format as CF-1; content is confinement & charges.
- * Context from ClaimForm2_092018.
  */
-export function OfficialCF2Sheet({ bill, patient, hospital, admission }: OfficialCF2SheetProps) {
-  const d = buildCf2FormData({ bill, patient, hospital, admission });
+export function OfficialCF2Sheet({
+  bill,
+  patient,
+  hospital,
+  admission,
+  editable,
+  overrides,
+  onFieldChange,
+}: OfficialCF2SheetProps) {
+  const d = mergeCf2FormData(buildCf2FormData({ bill, patient, hospital, admission }), overrides);
   const pinChars = d.patientPin.padEnd(12, " ").slice(0, 12).split("").map((c) => (c === " " ? "" : c));
+  const field = (key: keyof Cf2FormData) => ({
+    editable,
+    onChange: onFieldChange
+      ? (value: string) => onFieldChange(key, value)
+      : undefined,
+  });
+  const check = (key: keyof Cf2FormData) => ({
+    editable,
+    onChange: onFieldChange
+      ? (checked: boolean) => onFieldChange(key, checked)
+      : undefined,
+  });
 
   return (
     <div className="cf-sheet mx-auto bg-white text-black">
@@ -41,11 +65,11 @@ export function OfficialCF2Sheet({ bill, patient, hospital, admission }: Officia
           />
         </Row>
         <div className="cf-grid cf-grid--2">
-          <LineField label="2. Name of Health Care Institution" value={d.hciName} />
-          <LineField label="Contact No." value={d.hciPhone} />
+          <EditableLineField label="2. Name of Health Care Institution" value={d.hciName} {...field("hciName")} />
+          <EditableLineField label="Contact No." value={d.hciPhone} {...field("hciPhone")} />
         </div>
         <div className="mt-2">
-          <LineField label="3. Address of Health Care Institution" value={d.hciAddress} />
+          <EditableLineField label="3. Address of Health Care Institution" value={d.hciAddress} {...field("hciAddress")} />
         </div>
 
         <PartBar>PART II - PATIENT CONFINEMENT INFORMATION</PartBar>
@@ -53,18 +77,18 @@ export function OfficialCF2Sheet({ bill, patient, hospital, admission }: Officia
         <div className="cf-grid cf-grid--name-dob">
           <div>
             <Label>1. Name of Patient:</Label>
-            <LineField label="Last Name, First Name, Middle Name, Extension" value={d.patientName} />
+            <EditableLineField label="Last Name, First Name, Middle Name, Extension" value={d.patientName} {...field("patientName")} />
           </div>
           <div>
             <Label>PIN:</Label>
             <DigitBoxes chars={pinChars} groups={[2, 9, 1]} />
             <div className="cf-grid cf-grid--2 mt-2">
-              <LineField label="Age" value={d.patientAge} />
+              <EditableLineField label="Age" value={d.patientAge} {...field("patientAge")} />
               <div>
                 <Label>Sex:</Label>
                 <div className="cf-checks">
-                  <Check label="Male" checked={d.patientSexMale} />
-                  <Check label="Female" checked={d.patientSexFemale} />
+                  <EditableCheck label="Male" checked={d.patientSexMale} {...check("patientSexMale")} />
+                  <EditableCheck label="Female" checked={d.patientSexFemale} {...check("patientSexFemale")} />
                 </div>
               </div>
             </div>
@@ -74,77 +98,89 @@ export function OfficialCF2Sheet({ bill, patient, hospital, admission }: Officia
         <div className="mt-2">
           <Label>2. Was patient referred by another Health Care Institution (HCI)?</Label>
           <div className="cf-checks">
-            <Check label="Yes" checked={d.referredByOtherHci} />
-            <Check label="No" checked={!d.referredByOtherHci} />
+            <EditableCheck
+              label="Yes"
+              checked={d.referredByOtherHci}
+              editable={editable}
+              onChange={
+                onFieldChange ? (checked) => checked && onFieldChange("referredByOtherHci", true) : undefined
+              }
+            />
+            <EditableCheck
+              label="No"
+              checked={!d.referredByOtherHci}
+              editable={editable}
+              onChange={
+                onFieldChange ? (checked) => checked && onFieldChange("referredByOtherHci", false) : undefined
+              }
+            />
           </div>
         </div>
 
         <div className="mt-2">
           <Label>3. Confinement Period:</Label>
           <div className="cf-grid cf-grid--4">
-            <LineField label="a. Date Admitted" value={d.dateAdmitted} />
-            <LineField label="b. Time Admitted" value={d.timeAdmitted} />
-            <LineField label="c. Date Discharge" value={d.dateDischarged} />
-            <LineField label="d. Time Discharge" value={d.timeDischarged} />
+            <EditableLineField label="a. Date Admitted" value={d.dateAdmitted} {...field("dateAdmitted")} />
+            <EditableLineField label="b. Time Admitted" value={d.timeAdmitted} {...field("timeAdmitted")} />
+            <EditableLineField label="c. Date Discharge" value={d.dateDischarged} {...field("dateDischarged")} />
+            <EditableLineField label="d. Time Discharge" value={d.timeDischarged} {...field("timeDischarged")} />
           </div>
         </div>
 
         <div className="mt-2">
           <Label>4. Patient Disposition: (select only 1)</Label>
           <div className="cf-checks">
-            <Check label="a. Improved" checked={d.dispositionImproved} />
-            <Check label="b. Recovered" checked={d.dispositionRecovered} />
-            <Check label="c. Home/Discharged Against Medical Advice" checked={d.dispositionHama} />
-            <Check label="d. Absconded" checked={d.dispositionAbsconded} />
-            <Check label="e. Expired" checked={d.dispositionExpired} />
-            <Check label="f. Transferred/Referred" checked={d.dispositionTransferred} />
+            <EditableCheck label="a. Improved" checked={d.dispositionImproved} {...check("dispositionImproved")} />
+            <EditableCheck label="b. Recovered" checked={d.dispositionRecovered} {...check("dispositionRecovered")} />
+            <EditableCheck label="c. Home/Discharged Against Medical Advice" checked={d.dispositionHama} {...check("dispositionHama")} />
+            <EditableCheck label="d. Absconded" checked={d.dispositionAbsconded} {...check("dispositionAbsconded")} />
+            <EditableCheck label="e. Expired" checked={d.dispositionExpired} {...check("dispositionExpired")} />
+            <EditableCheck label="f. Transferred/Referred" checked={d.dispositionTransferred} {...check("dispositionTransferred")} />
           </div>
         </div>
 
         <div className="mt-2">
           <Label>5. Type of Accommodation:</Label>
           <div className="cf-checks">
-            <Check label="Private" checked={d.accommodationPrivate} />
-            <Check label="Non-Private (Charity/Service)" checked={d.accommodationNonPrivate} />
+            <EditableCheck label="Private" checked={d.accommodationPrivate} {...check("accommodationPrivate")} />
+            <EditableCheck label="Non-Private (Charity/Service)" checked={d.accommodationNonPrivate} {...check("accommodationNonPrivate")} />
           </div>
-          {d.roomWard ? (
-            <div className="mt-2">
-              <LineField label="Room / Ward" value={d.roomWard} />
-            </div>
-          ) : null}
+          <div className="mt-2">
+            <EditableLineField label="Room / Ward" value={d.roomWard} {...field("roomWard")} />
+          </div>
         </div>
 
         <div className="mt-2">
           <Label>6. Admission Diagnosis/es:</Label>
-          <LineField label="Admission Diagnosis" value={d.admissionDiagnosis} tall />
+          <EditableLineField label="Admission Diagnosis" value={d.admissionDiagnosis} tall {...field("admissionDiagnosis")} />
         </div>
 
         <div className="mt-2">
           <Label>7. Discharge Diagnosis/es:</Label>
           <div className="cf-grid cf-grid--3">
-            <LineField label="Diagnosis" value={d.dischargeDiagnosis} />
-            <LineField label="ICD-10 Code/s" value={d.icd10} />
-            <LineField label="RVS Code" value={d.rvsCode} />
+            <EditableLineField label="Diagnosis" value={d.dischargeDiagnosis} {...field("dischargeDiagnosis")} />
+            <EditableLineField label="ICD-10 Code/s" value={d.icd10} {...field("icd10")} />
+            <EditableLineField label="RVS Code" value={d.rvsCode} {...field("rvsCode")} />
           </div>
         </div>
 
         <div className="mt-2">
           <Label>8. Case Rate / Package Code:</Label>
-          <LineField label="Case Rate Code" value={d.caseRateCode} />
+          <EditableLineField label="Case Rate Code" value={d.caseRateCode} {...field("caseRateCode")} />
         </div>
 
         <div className="mt-2">
           <Label>9. PhilHealth Benefits / Charges:</Label>
           <div className="cf-grid cf-grid--3">
-            <LineField label="Total HCI Charges (₱)" value={d.totalCharges} />
-            <LineField label="PhilHealth Benefit (₱)" value={d.philhealthBenefit} />
-            <LineField label="Amount Paid (₱)" value={d.amountPaid} />
+            <EditableLineField label="Total HCI Charges (₱)" value={d.totalCharges} {...field("totalCharges")} />
+            <EditableLineField label="PhilHealth Benefit (₱)" value={d.philhealthBenefit} {...field("philhealthBenefit")} />
+            <EditableLineField label="Amount Paid (₱)" value={d.amountPaid} {...field("amountPaid")} />
           </div>
         </div>
 
         <div className="mt-2">
           <Label>10. Accredited Health Care Professional:</Label>
-          <LineField label="Name of Attending Physician / Date Signed" value={d.attendingDoctor} />
+          <EditableLineField label="Name of Attending Physician / Date Signed" value={d.attendingDoctor} {...field("attendingDoctor")} />
         </div>
 
         <PartBar>
@@ -157,7 +193,7 @@ export function OfficialCF2Sheet({ bill, patient, hospital, admission }: Officia
           record/s for claim processing.
         </p>
         <div className="cf-grid cf-grid--sig">
-          <LineField label="Signature Over Printed Name of Member/Patient/Representative" value={d.patientName} tall />
+          <EditableLineField label="Signature Over Printed Name of Member/Patient/Representative" value={d.patientName} tall {...field("patientName")} />
           <LineField label="Date Signed" value="" />
         </div>
 
@@ -172,7 +208,7 @@ export function OfficialCF2Sheet({ bill, patient, hospital, admission }: Officia
           <LineField label="Official Capacity / Designation" value="" />
         </div>
         <div className="mt-2">
-          <LineField label="Name of Health Care Institution" value={d.hciName} />
+          <EditableLineField label="Name of Health Care Institution" value={d.hciName} {...field("hciName")} />
         </div>
       </div>
     </div>

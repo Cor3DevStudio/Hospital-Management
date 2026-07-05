@@ -125,6 +125,7 @@ export function EClaimsRegistryDocument({
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Patient</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Type</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Admission</th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Discharged</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Room/Ward</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">PhilHealth</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Case Rate</th>
@@ -158,6 +159,9 @@ export function EClaimsRegistryDocument({
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1 whitespace-nowrap">
                         {claim.admissionDate}
+                      </td>
+                      <td className="border border-slate-300 px-1.5 py-1 whitespace-nowrap">
+                        {bill?.dischargeDate || "—"}
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1">
                         {claim.roomWard || "—"}

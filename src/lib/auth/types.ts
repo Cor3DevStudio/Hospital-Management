@@ -4,6 +4,8 @@ export type AuthUser = {
   username: string;
   fullName: string;
   role: UserRole;
+  /** Allowed route paths from DB; null/omitted = full access (legacy). */
+  pageAccess?: string[] | null;
 };
 
 export type LoginRequest = {

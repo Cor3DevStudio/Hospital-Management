@@ -1,14 +1,49 @@
 import { resolveLineItemPrice } from "@/lib/services/billingService";
 import { postServiceCharge } from "@/lib/services/chargePostingService";
-import { uid, todayISO, type AppState, type RadiologyRecord } from "@/lib/store";
+import { createPriceItem } from "@/lib/services/priceListService";
+import { uid, todayISO, type AppState, type PriceItem, type RadiologyRecord } from "@/lib/store";
+
+/** Seed effective date so default catalog items price on any order date. */
+const DEFAULT_PRICE_EFFECTIVE_DATE = "1900-01-01";
 
 export const RADIOLOGY_EXAM_TYPES = ["X-ray", "CT Scan", "Ultrasound", "MRI", "Mammography", "Other"];
+
+/** Seed common imaging procedures when the Hospital Prices catalog has none yet. */
+export const DEFAULT_RAD_PROCEDURES: { code: string; description: string; amount: number }[] = [
+  { code: "RAD-XRAY-CHEST", description: "Chest X-ray (PA)", amount: 450 },
+  { code: "RAD-UTZ-ABD", description: "Abdominal Ultrasound", amount: 1200 },
+  { code: "RAD-ECG", description: "Electrocardiogram", amount: 600 },
+];
+
+const RADIOLOGY_PRICE_CATEGORIES = new Set(["procedure", "other", "radiology", "equipment"]);
+
+export function getRadiologyPriceItems(state: AppState): PriceItem[] {
+  return state.prices
+    .filter((p) => RADIOLOGY_PRICE_CATEGORIES.has(String(p.category).toLowerCase()))
+    .sort((a, b) => a.description.localeCompare(b.description));
+}
+
+export function ensureDefaultRadiologyPrices(state: AppState): AppState {
+  if (getRadiologyPriceItems(state).length > 0) return state;
+  let next = state;
+  for (const proc of DEFAULT_RAD_PROCEDURES) {
+    next = createPriceItem(next, {
+      code: proc.code,
+      description: proc.description,
+      caseRate: proc.amount,
+      category: "Procedure",
+      effectiveDate: DEFAULT_PRICE_EFFECTIVE_DATE,
+    });
+  }
+  return next;
+}
 
 export function createRadiologyOrder(
   state: AppState,
   form: Omit<RadiologyRecord, "id">,
   postCharge = true
 ): { state: AppState; record: RadiologyRecord } | { error: string } {
+  const working = ensureDefaultRadiologyPrices(state);
   const chargeDate = form.requestDate || todayISO();
   const qty = form.quantity && form.quantity > 0 ? form.quantity : 1;
   const imagingType = form.examType || form.imagingType;
@@ -18,9 +53,9 @@ export function createRadiologyOrder(
 
   if (postCharge) {
     if (!form.priceItemId) {
-      return { error: "Select a procedure from the Price List to charge" };
+      return { error: "Select a procedure from Hospital Prices to charge" };
     }
-    unitPrice = resolveLineItemPrice(state, {
+    unitPrice = resolveLineItemPrice(working, {
       priceItemId: form.priceItemId,
       asOfDate: chargeDate,
     });
@@ -40,11 +75,12 @@ export function createRadiologyOrder(
     requestDate: chargeDate,
   };
 
-  let next: AppState = { ...state, radiologyRecords: [...state.radiologyRecords, record] };
+  let next: AppState = { ...working, radiologyRecords: [...working.radiologyRecords, record] };
 
   if (postCharge && form.priceItemId && unitPrice > 0) {
+    const priceItem = working.prices.find((p) => p.id === form.priceItemId);
     const charge = postServiceCharge(next, form.patientId, {
-      description: imagingType || form.imagingType,
+      description: form.imagingType || priceItem?.description || imagingType || "Radiology",
       category: "Radiology",
       qty,
       unitPrice,

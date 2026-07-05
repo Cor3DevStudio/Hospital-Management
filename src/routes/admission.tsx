@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Save, Trash2, RotateCcw, Download, ArrowRightLeft } from "lucide-react";
+import { Save, Trash2, RotateCcw, Download, ArrowRightLeft, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { ListPagination } from "@/components/ListPagination";
 import { usePaginatedList } from "@/lib/hooks/usePaginatedList";
@@ -33,6 +33,16 @@ import {
 } from "@/lib/services/roomBoardService";
 import { getPriceAsOf } from "@/lib/priceService";
 import { getActiveDoctors } from "@/lib/services/userService";
+import { AdmissionRecordDocument } from "@/components/clinical/AdmissionRecordDocument";
+import { buildPatientChartModel } from "@/components/clinical/buildPatientChartModel";
+import { PatientChartDocument } from "@/components/clinical/PatientChartDocument";
+import { ClinicalPrintPreviewModal } from "@/components/clinical/ClinicalPrintPreviewModal";
+import { getClinicalPrintCss, triggerClinicalPrint, triggerClinicalSavePdf } from "@/components/clinical/clinicalPrintStyles";
+import {
+  getPatientChartPrintCss,
+  triggerPatientChartPrint,
+  triggerPatientChartSavePdf,
+} from "@/components/clinical/patientChartPrintStyles";
 import { useStore, todayISO, type Admission } from "@/lib/store";
 
 export const Route = createFileRoute("/admission")({
@@ -48,6 +58,8 @@ function AdmissionPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [transferTypeId, setTransferTypeId] = useState("");
   const [transferWard, setTransferWard] = useState("");
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showChartPreview, setShowChartPreview] = useState(false);
   const [transferDate, setTransferDate] = useState(todayISO());
 
   useEffect(() => {
@@ -55,6 +67,18 @@ function AdmissionPage() {
   }, [setState]);
 
   const patients = state.patients.filter((p) => !p.archived);
+  const printPatient = useMemo(
+    () => state.patients.find((p) => p.id === form.patientId),
+    [state.patients, form.patientId]
+  );
+  const preparedBy =
+    state.users.find((u) => u.username === state.authedUser)?.fullName || state.authedUser || undefined;
+  const canPrint = Boolean(editId && form.patientId);
+  const canPrintChart = Boolean(form.patientId);
+  const chartModel = useMemo(
+    () => (form.patientId ? buildPatientChartModel(state, form.patientId) : null),
+    [state, form.patientId]
+  );
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const admList = usePaginatedList(state.admissions, 50);
   const doctors = getActiveDoctors(state.users);
@@ -135,7 +159,10 @@ function AdmissionPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
+    <>
+      <style>{getClinicalPrintCss()}</style>
+      <style>{getPatientChartPrintCss()}</style>
+      <div className="no-print h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
       <PageHeader title="Admissions" description="Track inpatient admissions, room assignments, and discharge status." />
       <div className="flex-1 grid gap-4 p-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-stretch min-h-0 overflow-hidden">
         {/* Left: patient search + admission form (stacked, scrollable — no overlap) */}
@@ -144,6 +171,9 @@ function AdmissionPage() {
             patients={state.patients}
             selectedPatientId={form.patientId}
             onSelect={(patientId) => setForm({ ...form, patientId })}
+            label="Search Patient for Admission"
+            changeLabel="Change Patient"
+            excludeAdmissionId={editId ?? undefined}
             onViewAdmission={(admissionId) => {
               const admission = state.admissions.find((item) => item.id === admissionId);
               if (admission) {
@@ -388,6 +418,16 @@ function AdmissionPage() {
               {editId && form.status === "Discharged" && (
                 <Button variant="outline" size="sm" onClick={handleCancelDischarge}>Cancel Discharge</Button>
               )}
+              {canPrintChart && (
+                <Button variant="outline" size="sm" onClick={() => setShowChartPreview(true)}>
+                  <Printer className="h-3.5 w-3.5" /> Print Chart
+                </Button>
+              )}
+              {canPrint && (
+                <Button variant="outline" size="sm" onClick={() => setShowPrintPreview(true)}>
+                  <Printer className="h-3.5 w-3.5" /> Print / PDF
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
               <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
             </div>
@@ -440,6 +480,65 @@ function AdmissionPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <ClinicalPrintPreviewModal
+        open={showPrintPreview}
+        title="Clinical Cover Sheet Preview"
+        subtitle="Review the admission form before printing or saving as PDF."
+        onClose={() => setShowPrintPreview(false)}
+        onPrint={() => {
+          setShowPrintPreview(false);
+          triggerClinicalPrint();
+        }}
+        onSavePdf={() => {
+          setShowPrintPreview(false);
+          triggerClinicalSavePdf();
+        }}
+      >
+        {editId ? (
+          <AdmissionRecordDocument
+            hospital={state.hospital}
+            admission={{ ...form, id: editId }}
+            patient={printPatient}
+            state={state}
+            preparedBy={preparedBy}
+          />
+        ) : null}
+      </ClinicalPrintPreviewModal>
+
+      <ClinicalPrintPreviewModal
+        open={showChartPreview}
+        title="Patient Chart Preview"
+        subtitle="Review the patient's medical chart before printing or saving as PDF."
+        onClose={() => setShowChartPreview(false)}
+        onPrint={() => {
+          setShowChartPreview(false);
+          triggerPatientChartPrint();
+        }}
+        onSavePdf={() => {
+          setShowChartPreview(false);
+          triggerPatientChartSavePdf();
+        }}
+      >
+        {chartModel ? <PatientChartDocument model={chartModel} /> : null}
+      </ClinicalPrintPreviewModal>
+      </div>
+
+      <div id="clinical-print-area" className="force-light">
+        {editId && form.patientId ? (
+          <AdmissionRecordDocument
+            hospital={state.hospital}
+            admission={{ ...form, id: editId }}
+            patient={printPatient}
+            state={state}
+            preparedBy={preparedBy}
+          />
+        ) : null}
+      </div>
+
+      <div id="patient-chart-print-area" className="force-light">
+        {chartModel ? <PatientChartDocument model={chartModel} /> : null}
+      </div>
+    </>
   );
 }

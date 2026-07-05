@@ -4,6 +4,7 @@ import { Search, UserRound } from "lucide-react";
 
 import { PatientClinicalHistory } from "@/components/PatientClinicalHistory";
 import { PatientSearchModal } from "@/components/PatientSearchModal";
+import { ReAdmissionBanner } from "@/components/ReAdmissionBanner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getPatientAdmissions } from "@/lib/services/admissionService";
+import { getPatientAdmissionSummary } from "@/lib/services/admissionService";
 import { formatPatientName } from "@/lib/services/patientHistoryService";
 import { useStore, type Admission, type Patient } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,9 @@ export type PatientSearchWithHistoryProps = {
   hideSearch?: boolean;
   /** Load admission into the current module form (e.g. Admission page). */
   onViewAdmission?: (admissionId: string) => void;
+  /** Exclude an admission from prior-history counts (e.g. record being edited). */
+  excludeAdmissionId?: string;
+  allowCreate?: boolean;
   /** Stretch the trigger button to full width (forms/side panels). Default: true. */
   fullWidth?: boolean;
   /** Show selected patient name/ID above the button. Default: true. */
@@ -39,8 +43,8 @@ export type PatientSearchWithHistoryProps = {
   buttonSize?: "default" | "sm" | "lg" | "icon";
   buttonClassName?: string;
   className?: string;
-  /** @deprecated Inline search removed — modal is always used. Kept for call-site compatibility. */
-  embedded?: boolean;
+  /** Show inline registration in the search modal. Default: true. */
+  allowCreate?: boolean;
   /** @deprecated Inline list/table layouts removed. */
   layout?: "table" | "list";
   /** @deprecated Results are fully scrollable in the modal. */
@@ -62,6 +66,8 @@ export function PatientSearchWithHistory({
   showAdmissionHistory = true,
   hideSearch = false,
   onViewAdmission,
+  excludeAdmissionId,
+  allowCreate = true,
   fullWidth = true,
   showSelectedSummary = true,
   buttonVariant = "outline",
@@ -81,10 +87,15 @@ export function PatientSearchWithHistory({
     [patients, selectedPatientId, state.patients]
   );
 
-  const admissions = useMemo(
-    () => (selectedPatientId ? getPatientAdmissions(state, selectedPatientId) : []),
-    [state, selectedPatientId]
+  const admissionSummary = useMemo(
+    () =>
+      selectedPatientId
+        ? getPatientAdmissionSummary(state, selectedPatientId, { excludeAdmissionId })
+        : null,
+    [state, selectedPatientId, excludeAdmissionId]
   );
+
+  const admissions = admissionSummary?.admissions ?? [];
 
   const handleViewAdmission = (admissionId: string) => {
     if (onViewAdmission) {
@@ -103,6 +114,7 @@ export function PatientSearchWithHistory({
           state={state}
           patient={selectedPatient}
           admissions={admissions}
+          admissionSummary={admissionSummary ?? undefined}
           compact
           listLayout
           onViewAdmission={handleViewAdmission}
@@ -123,17 +135,20 @@ export function PatientSearchWithHistory({
   return (
     <div className={cn("min-w-0 space-y-3", className)}>
       {showSelectedSummary && selectedPatient && (
-        <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs">
-          <div className="flex items-start gap-2">
-            <UserRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            <div className="min-w-0 flex-1">
-              <p className="font-medium break-words">{formatPatientName(selectedPatient)}</p>
-              <p className="truncate font-mono text-[10px] text-muted-foreground">
-                {selectedPatient.id}
-                {selectedPatient.contactNumber ? ` · ${selectedPatient.contactNumber}` : ""}
-              </p>
+        <div className="space-y-2">
+          <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs">
+            <div className="flex items-start gap-2">
+              <UserRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium break-words">{formatPatientName(selectedPatient)}</p>
+                <p className="truncate font-mono text-[10px] text-muted-foreground">
+                  {selectedPatient.id}
+                  {selectedPatient.contactNumber ? ` · ${selectedPatient.contactNumber}` : ""}
+                </p>
+              </div>
             </div>
           </div>
+          {admissionSummary && <ReAdmissionBanner summary={admissionSummary} compact />}
         </div>
       )}
 
@@ -156,6 +171,8 @@ export function PatientSearchWithHistory({
         onSelect={onSelect}
         showArchived={showArchived}
         title={label}
+        excludeAdmissionId={excludeAdmissionId}
+        allowCreate={allowCreate}
       />
 
       {showAdmissionHistory && (
@@ -163,6 +180,7 @@ export function PatientSearchWithHistory({
           state={state}
           patient={selectedPatient}
           admissions={admissions}
+          admissionSummary={admissionSummary ?? undefined}
           compact
           listLayout
           onViewAdmission={handleViewAdmission}

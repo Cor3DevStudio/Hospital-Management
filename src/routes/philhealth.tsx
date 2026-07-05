@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Calculator, FileStack, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,14 +23,29 @@ import {
   type SuiteClaimMeta,
 } from "@/components/philhealth/ClaimFormSuiteModal";
 import { OfficialCF1Sheet } from "@/components/philhealth/OfficialCF1Sheet";
+import { OfficialCSFSheet } from "@/components/philhealth/OfficialCSFSheet";
 import { OfficialCF2Sheet } from "@/components/philhealth/OfficialCF2Sheet";
 import { OfficialCF3Sheet } from "@/components/philhealth/OfficialCF3Sheet";
 import { OfficialCF4Sheet } from "@/components/philhealth/OfficialCF4Sheet";
 import { OfficialCF5Sheet } from "@/components/philhealth/OfficialCF5Sheet";
+import { OfficialESOASheet } from "@/components/philhealth/OfficialESOASheet";
+import type { Cf2FormData } from "@/components/philhealth/buildCf2Values";
+import type { Cf4FormData } from "@/components/philhealth/buildCf4Values";
 import { getCf1PrintCss } from "@/components/billing/billingPrintStyles";
 import { buildPatientMap } from "@/lib/stateIndexes";
 import { formatPatientName } from "@/lib/services/patientHistoryService";
-import { syncEClaimFromBill, updateEClaimStatus } from "@/lib/services/eclaimService";
+import {
+  patchCf2Override,
+  patchCf4Override,
+} from "@/lib/services/claimFormService";
+import { syncEClaimFromBill, updateEClaim } from "@/lib/services/eclaimService";
+import {
+  buildPhilHealthXmlFile,
+  downloadPhilHealthXmlFile,
+  findPhilHealthXmlAttachments,
+  validatePhilHealthXml,
+  type PhilHealthXmlForm,
+} from "@/lib/services/philhealthXmlService";
 import { useStore, type Bill, type EClaimStatus } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -76,7 +91,7 @@ function getDisplayStatus(bill: Bill, claimStatus?: EClaimStatus): DisplayStatus
 }
 
 function PhilHealthPage() {
-  const { state, setState } = useStore();
+  const { state, setState, addAttachment, deleteAttachment } = useStore();
   const [calcCaseCode, setCalcCaseCode] = useState("");
   const [calcCaseAmount, setCalcCaseAmount] = useState(0);
   const [hospitalCharges, setHospitalCharges] = useState(20000);
@@ -86,6 +101,8 @@ function PhilHealthPage() {
   const [suiteOpen, setSuiteOpen] = useState(false);
   const [activeForm, setActiveForm] = useState<ClaimFormId>("CF1");
   const [suiteBillId, setSuiteBillId] = useState<string | null>(null);
+  const [cf2Overrides, setCf2Overrides] = useState<Partial<Cf2FormData>>({});
+  const [cf4Overrides, setCf4Overrides] = useState<Partial<Cf4FormData>>({});
 
   const benefit = Math.min(calcCaseAmount, hospitalCharges);
   const patientShare = Math.max(0, hospitalCharges - benefit);
@@ -171,6 +188,13 @@ function PhilHealthPage() {
     setSuiteOpen(true);
   };
 
+  useEffect(() => {
+    if (!suiteOpen || !suiteBillId) return;
+    const claim = (state.eClaims ?? []).find((c) => c.billId === suiteBillId);
+    setCf2Overrides((claim?.cf2Overrides as Partial<Cf2FormData> | undefined) ?? {});
+    setCf4Overrides((claim?.cf4Overrides as Partial<Cf4FormData> | undefined) ?? {});
+  }, [suiteOpen, suiteBillId, state.eClaims]);
+
   const handleValidate = () => {
     if (!suiteBill) return toast.error("No claim selected");
     toast.success("Claim forms validated (placeholder — official rules coming soon)");
@@ -178,8 +202,67 @@ function PhilHealthPage() {
 
   const handleSave = () => {
     if (!suiteBill) return toast.error("No claim selected");
-    setState((s) => syncEClaimFromBill(s, suiteBill));
+    setState((s) => {
+      let next = syncEClaimFromBill(s, suiteBill);
+      const claim = (next.eClaims ?? []).find((c) => c.billId === suiteBill.id);
+      if (claim) {
+        next = updateEClaim(next, {
+          ...claim,
+          cf2Overrides,
+          cf4Overrides,
+        });
+      }
+      return next;
+    });
     toast.success("Claim suite changes saved");
+  };
+
+  const handleExportXml = async (form: PhilHealthXmlForm, attach: boolean) => {
+    if (!suiteBill) return toast.error("No claim selected");
+    const patient = patientMap.get(suiteBill.patientId);
+    let claim = suiteClaim;
+    if (!claim) {
+      const synced = syncEClaimFromBill(state, suiteBill);
+      claim = (synced.eClaims ?? []).find((c) => c.billId === suiteBill.id);
+      setState(synced);
+    }
+    const validation = validatePhilHealthXml({
+      form,
+      bill: suiteBill,
+      patient,
+      claim,
+      hospital: state.hospital,
+      attach,
+    });
+    if (!validation.valid) {
+      toast.error(validation.errors[0] ?? "Cannot generate XML");
+      return;
+    }
+    const file = buildPhilHealthXmlFile({
+      form,
+      bill: suiteBill,
+      patient,
+      hospital: state.hospital,
+      admission: suiteAdmission,
+      claimId: claim?.id,
+      cf4Overrides,
+    });
+    if (attach) {
+      if (!claim) return toast.error("No eClaim found to attach XML");
+      try {
+        const existing = findPhilHealthXmlAttachments(state, claim.id, form);
+        for (const attachment of existing) {
+          await deleteAttachment(attachment.id);
+        }
+        await addAttachment("eclaim", claim.id, file);
+        toast.success(`${form}.xml attached to eClaim`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to attach XML");
+      }
+      return;
+    }
+    downloadPhilHealthXmlFile(file);
+    toast.success(`${form}.xml downloaded`);
   };
 
   const handleTransmit = () => {
@@ -187,7 +270,14 @@ function PhilHealthPage() {
     setState((s) => {
       let next = syncEClaimFromBill(s, suiteBill);
       const claim = (next.eClaims ?? []).find((c) => c.billId === suiteBill.id);
-      if (claim) next = updateEClaimStatus(next, claim.id, "Submitted");
+      if (claim) {
+        next = updateEClaim(next, {
+          ...claim,
+          cf2Overrides,
+          cf4Overrides,
+          claimStatus: "Submitted",
+        });
+      }
       return {
         ...next,
         bills: next.bills.map((b) =>
@@ -199,10 +289,6 @@ function PhilHealthPage() {
   };
 
   const handlePrint = () => {
-    if (activeForm === "CSF") {
-      toast.message("Print layout not available yet for this form");
-      return;
-    }
     if (!suiteBill) return toast.error("No claim selected");
     setTimeout(() => window.print(), 100);
   };
@@ -221,7 +307,7 @@ function PhilHealthPage() {
       <div className="no-print flex h-[calc(100vh-3rem)] flex-col overflow-hidden bg-background">
       <PageHeader
         title="PhilHealth eClaims"
-        description="Manage Claims Form Suite (CF1 to CF5), validate clinical records, and transmit electronic claims."
+        description="Manage Claims Form Suite (CF1 to CF5, ESOA), validate clinical records, and transmit electronic claims."
       />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -410,17 +496,38 @@ function PhilHealthPage() {
         patient={suitePatient}
         hospital={state.hospital}
         admission={suiteAdmission}
+        cf2Overrides={cf2Overrides}
+        cf4Overrides={cf4Overrides}
+        onCf2FieldChange={(field, value) =>
+          setCf2Overrides((current) => patchCf2Override(current, field, value))
+        }
+        onCf4FieldChange={(field, value) =>
+          setCf4Overrides((current) => patchCf4Override(current, field, value))
+        }
         onValidate={handleValidate}
         onSave={handleSave}
         onTransmit={handleTransmit}
         onPrint={handlePrint}
+        onExportXml={(form, attach) => void handleExportXml(form, attach)}
       />
       </div>
 
       {/* Print-only CF sheet — sibling of UI so PDF excludes chrome/tabs/sidebar */}
-      {suiteBill && activeForm !== "CSF" && (
+      {suiteBill && (
         <div id="cf-print-area" className="force-light">
-          {activeForm === "CF5" ? (
+          {activeForm === "ESOA" ? (
+            <OfficialESOASheet
+              bill={suiteBill}
+              patient={suitePatient}
+              hospital={state.hospital}
+            />
+          ) : activeForm === "CSF" ? (
+            <OfficialCSFSheet
+              bill={suiteBill}
+              patient={suitePatient}
+              admission={suiteAdmission}
+            />
+          ) : activeForm === "CF5" ? (
             <OfficialCF5Sheet
               bill={suiteBill}
               patient={suitePatient}
@@ -433,6 +540,7 @@ function PhilHealthPage() {
               patient={suitePatient}
               hospital={state.hospital}
               admission={suiteAdmission}
+              overrides={cf4Overrides}
             />
           ) : activeForm === "CF3" ? (
             <OfficialCF3Sheet
@@ -447,6 +555,7 @@ function PhilHealthPage() {
               patient={suitePatient}
               hospital={state.hospital}
               admission={suiteAdmission}
+              overrides={cf2Overrides}
             />
           ) : (
             <OfficialCF1Sheet bill={suiteBill} patient={suitePatient} />

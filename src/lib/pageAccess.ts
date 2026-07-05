@@ -16,7 +16,7 @@ export const APP_PAGES: AppPage[] = [
   { path: "/billing", title: "Billing", group: "Operations" },
   { path: "/philhealth", title: "PhilHealth", group: "Operations" },
   { path: "/eclaims-monitoring", title: "eClaims Monitoring", group: "Operations" },
-  { path: "/pricelist", title: "Price List", group: "Operations" },
+  { path: "/pricelist", title: "PhilHealth Case Rates", group: "Operations" },
   { path: "/admission", title: "Admission", group: "Hospital Services" },
   { path: "/er", title: "Emergency Room", group: "Hospital Services" },
   { path: "/opd", title: "OPD", group: "Hospital Services" },
@@ -44,6 +44,28 @@ export type PageAccessUser = {
   role: string;
   pageAccess?: string[] | null;
 };
+
+/** Resolve the signed-in user for access checks (store record, then auth session). */
+export function resolveAccessUser(
+  state: { users: Array<{ username: string; role: string; pageAccess?: string[] | null }>; authedUser: string | null },
+  sessionUser?: { username: string; role: string; pageAccess?: string[] | null } | null
+): PageAccessUser | undefined {
+  const username = state.authedUser?.trim();
+  if (!username) return undefined;
+
+  const fromStore = state.users.find(
+    (u) => u.username.toLowerCase() === username.toLowerCase()
+  );
+  if (fromStore) {
+    return { role: fromStore.role, pageAccess: fromStore.pageAccess };
+  }
+
+  if (sessionUser && sessionUser.username.toLowerCase() === username.toLowerCase()) {
+    return { role: sessionUser.role, pageAccess: sessionUser.pageAccess };
+  }
+
+  return undefined;
+}
 
 /** Valid paths only; empty/missing means full access (legacy users). */
 export function normalizePageAccess(paths: string[] | null | undefined): string[] {

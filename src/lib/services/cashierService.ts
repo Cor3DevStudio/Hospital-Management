@@ -73,7 +73,7 @@ export function processBillPayment(
 
   next = {
     ...next,
-    cashierTransactions: [...next.cashierTransactions, transaction],
+    cashierTransactions: [...(next.cashierTransactions ?? []), transaction],
   };
 
   return { state: next, transaction };

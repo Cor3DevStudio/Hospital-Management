@@ -15,6 +15,14 @@ import {
 import type { SOAPrintOptions } from "@/components/billing/soaPrintOptions";
 import { DEFAULT_SOA_PRINT_OPTIONS } from "@/components/billing/soaPrintOptions";
 
+/** Keep fixed-position SOA fields inside their line boxes. */
+export function truncateSoaField(value: string, maxLen: number): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= maxLen) return trimmed;
+  if (maxLen <= 1) return trimmed.slice(0, maxLen);
+  return `${trimmed.slice(0, maxLen - 1)}…`;
+}
+
 export type SoaHospital = {
   name: string;
   address: string;
@@ -82,21 +90,30 @@ export function buildSoaValues(input: {
   const moneyOrZero = (n: number) => money2(n);
 
   return {
-    HOSPITAL_NAME: hospital.name || "MEDICAL CENTER",
-    HOSPITAL_ADDRESS: hospital.address || "",
-    HOSPITAL_CITY: cityFromAddress(hospital.address) || "",
-    PATIENT_TYPE: patientTypeLabel(bill.patientType),
+    HOSPITAL_NAME: truncateSoaField(hospital.name || "MEDICAL CENTER", 42),
+    HOSPITAL_ADDRESS: truncateSoaField(hospital.address || "", 58),
+    HOSPITAL_CITY: truncateSoaField(cityFromAddress(hospital.address) || "", 28),
+    PATIENT_TYPE: truncateSoaField(patientTypeLabel(bill.patientType), 18),
     BILL_STATUS: options.status === "Tentative" ? "TENTATIVE BILL" : "FINAL BILL",
-    PATIENT_NAME: getFullName(patient),
+    PATIENT_NAME: truncateSoaField(getFullName(patient), 34),
     DATE_TODAY: formatDateLong(new Date().toISOString().slice(0, 10)),
     SOA_NUMBER: formNo.replace(/\D/g, "").padStart(15, "0").slice(-15),
-    ADMIT_DT: formatDateTime12(bill.date),
-    DISCHARGE_DT: formatDateTime12(bill.dischargeDate || bill.date, "05:00:00 PM"),
-    ACCOUNT_NO: accountNo,
-    ROOM: input.roomWard || (bill.patientType === "In-Patient" ? "" : "Out-Patient Department"),
-    AGE: age == null ? "" : `${age} y/o`,
-    PHIC_MEMBERSHIP: patient?.philhealth?.memberType || patient?.philhealth?.memberNumber || "",
-    FIRST_CASE_DESC: input.caseRateDescription || bill.caseRateCode || bill.notes || "",
+    ADMIT_DT: truncateSoaField(formatDateTime12(bill.date), 24),
+    DISCHARGE_DT: truncateSoaField(formatDateTime12(bill.dischargeDate || bill.date, "05:00:00 PM"), 24),
+    ACCOUNT_NO: truncateSoaField(accountNo, 18),
+    ROOM: truncateSoaField(
+      input.roomWard || (bill.patientType === "In-Patient" ? "" : "Out-Patient Department"),
+      22
+    ),
+    AGE: age == null ? "" : truncateSoaField(`${age} y/o`, 10),
+    PHIC_MEMBERSHIP: truncateSoaField(
+      patient?.philhealth?.memberType || patient?.philhealth?.memberNumber || "",
+      26
+    ),
+    FIRST_CASE_DESC: truncateSoaField(
+      input.caseRateDescription || bill.caseRateCode || bill.notes || "",
+      38
+    ),
     ST_ACTUAL: moneyOrZero(hciTotal),
     ST_VAT: z,
     ST_DISC: z,
@@ -129,8 +146,8 @@ export function buildSoaValues(input: {
     TOT_AFTER: moneyOrZero(Math.max(0, subtotal - phic)),
     TOT_BAL: moneyOrZero(balance),
     NBB: isIndigent ? "NBB" : "",
-    PREPARED_BY: input.billingOfficerName || "",
+    PREPARED_BY: truncateSoaField(input.billingOfficerName || "", 32),
     PREPARED_POSITION: "Billing Clerk/Accountant",
-    PRINTED_AT: formatPrintedAt(),
+    PRINTED_AT: truncateSoaField(formatPrintedAt(), 24),
   };
 }

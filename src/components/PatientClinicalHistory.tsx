@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { ReAdmissionBanner } from "@/components/ReAdmissionBanner";
 import type { Admission, Patient } from "@/lib/store";
+import type { PatientAdmissionSummary } from "@/lib/services/admissionService";
 import {
   formatPatientName,
   getPatientClinicalHistory,
@@ -15,6 +17,7 @@ type PatientClinicalHistoryProps = {
   state: AppState;
   patient: Patient | undefined;
   admissions?: Admission[];
+  admissionSummary?: PatientAdmissionSummary;
   onViewAdmission?: (admissionId: string) => void;
   compact?: boolean;
   /** Stacked rows instead of a wide table (for narrow side panels). */
@@ -25,6 +28,7 @@ export function PatientClinicalHistory({
   state,
   patient,
   admissions,
+  admissionSummary,
   onViewAdmission,
   compact = false,
   listLayout = false,
@@ -64,6 +68,7 @@ export function PatientClinicalHistory({
         </CardHeader>
         <CardContent className="px-3 pb-3">
           <p className="mb-2 text-sm font-semibold break-words">{formatPatientName(patient)}</p>
+          {admissionSummary && <ReAdmissionBanner summary={admissionSummary} compact className="mb-3" />}
           {listLayout ? (
             <AdmissionList items={admissionItems} onViewAdmission={onViewAdmission} />
           ) : (

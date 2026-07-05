@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
+import { getSession } from "@/lib/auth/authService";
+import { firstAllowedPage, normalizePageAccess, resolveAccessUser } from "@/lib/pageAccess";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register — Medical Center" }] }),
@@ -30,8 +32,10 @@ function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (state.authedUser) navigate({ to: "/dashboard" });
-  }, [state.authedUser, navigate]);
+    if (!state.authedUser) return;
+    const accessUser = resolveAccessUser(state, getSession()?.user);
+    navigate({ to: firstAllowedPage(accessUser) });
+  }, [state.authedUser, state.users, navigate, state]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +51,11 @@ function RegisterPage() {
     // Register user (MariaDB)
     if (await register(username, fullName, role, password)) {
       toast.success("Account registered successfully");
-      navigate({ to: "/dashboard" });
+      const accessUser = resolveAccessUser(
+        { ...state, authedUser: username },
+        getSession()?.user
+      );
+      navigate({ to: firstAllowedPage(accessUser) });
     } else {
       toast.error("Username already taken or database unavailable");
     }

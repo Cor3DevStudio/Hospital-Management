@@ -13,16 +13,17 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatChip } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
 import { CaseRatePicker } from "@/components/CaseRatePicker";
-import { useStore, uid, todayISO, type Bill } from "@/lib/store";
+import { useStore, uid, todayISO, type Bill, type CaseRate } from "@/lib/store";
 import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
-import { isPatientDischarged as checkPatientDischarged } from "@/lib/services/admissionService";
 import {
   applyCaseRateToBill,
+  canCancelBillDischarge,
   computeBillBalance,
   computeBillNetTotal,
   computeBillSubtotal,
   createBill,
   deleteBill,
+  normalizeBillPaymentMethod,
   resolveLineItemPrice,
   type BillLineItem,
 } from "@/lib/services/billingService";
@@ -86,17 +87,14 @@ function BillingPage() {
   // SOA Print Options modal
   const [showPrintOptions, setShowPrintOptions] = useState(false);
   const [printOptions, setPrintOptions] = useState<SOAPrintOptions>(DEFAULT_SOA_PRINT_OPTIONS);
-  const [printOptionsMode, setPrintOptionsMode] = useState<"print" | "preview">("print");
 
   // Computed Values
   const patient = state.patients.find((p) => p.id === selectedPatientId);
-  const patientDischarged = checkPatientDischarged(state, selectedPatientId);
   const chargeEntryDisabledReason = selectedBill?.dischargeDate
     ? "Current bill is discharged. Charge entry is disabled."
-    : patientDischarged
-      ? "Patient has been discharged. Charge entry is disabled until readmission."
-      : "";
+    : "";
   const disableChargeEntry = !!chargeEntryDisabledReason;
+  const cancelDischargeCheck = selectedBill ? canCancelBillDischarge(state, selectedBill) : { allowed: false };
   
   // Filter patient billing history
   const patientBills = useMemo(() => {
@@ -119,6 +117,7 @@ function BillingPage() {
 
   const billingAsOfDate = selectedBill?.date || todayISO();
   const [caseRateAmount, setCaseRateAmount] = useState(0);
+  const [selectedCaseRate, setSelectedCaseRate] = useState<CaseRate | null>(null);
 
   const availablePriceItems = useMemo(() => state.prices.map((p) => ({ value: p.id, label: `${p.code} — ${p.description}` })), [state.prices]);
   const availableMedicines = useMemo(() => state.medicines.filter((m) => !m.archived).map((m) => ({ value: m.id, label: `${m.name} (${m.stock} ${m.unit || 'pcs'})` })), [state.medicines]);
@@ -132,6 +131,7 @@ function BillingPage() {
     setSelectedBill(null);
     setCaseRateCode("none");
     setCaseRateAmount(0);
+    setSelectedCaseRate(null);
     setPaymentAmount("");
     setNotes("");
     setDischargeDate("");
@@ -147,8 +147,15 @@ function BillingPage() {
     setDischargeDate(bill.dischargeDate || "");
     if (bill.caseRateCode) {
       void fetchCaseRateByCode(bill.caseRateCode).then((rate) => {
-        if (rate) setCaseRateAmount(rate.amount);
+        if (rate) {
+          setCaseRateAmount(rate.amount);
+          setSelectedCaseRate(rate);
+        } else {
+          setSelectedCaseRate(null);
+        }
       });
+    } else {
+      setSelectedCaseRate(null);
     }
   };
 
@@ -220,31 +227,39 @@ function BillingPage() {
     if (!patientId) return toast.error("Please select a patient first");
     if (draftItems.length === 0) return toast.error("No charges in draft to bill");
 
-    const result = createBill(state, {
-      patientId,
-      items: draftItems,
-      date: todayISO(),
+    let createdBill: Bill | null = null;
+    setState((s) => {
+      const result = createBill(s, {
+        patientId,
+        items: draftItems,
+        date: todayISO(),
+      });
+      if ("error" in result) {
+        toast.error(result.error);
+        return s;
+      }
+      createdBill = result.bill;
+      return syncEClaimFromBill(result.state, result.bill);
     });
-    if ("error" in result) {
-      toast.error(result.error);
-      return;
-    }
-    const next = syncEClaimFromBill(result.state, result.bill);
-    setState(next);
+    if (!createdBill) return;
     setDraftItems([]);
-    setSelectedBill(result.bill);
+    setSelectedBill(createdBill);
     toast.success("Billing statement created successfully!");
   };
 
   // Payment Actions
-  const handleCaseRateChange = (val: string, amount = 0) => {
+  const handleCaseRateChange = (val: string, amount = 0, rate?: CaseRate) => {
     setCaseRateCode(val);
     setCaseRateAmount(amount);
+    setSelectedCaseRate(rate ?? null);
     if (!selectedBill) return;
-    let next = applyCaseRateToBill(state, selectedBill.id, val, amount);
-    const updated = next.bills.find((b) => b.id === selectedBill.id);
-    if (updated) next = syncEClaimFromBill(next, updated);
-    setState(next);
+    let updated: Bill | undefined;
+    setState((s) => {
+      let next = applyCaseRateToBill(s, selectedBill.id, val, amount);
+      updated = next.bills.find((b) => b.id === selectedBill.id);
+      if (updated) next = syncEClaimFromBill(next, updated);
+      return next;
+    });
     if (updated) setSelectedBill(updated);
     toast.info("PhilHealth case rate updated");
   };
@@ -266,6 +281,8 @@ function BillingPage() {
 
   const handleCancelDischarge = () => {
     if (!selectedBill) return;
+    const check = canCancelBillDischarge(state, selectedBill);
+    if (!check.allowed) return toast.error(check.reason || "Cannot cancel discharge");
     setDischargeDate("");
     const updated = {
       ...selectedBill,
@@ -282,29 +299,39 @@ function BillingPage() {
   const handleApplyPhilHealthPay = () => {
     if (!selectedBill) return;
     const payVal = parseFloat(paymentAmount) || 0;
-    let next = applyCaseRateToBill(state, selectedBill.id, caseRateCode, caseRateAmount);
-    if (payVal > 0) {
-      const result = processBillPayment(next, {
-        billId: selectedBill.id,
-        amount: payVal,
-        paymentMethod: paymentMethod as "Cash" | "Card" | "GCash" | "Insurance" | "Credit",
-        billExtras: { paymentMethod, notes, dischargeDate: dischargeDate || undefined },
-      });
-      if ("error" in result) return toast.error(result.error);
-      next = result.state;
-    } else if (notes || dischargeDate) {
-      next = {
-        ...next,
-        bills: next.bills.map((b) =>
-          b.id === selectedBill.id
-            ? { ...b, notes: notes || b.notes, dischargeDate: dischargeDate || b.dischargeDate, paymentMethod: paymentMethod || b.paymentMethod }
-            : b
-        ),
-      };
-    }
-    const updated = next.bills.find((b) => b.id === selectedBill.id);
-    if (updated && dischargeDate) next = syncEClaimFromBill(next, updated);
-    setState(next);
+    const normalizedMethod = normalizeBillPaymentMethod(paymentMethod);
+    let updated: Bill | undefined;
+    let failed = false;
+    setState((s) => {
+      let next = applyCaseRateToBill(s, selectedBill.id, caseRateCode, caseRateAmount);
+      if (payVal > 0) {
+        const result = processBillPayment(next, {
+          billId: selectedBill.id,
+          amount: payVal,
+          paymentMethod: normalizedMethod,
+          billExtras: { paymentMethod, notes, dischargeDate: dischargeDate || undefined },
+        });
+        if ("error" in result) {
+          toast.error(result.error);
+          failed = true;
+          return s;
+        }
+        next = result.state;
+      } else if (notes || dischargeDate) {
+        next = {
+          ...next,
+          bills: next.bills.map((b) =>
+            b.id === selectedBill.id
+              ? { ...b, notes: notes || b.notes, dischargeDate: dischargeDate || b.dischargeDate, paymentMethod: paymentMethod || b.paymentMethod }
+              : b
+          ),
+        };
+      }
+      updated = next.bills.find((b) => b.id === selectedBill.id);
+      if (updated && dischargeDate) next = syncEClaimFromBill(next, updated);
+      return next;
+    });
+    if (failed) return;
     invalidateDashboardMetricsCache();
     if (updated) setSelectedBill(updated);
     setPaymentAmount("");
@@ -315,17 +342,27 @@ function BillingPage() {
     if (!selectedBill) return;
     const payVal = parseFloat(paymentAmount) || 0;
     if (payVal <= 0) return toast.error("Enter payment amount");
-    const result = processBillPayment(state, {
-      billId: selectedBill.id,
-      amount: payVal,
-      paymentMethod: paymentMethod as "Cash" | "Card" | "GCash" | "Insurance" | "Credit",
-      billExtras: { paymentMethod, notes, dischargeDate: dischargeDate || undefined },
+    const normalizedMethod = normalizeBillPaymentMethod(paymentMethod);
+    let updated: Bill | undefined;
+    let failed = false;
+    setState((s) => {
+      const result = processBillPayment(s, {
+        billId: selectedBill.id,
+        amount: payVal,
+        paymentMethod: normalizedMethod,
+        billExtras: { paymentMethod, notes, dischargeDate: dischargeDate || undefined },
+      });
+      if ("error" in result) {
+        toast.error(result.error);
+        failed = true;
+        return s;
+      }
+      let next = result.state;
+      updated = next.bills.find((b) => b.id === selectedBill.id);
+      if (updated && dischargeDate) next = syncEClaimFromBill(next, updated);
+      return next;
     });
-    if ("error" in result) return toast.error(result.error);
-    let next = result.state;
-    const updated = next.bills.find((b) => b.id === selectedBill.id);
-    if (updated && dischargeDate) next = syncEClaimFromBill(next, updated);
-    setState(next);
+    if (failed) return;
     invalidateDashboardMetricsCache();
     if (updated) setSelectedBill(updated);
     setPaymentAmount("");
@@ -338,18 +375,22 @@ function BillingPage() {
     toast.success("Bill deleted and inventory restored");
   };
 
+  const openPreviewSoa = () => {
+    if (!selectedBill) return toast.error("Select a bill first");
+    setShowPreview(true);
+  };
+
   const openPrintOptions = (mode: "print" | "preview") => {
     if (!selectedBill) return toast.error("Select a bill first");
-    setPrintOptionsMode(mode);
+    if (mode === "preview") {
+      openPreviewSoa();
+      return;
+    }
     setShowPrintOptions(true);
   };
 
   const handlePrintOptionsConfirm = () => {
     setShowPrintOptions(false);
-    if (printOptionsMode === "preview") {
-      setShowPreview(true);
-      return;
-    }
     setTimeout(() => {
       window.print();
     }, 150);
@@ -592,7 +633,14 @@ function BillingPage() {
                           className="h-9 flex-1" 
                         />
                         {selectedBill?.dischargeDate && (
-                          <Button size="sm" variant="outline" className="h-9 px-3 text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleCancelDischarge()}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-9 px-3 text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-50"
+                            onClick={() => handleCancelDischarge()}
+                            disabled={!cancelDischargeCheck.allowed}
+                            title={cancelDischargeCheck.reason}
+                          >
                             Cancel Discharge
                           </Button>
                         )}
@@ -685,7 +733,7 @@ function BillingPage() {
                       <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete Bill
                     </Button>
                     <div className="grid grid-cols-2 gap-1">
-                      <Button size="sm" variant="outline" className="h-8.5 text-[11px]" onClick={() => openPrintOptions("preview")}>Preview SOA</Button>
+                      <Button size="sm" variant="outline" className="h-8.5 text-[11px]" onClick={openPreviewSoa}>Preview SOA</Button>
                       <Button size="sm" variant="outline" className="h-8.5 text-[11px]" onClick={() => openPrintOptions("print")}>Print SOA</Button>
                     </div>
                   </div>
@@ -706,8 +754,8 @@ function BillingPage() {
         onChange={setPrintOptions}
         onCancel={() => setShowPrintOptions(false)}
         onConfirm={handlePrintOptionsConfirm}
-        title="Print Option"
-        confirmLabel={printOptionsMode === "preview" ? "Preview" : "Print"}
+        title="Print SOA"
+        confirmLabel="Print"
       />
 
       {/* Statement of Account Preview Dialog Overlay */}
@@ -730,8 +778,11 @@ function BillingPage() {
                   bill={selectedBill}
                   patient={patient}
                   hospital={state.hospital}
+                  state={state}
                   billingOfficerName={billingOfficerName}
                   printOptions={printOptions}
+                  caseRate={selectedCaseRate}
+                  caseRateDescription={selectedCaseRate?.description}
                 />
               </div>
             </div>
@@ -768,8 +819,11 @@ function BillingPage() {
           bill={activePrintBill}
           patient={activePrintPatient}
           hospital={state.hospital}
+          state={state}
           billingOfficerName={billingOfficerName}
           printOptions={printOptions}
+          caseRate={selectedCaseRate}
+          caseRateDescription={selectedCaseRate?.description}
         />
       </div>
     </>

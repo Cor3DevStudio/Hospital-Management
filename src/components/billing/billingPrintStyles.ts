@@ -1,10 +1,13 @@
-/** Print CSS for official SOA.html layout (612pt × 936pt). Do not alter form geometry. */
+import { getHospitalSoaCss } from "@/components/billing/hospitalSoaStyles";
+
+/** Print CSS for hospital SOA (A4 portrait). */
 export function getBillingPrintCss() {
   return `
+    ${getHospitalSoaCss()}
     #print-area {
       display: none;
     }
-    .soa-official-sheet__page > div,
+    .soa-official-sheet,
     .esoa-official-sheet__page > div {
       margin: 0 auto !important;
     }
@@ -30,19 +33,19 @@ export function getBillingPrintCss() {
         position: absolute;
         left: 0;
         top: 0;
-        width: auto !important;
+        width: 210mm !important;
         background: white !important;
         padding: 0 !important;
         margin: 0 !important;
         box-sizing: border-box !important;
       }
-      .soa-official-sheet__page > div {
-        border: none !important;
-        margin: 0 !important;
+      .hospital-soa-sheet {
+        width: 210mm !important;
+        max-width: 210mm !important;
       }
       @page {
-        size: letter;
-        margin: 0.25in;
+        size: A4 portrait;
+        margin: 0;
       }
     }
   `;
@@ -86,15 +89,17 @@ export function getEsoaPrintCss() {
         margin: 0 !important;
       }
       @page {
-        size: A4;
-        margin: 0.2in;
+        size: A4 portrait;
+        margin: 0;
       }
     }
   `;
 }
 
 /**
- * Print CSS for PhilHealth CF-1…CF-5 sheets.
+ * Print CSS for PhilHealth CF-1…CF-5, CSF, and ESOA sheets.
+ * Paper: A4 portrait (210mm × 297mm). ESOA uses the official 595.25pt page;
+ * React claim forms (.cf-sheet) are sized to 210mm with compact print typography.
  * Uses visibility (not display:none on ancestors) so only the form prints as PDF,
  * even when #cf-print-area is nested or a dialog/portal is open.
  */
@@ -107,6 +112,11 @@ export function getCf1PrintCss() {
       top: 0;
       width: 210mm;
       pointer-events: none;
+    }
+    #cf-print-area .esoa-official-sheet {
+      width: 595.25pt;
+      max-width: 210mm;
+      margin: 0 auto;
     }
     @media print {
       body * {
@@ -136,34 +146,53 @@ export function getCf1PrintCss() {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
-        max-width: none !important;
+        width: 210mm !important;
+        max-width: 210mm !important;
         background: white !important;
         padding: 0 !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         pointer-events: auto !important;
+        overflow: visible !important;
       }
       #cf-print-area .cf-sheet,
       #cf1-print-area .cf-sheet {
-        max-width: none !important;
-        width: 100% !important;
+        max-width: 210mm !important;
+        width: 210mm !important;
         border: none !important;
         box-shadow: none !important;
         margin: 0 auto !important;
+        overflow: hidden !important;
+      }
+      #cf-print-area .esoa-official-sheet,
+      #cf1-print-area .esoa-official-sheet {
+        max-width: 210mm !important;
+        width: 595.25pt !important;
+        margin: 0 auto !important;
+        overflow: hidden !important;
       }
       #cf-print-area .cf3-official-sheet__page > div,
       #cf-print-area .cf4-official-sheet__page > div,
       #cf-print-area .cf5-official-sheet__page > div,
+      #cf-print-area .esoa-official-sheet__page > div,
       #cf1-print-area .cf3-official-sheet__page > div,
       #cf1-print-area .cf4-official-sheet__page > div,
-      #cf1-print-area .cf5-official-sheet__page > div {
+      #cf1-print-area .cf5-official-sheet__page > div,
+      #cf1-print-area .esoa-official-sheet__page > div {
         border: none !important;
         margin: 0 auto !important;
         box-shadow: none !important;
+        overflow: hidden !important;
+      }
+      #cf-print-area .esoa-official-sheet__page > div,
+      #cf1-print-area .esoa-official-sheet__page > div {
+        width: 595.25pt !important;
+        height: 841.85pt !important;
+        max-width: 210mm !important;
+        max-height: 297mm !important;
       }
       @page {
-        size: A4;
-        margin: 0.3in;
+        size: A4 portrait;
+        margin: 0;
       }
     }
   `;

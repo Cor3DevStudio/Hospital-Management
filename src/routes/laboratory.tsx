@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Save, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { ListPagination } from "@/components/ListPagination";
@@ -16,11 +16,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
-import { isPatientDischarged } from "@/lib/services/admissionService";
 import {
   createLabOrder,
   deleteLabRecord,
   emptyLabRecord,
+  ensureDefaultLabPrices,
+  getLabPriceItems,
   updateLabRecord,
 } from "@/lib/services/laboratoryService";
 import { getActiveDoctors } from "@/lib/services/userService";
@@ -36,22 +37,24 @@ function LaboratoryPage() {
   const { state, setState } = useStore();
   const [form, setForm] = useState<LaboratoryRecord>(emptyLabRecord());
   const [editId, setEditId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setState((s) => ensureDefaultLabPrices(s));
+  }, [setState]);
+
   const doctors = getActiveDoctors(state.users);
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const labList = usePaginatedList(state.laboratoryRecords, 50);
   const labOptions = useMemo(
     () =>
-      state.prices
-        .filter((p) => p.category === "Laboratory")
-        .map((p) => ({
+      getLabPriceItems(state).map((p) => ({
           id: p.id,
           label: p.description,
           secondary: p.code ? `Code ${p.code}` : "Laboratory",
           meta: p.caseRate > 0 ? `₱${p.caseRate.toLocaleString()}` : undefined,
         })),
-    [state.prices]
+    [state.prices, state.priceHistories]
   );
-  const chargeBlocked = form.patientId ? isPatientDischarged(state, form.patientId) : false;
 
   const unitPrice = useMemo(() => {
     if (!form.priceItemId) return 0;
@@ -72,7 +75,6 @@ function LaboratoryPage() {
     if (!form.patientId || !form.testName || !form.requestDate || !form.requestedBy) {
       return toast.error("Patient, test, date, and ordering doctor are required");
     }
-    if (chargeBlocked && !editId) return toast.error("Patient is discharged — cannot create lab order");
 
     if (editId) {
       setState((s) => updateLabRecord(s, { ...form, id: editId }));
@@ -82,15 +84,27 @@ function LaboratoryPage() {
     }
 
     if (!form.priceItemId) {
-      return toast.error("Search and select a lab test from the Price List");
+      return toast.error("Search and select a lab test from Hospital Prices");
     }
 
-    const result = createLabOrder(state, { ...form, quantity }, true);
-    if ("error" in result) return toast.error(result.error);
-    setState(() => result.state);
+    let createdBillId: string | undefined;
+    let errorMessage: string | null = null;
+
+    setState((current) => {
+      const result = createLabOrder(current, { ...form, quantity }, true);
+      if ("error" in result) {
+        errorMessage = result.error;
+        return current;
+      }
+      createdBillId = result.record.billId;
+      return result.state;
+    });
+
+    if (errorMessage) return toast.error(errorMessage);
+
     toast.success(
-      result.record.billId
-        ? `Lab order created — billed on ${result.record.billId}`
+      createdBillId
+        ? `Lab order created — billed on ${createdBillId}`
         : "Lab order created"
     );
     reset();
@@ -115,7 +129,7 @@ function LaboratoryPage() {
     <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
       <PageHeader
         title="Laboratory"
-        description="Create lab orders from the Price List — charges post at as-of-date prices (no inventory deduction)."
+        description="Create lab orders from Hospital Prices — charges post at as-of-date prices (no inventory deduction)."
       />
       <div className="flex-1 grid gap-4 p-4 md:grid-cols-[1.4fr_1fr] items-stretch min-h-0 overflow-hidden">
         <Card className="flex flex-col h-full min-h-0">
@@ -200,11 +214,8 @@ function LaboratoryPage() {
               selectedPatientId={form.patientId}
               onSelect={(id) => setForm({ ...form, patientId: id })}
             />
-            {chargeBlocked && (
-              <p className="text-xs text-destructive">Patient discharged — new orders blocked.</p>
-            )}
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Test (Price List)</Label>
+              <Label className="text-xs text-muted-foreground">Test (Hospital Prices)</Label>
               <ChargeItemPicker
                 items={labOptions}
                 value={form.priceItemId}
@@ -324,7 +335,7 @@ function LaboratoryPage() {
               <Button variant="outline" size="sm" onClick={reset}>
                 <RotateCcw className="h-3.5 w-3.5" /> Clear
               </Button>
-              <Button size="sm" onClick={save} disabled={chargeBlocked && !editId}>
+              <Button size="sm" onClick={save}>
                 <Save className="h-3.5 w-3.5" /> {editId ? "Update" : "Charge & Bill"}
               </Button>
             </div>

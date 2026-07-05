@@ -98,6 +98,7 @@ export function EClaimSlipDocument({
           <Field label="Claim ID" value={claim.id} />
           <Field label="Linked Bill" value={claim.billId ?? "—"} />
           <Field label="Admission Date" value={claim.admissionDate} />
+          <Field label="Discharged Date" value={bill?.dischargeDate || "—"} />
           <Field label="Room / Ward" value={claim.roomWard || "—"} />
           <Field label="Case Rate Code" value={claim.caseRateCode || "—"} />
           <Field

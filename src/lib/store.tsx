@@ -2,14 +2,13 @@
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 import * as fileStore from "./fileStore";
-import { toast } from "sonner";
 import { validateAttachmentFile } from "./attachmentValidation";
 import * as authService from "./auth/authService";
+import { InactivityHandler } from "@/components/InactivityHandler";
 import { fetchAuthSessionData, updateUserDarkModeViaApi } from "./services/userService";
 import { normalizeConsultations } from "./services/consultationService";
 import { mergeDatabaseIntoState } from "./services/syncService";
@@ -62,7 +61,13 @@ export type Consultation = {
   dischargeDate?: string;
 };
 
-export type InventoryCategory = "Medicine" | "Supplies" | "Equipment";
+export type InventoryCategory =
+  | "Medicine"
+  | "Supplies"
+  | "Equipment"
+  | "Laboratory"
+  | "Radiology"
+  | "Miscellaneous";
 
 export type Medicine = {
   id: string;
@@ -101,6 +106,10 @@ export type EClaim = {
   caseRateCode?: string;
   claimStatus: EClaimStatus;
   notes?: string;
+  /** User edits to CF-2 fields (merged over auto-filled values). */
+  cf2Overrides?: Record<string, string | boolean>;
+  /** User edits to CF-4 fields (merged over auto-filled values). */
+  cf4Overrides?: Record<string, string | boolean>;
   createdAt: string;
   updatedAt: string;
 };
@@ -464,6 +473,11 @@ const defaultState: State = {
 
 const seed = defaultState;
 
+function coerceInactivityMinutes(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : fallback;
+}
+
 function normalizeLoadedState(parsed: Partial<State>): State {
   const users = Array.isArray(parsed.users)
     ? parsed.users.map((u: User) => {
@@ -513,14 +527,14 @@ function normalizeLoadedState(parsed: Partial<State>): State {
             return hospital;
           })()
         : defaultState.hospital,
-    inactivityTimeoutMinutes:
-      typeof parsed.inactivityTimeoutMinutes === "number"
-        ? parsed.inactivityTimeoutMinutes
-        : defaultState.inactivityTimeoutMinutes,
-    inactivityWarningSeconds:
-      typeof parsed.inactivityWarningSeconds === "number"
-        ? parsed.inactivityWarningSeconds
-        : defaultState.inactivityWarningSeconds,
+    inactivityTimeoutMinutes: coerceInactivityMinutes(
+      parsed.inactivityTimeoutMinutes,
+      defaultState.inactivityTimeoutMinutes ?? 15
+    ),
+    inactivityWarningSeconds: coerceInactivityMinutes(
+      parsed.inactivityWarningSeconds,
+      defaultState.inactivityWarningSeconds ?? 60
+    ),
   };
 }
 
@@ -580,6 +594,11 @@ function flushPendingSave() {
     save(pendingSave);
     pendingSave = null;
   }
+}
+
+/** Flush debounced localStorage persistence immediately (e.g. before DB sync). */
+export function persistStoreNow(): void {
+  flushPendingSave();
 }
 
 // ---------- Context ----------
@@ -716,10 +735,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteAttachment = async (attachmentId: string) => {
-    const att = state.attachments?.find((a) => a.id === attachmentId);
-    if (!att) return;
-    await fileStore.deleteFile(att.key);
-    setState((s) => ({ ...s, attachments: (s.attachments || []).filter((a) => a.id !== attachmentId) }));
+    let fileKey: string | undefined;
+    setState((prev) => {
+      const att = prev.attachments?.find((a) => a.id === attachmentId);
+      if (!att) return prev;
+      fileKey = att.key;
+      return { ...prev, attachments: (prev.attachments || []).filter((a) => a.id !== attachmentId) };
+    });
+    if (fileKey) await fileStore.deleteFile(fileKey);
   };
 
   const getAttachmentBlob = async (key: string) => {
@@ -770,91 +793,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state.authedUser, state.users]);
 
   if (!hydrated) return null;
-
-  /**
-   * Idle session timeout: after N minutes with no activity, log out immediately.
-   * No countdown modal — settings apply as soon as they change.
-   */
-  function InactivityHandler() {
-    const authedUser = state.authedUser;
-    const timeoutMinutes = Number(state.inactivityTimeoutMinutes) || 0;
-    const timeoutMs = Math.max(0, Math.round(timeoutMinutes * 60 * 1000));
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const sessionRef = useRef(0);
-    const logoutRef = useRef(logout);
-    logoutRef.current = logout;
-
-    useEffect(() => {
-      if (typeof window === "undefined") return;
-
-      // Clear timers from older builds (window globals + warning intervals).
-      const legacy = window as Window & {
-        __inactivity_timer_ref?: { id: ReturnType<typeof setTimeout> | null };
-        __inactivity_warn_ref?: { id: ReturnType<typeof setInterval> | null };
-      };
-      if (legacy.__inactivity_timer_ref?.id != null) {
-        clearTimeout(legacy.__inactivity_timer_ref.id);
-        legacy.__inactivity_timer_ref.id = null;
-      }
-      if (legacy.__inactivity_warn_ref?.id != null) {
-        clearInterval(legacy.__inactivity_warn_ref.id);
-        legacy.__inactivity_warn_ref.id = null;
-      }
-
-      const clearTimer = () => {
-        if (timerRef.current != null) {
-          clearTimeout(timerRef.current);
-          timerRef.current = null;
-        }
-      };
-
-      sessionRef.current += 1;
-      const session = sessionRef.current;
-      clearTimer();
-
-      if (!authedUser || timeoutMs <= 0) {
-        return () => {
-          sessionRef.current += 1;
-          clearTimer();
-        };
-      }
-
-      const armTimer = () => {
-        if (session !== sessionRef.current) return;
-        clearTimer();
-        timerRef.current = setTimeout(() => {
-          if (session !== sessionRef.current) return;
-          sessionRef.current += 1;
-          clearTimer();
-          logoutRef.current();
-          toast.message("You have been logged out due to inactivity.");
-        }, timeoutMs);
-      };
-
-      armTimer();
-
-      const onActivity = () => armTimer();
-      const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"] as const;
-      for (const ev of events) {
-        window.addEventListener(ev, onActivity, { passive: true });
-      }
-      const onVis = () => {
-        if (document.visibilityState === "visible") armTimer();
-      };
-      document.addEventListener("visibilitychange", onVis);
-
-      return () => {
-        sessionRef.current += 1;
-        clearTimer();
-        for (const ev of events) {
-          window.removeEventListener(ev, onActivity);
-        }
-        document.removeEventListener("visibilitychange", onVis);
-      };
-    }, [authedUser, timeoutMs]);
-
-    return null;
-  }
 
   return (
     <StoreCtx.Provider value={{ state, setState, login, register, logout, resetAll, addAttachment, deleteAttachment, getAttachmentBlob, setDarkMode, isDark }}>

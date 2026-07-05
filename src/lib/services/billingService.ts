@@ -1,11 +1,12 @@
 import { getCaseRateByCode } from "@/lib/caseRateService";
 import { getPriceAsOf } from "@/lib/priceService";
+import { getLatestAdmission } from "@/lib/services/admissionService";
 import {
   resolveChargeCategory,
   type BillChargeCategory,
 } from "@/lib/services/billChargeCategories";
 import { deductMedicineStock, restoreMedicineStock } from "@/lib/services/inventoryService";
-import { todayISO, type AppState, type Bill, type BillItem } from "@/lib/store";
+import { todayISO, type AppState, type Bill, type BillItem, type CashierTransaction } from "@/lib/store";
 
 export type BillLineItem = {
   description: string;
@@ -62,6 +63,47 @@ export function deriveBillStatus(bill: Bill): Bill["status"] {
   if (bill.amountPaid >= net && net > 0) return "Paid";
   if (bill.amountPaid > 0) return "Partial";
   return "Unpaid";
+}
+
+/** Map billing UI payment labels to cashier transaction methods. */
+export function normalizeBillPaymentMethod(method: string): CashierTransaction["paymentMethod"] {
+  switch (method) {
+    case "Card":
+    case "Credit Card":
+      return "Card";
+    case "Bank Transfer":
+      return "Credit";
+    case "PayMaya":
+      return "GCash";
+    case "Cash":
+    case "GCash":
+    case "Insurance":
+    case "Credit":
+      return method;
+    default:
+      return "Cash";
+  }
+}
+
+/** Cancel bill discharge only while the patient is still admitted (has not gone home). */
+export function canCancelBillDischarge(
+  state: AppState,
+  bill: Bill
+): { allowed: boolean; reason?: string } {
+  if (!bill.dischargeDate) {
+    return { allowed: false, reason: "This bill is not marked as discharged." };
+  }
+
+  const admission = getLatestAdmission(state, bill.patientId);
+  if (admission?.status === "Discharged" && admission.dischargeDate) {
+    return {
+      allowed: false,
+      reason:
+        "Patient has already been discharged from admission. Cancel discharge is not allowed once the patient has gone home.",
+    };
+  }
+
+  return { allowed: true };
 }
 
 export function validateInventoryForItems(state: AppState, items: BillLineItem[]): string | null {
@@ -196,11 +238,15 @@ export function resolveLineItemPrice(
 ): number {
   const asOf = input.asOfDate ?? todayISO();
   if (input.priceItemId) {
-    const fromHistory = getPriceAsOf(state, "priceItem", input.priceItemId, asOf);
-    if (fromHistory !== undefined) return fromHistory;
     const item = state.prices.find((p) => p.id === input.priceItemId);
-    if (item && (item.effectiveDate || "1900-01-01") <= asOf) return item.caseRate;
-    return 0;
+    const fromHistory = getPriceAsOf(state, "priceItem", input.priceItemId, asOf);
+    if (fromHistory !== undefined && fromHistory > 0) return fromHistory;
+    if (item && (item.effectiveDate || "1900-01-01") <= asOf && item.caseRate > 0) {
+      return item.caseRate;
+    }
+    // Fall back to catalog rate when no history applies on the order date (e.g. retroactive orders).
+    if (item && item.caseRate > 0) return item.caseRate;
+    return fromHistory ?? 0;
   }
   if (input.medicineId) {
     const fromHistory = getPriceAsOf(state, "medicine", input.medicineId, asOf);

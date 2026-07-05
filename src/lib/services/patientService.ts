@@ -1,4 +1,4 @@
-import { uid, type Admission, type AppState, type Patient } from "@/lib/store";
+import { uid, todayISO, type Admission, type AppState, type Patient } from "@/lib/store";
 import { getAdmissionStatusLabel } from "@/lib/services/admissionService";
 
 export type PatientFilter = "active" | "archived" | "all";
@@ -50,14 +50,53 @@ export function isDuplicatePatient(patients: Patient[], form: Patient): boolean 
   );
 }
 
-export function createPatient(state: AppState, form: Patient): AppState {
-  const patient: Patient = {
+export function emptyPatient(): Patient {
+  return {
+    id: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    suffix: "",
+    birthDate: "",
+    gender: "Male",
+    civilStatus: "Single",
+    contactNumber: "",
+    email: "",
+    address: { street: "", barangay: "", city: "", province: "", zip: "" },
+    emergencyContact: { name: "", phone: "", relationship: "" },
+    philhealth: { memberNumber: "", category: "Employed", memberType: "Member" },
+    seniorCitizen: { flag: false, idNumber: "" },
+    pwd: { flag: false, idNumber: "" },
+    archived: false,
+    createdAt: todayISO(),
+  };
+}
+
+function normalizePatientForm(form: Patient): Patient {
+  const base = emptyPatient();
+  return {
+    ...base,
     ...form,
+    address: { ...base.address, ...form.address },
+    emergencyContact: { ...base.emergencyContact, ...form.emergencyContact },
+    philhealth: { ...base.philhealth, ...form.philhealth },
+    seniorCitizen: { ...base.seniorCitizen, ...form.seniorCitizen },
+    pwd: { ...base.pwd, ...form.pwd },
+  };
+}
+
+export function createPatient(
+  state: AppState,
+  form: Patient
+): { state: AppState; patient: Patient } {
+  const normalized = normalizePatientForm(form);
+  const patient: Patient = {
+    ...normalized,
     id: uid(),
     createdAt: new Date().toISOString(),
     archived: false,
   };
-  return { ...state, patients: [...state.patients, patient] };
+  return { state: { ...state, patients: [...state.patients, patient] }, patient };
 }
 
 export function updatePatient(state: AppState, form: Patient): AppState {

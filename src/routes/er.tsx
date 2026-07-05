@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Save, Trash2, RotateCcw, Bed } from "lucide-react";
+import { Save, Trash2, RotateCcw, Bed, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { ListPagination } from "@/components/ListPagination";
 import { usePaginatedList } from "@/lib/hooks/usePaginatedList";
@@ -23,6 +23,16 @@ import {
   updateERRecord,
 } from "@/lib/services/erService";
 import { getActiveDoctors } from "@/lib/services/userService";
+import { ERRecordDocument } from "@/components/clinical/ERRecordDocument";
+import { buildPatientChartModel } from "@/components/clinical/buildPatientChartModel";
+import { PatientChartDocument } from "@/components/clinical/PatientChartDocument";
+import { ClinicalPrintPreviewModal } from "@/components/clinical/ClinicalPrintPreviewModal";
+import { getClinicalPrintCss, triggerClinicalPrint } from "@/components/clinical/clinicalPrintStyles";
+import {
+  getPatientChartPrintCss,
+  triggerPatientChartPrint,
+  triggerPatientChartSavePdf,
+} from "@/components/clinical/patientChartPrintStyles";
 import { useStore, type ERRecord } from "@/lib/store";
 
 export const Route = createFileRoute("/er")({
@@ -35,8 +45,22 @@ function ERPage() {
   const [form, setForm] = useState<ERRecord>(emptyERRecord());
   const [editId, setEditId] = useState<string | null>(null);
   const [admitRoom, setAdmitRoom] = useState("");
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showChartPreview, setShowChartPreview] = useState(false);
 
   const patients = state.patients.filter((p) => !p.archived);
+  const printPatient = useMemo(
+    () => state.patients.find((p) => p.id === form.patientId),
+    [state.patients, form.patientId]
+  );
+  const preparedBy =
+    state.users.find((u) => u.username === state.authedUser)?.fullName || state.authedUser || undefined;
+  const canPrint = Boolean(editId && form.patientId);
+  const canPrintChart = Boolean(form.patientId);
+  const chartModel = useMemo(
+    () => (form.patientId ? buildPatientChartModel(state, form.patientId) : null),
+    [state, form.patientId]
+  );
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const erList = usePaginatedList(state.erRecords, 50);
   const doctors = getActiveDoctors(state.users);
@@ -76,7 +100,10 @@ function ERPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
+    <>
+      <style>{getClinicalPrintCss()}</style>
+      <style>{getPatientChartPrintCss()}</style>
+      <div className="no-print h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
       <PageHeader title="Emergency Room" description="Manage ER triage, arrivals, treatment status, and dispositions." />
       <div className="flex-1 grid gap-4 p-4 md:grid-cols-[1.4fr_1fr] items-stretch min-h-0 overflow-hidden">
         <Card className="flex flex-col h-full min-h-0">
@@ -185,12 +212,75 @@ function ERPage() {
             )}
             {form.admissionId && <p className="text-xs text-muted-foreground">Linked admission: {form.admissionId}</p>}
             <div className="flex justify-end gap-2 border-t pt-3">
+              {canPrintChart && (
+                <Button variant="outline" size="sm" onClick={() => setShowChartPreview(true)}>
+                  <Printer className="h-3.5 w-3.5" /> Print Chart
+                </Button>
+              )}
+              {canPrint && (
+                <Button variant="outline" size="sm" onClick={() => setShowPrintPreview(true)}>
+                  <Printer className="h-3.5 w-3.5" /> Print
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
               <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <ClinicalPrintPreviewModal
+        open={showPrintPreview}
+        title="ER Record Preview"
+        subtitle="Review the layout before sending to the printer."
+        onClose={() => setShowPrintPreview(false)}
+        onPrint={() => {
+          setShowPrintPreview(false);
+          triggerClinicalPrint();
+        }}
+      >
+        {editId ? (
+          <ERRecordDocument
+            hospital={state.hospital}
+            record={{ ...form, id: editId }}
+            patient={printPatient}
+            preparedBy={preparedBy}
+          />
+        ) : null}
+      </ClinicalPrintPreviewModal>
+
+      <ClinicalPrintPreviewModal
+        open={showChartPreview}
+        title="Patient Chart Preview"
+        subtitle="Review the patient's medical chart before printing or saving as PDF."
+        onClose={() => setShowChartPreview(false)}
+        onPrint={() => {
+          setShowChartPreview(false);
+          triggerPatientChartPrint();
+        }}
+        onSavePdf={() => {
+          setShowChartPreview(false);
+          triggerPatientChartSavePdf();
+        }}
+      >
+        {chartModel ? <PatientChartDocument model={chartModel} /> : null}
+      </ClinicalPrintPreviewModal>
+      </div>
+
+      <div id="clinical-print-area" className="force-light">
+        {editId && form.patientId ? (
+          <ERRecordDocument
+            hospital={state.hospital}
+            record={{ ...form, id: editId }}
+            patient={printPatient}
+            preparedBy={preparedBy}
+          />
+        ) : null}
+      </div>
+
+      <div id="patient-chart-print-area" className="force-light">
+        {chartModel ? <PatientChartDocument model={chartModel} /> : null}
+      </div>
+    </>
   );
 }

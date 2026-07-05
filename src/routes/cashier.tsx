@@ -23,7 +23,8 @@ import {
   processBillPayment,
 } from "@/lib/services/cashierService";
 import { syncEClaimFromBill } from "@/lib/services/eclaimService";
-import { useStore, todayISO } from "@/lib/store";
+import { useStore, todayISO, type CashierTransaction } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/cashier")({
   head: () => ({ meta: [{ title: "Cashier — Hospital CMS" }] }),
@@ -38,6 +39,10 @@ function CashierPage() {
   const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Card" | "GCash" | "Insurance" | "Credit">("Cash");
   const [receiptNumber, setReceiptNumber] = useState("");
   const [transactionDate, setTransactionDate] = useState(todayISO());
+  const [paymentFeedback, setPaymentFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const openBills = useMemo(() => (patientId ? getPatientOpenBills(state, patientId) : []), [state, patientId]);
   const selectedBill = state.bills.find((b) => b.id === billId);
@@ -49,28 +54,86 @@ function CashierPage() {
   const txList = usePaginatedList(reversedTx, 50);
 
   const pay = () => {
-    if (!billId) return toast.error("Select a bill");
+    setPaymentFeedback(null);
+
+    if (!billId) {
+      const message = "Select a bill before recording payment.";
+      setPaymentFeedback({ type: "error", message });
+      toast.error(message);
+      return;
+    }
+
     const payVal = parseFloat(amount) || 0;
-    if (payVal <= 0) return toast.error("Enter payment amount");
+    if (payVal <= 0) {
+      const message = "Enter a payment amount greater than zero.";
+      setPaymentFeedback({ type: "error", message });
+      toast.error(message);
+      return;
+    }
 
-    const result = processBillPayment(state, {
-      billId,
-      amount: payVal,
-      paymentMethod,
-      receiptNumber: receiptNumber || `OR-${Date.now().toString().slice(-6)}`,
-      transactionDate,
+    const orNumber = receiptNumber.trim() || `OR-${Date.now().toString().slice(-6)}`;
+    let recorded: CashierTransaction | null = null;
+    let errorMessage: string | null = null;
+
+    setState((current) => {
+      const result = processBillPayment(current, {
+        billId,
+        amount: payVal,
+        paymentMethod,
+        receiptNumber: orNumber,
+        transactionDate,
+        billExtras: { paymentMethod },
+      });
+
+      if ("error" in result) {
+        errorMessage = result.error;
+        return current;
+      }
+
+      recorded = result.transaction;
+      let next = result.state;
+      const updatedBill = next.bills.find((b) => b.id === billId);
+      if (updatedBill?.dischargeDate) {
+        next = syncEClaimFromBill(next, updatedBill);
+      }
+      return next;
     });
-    if ("error" in result) return toast.error(result.error);
 
-    let next = result.state;
-    const updatedBill = next.bills.find((b) => b.id === billId);
-    if (updatedBill?.dischargeDate) next = syncEClaimFromBill(next, updatedBill);
+    if (errorMessage) {
+      setPaymentFeedback({ type: "error", message: errorMessage });
+      toast.error(errorMessage);
+      return;
+    }
 
-    setState(next);
+    if (!recorded) {
+      const message = "Payment could not be recorded. Please try again.";
+      setPaymentFeedback({ type: "error", message });
+      toast.error(message);
+      return;
+    }
+
     invalidateDashboardMetricsCache();
-    toast.success(`Payment recorded — OR ${result.transaction.receiptNumber}. Balance: ₱${result.transaction.balanceRemaining?.toFixed(2)}`);
+
+    const balanceRemaining = recorded.balanceRemaining ?? 0;
+    const message = `Payment of ₱${payVal.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    })} recorded via ${paymentMethod}. OR #${recorded.receiptNumber}. Balance remaining: ₱${balanceRemaining.toLocaleString(
+      undefined,
+      { minimumFractionDigits: 2 }
+    )}.`;
+
+    setPaymentFeedback({ type: "success", message });
+    toast.success(message, { duration: 6000 });
     setAmount("");
     setReceiptNumber("");
+  };
+
+  const clearForm = () => {
+    setPatientId("");
+    setBillId("");
+    setAmount("");
+    setReceiptNumber("");
+    setPaymentFeedback(null);
   };
 
   const remove = (id: string) => {
@@ -129,11 +192,21 @@ function CashierPage() {
             <PatientSearchWithHistory
               patients={state.patients}
               selectedPatientId={patientId}
-              onSelect={(id) => { setPatientId(id); setBillId(""); }}
+              onSelect={(id) => {
+                setPatientId(id);
+                setBillId("");
+                setPaymentFeedback(null);
+              }}
             />
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Bill / SOA</Label>
-              <Select value={billId || "none"} onValueChange={(v) => setBillId(v === "none" ? "" : v)}>
+              <Select
+                value={billId || "none"}
+                onValueChange={(v) => {
+                  setBillId(v === "none" ? "" : v);
+                  setPaymentFeedback(null);
+                }}
+              >
                 <SelectTrigger className="h-9"><SelectValue placeholder="Select bill" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Select bill</SelectItem>
@@ -171,8 +244,24 @@ function CashierPage() {
               <Label className="text-xs text-muted-foreground">Official Receipt Number</Label>
               <Input className="h-9 text-sm" value={receiptNumber} onChange={(e) => setReceiptNumber(e.target.value)} placeholder="Auto-generated if empty" />
             </div>
+
+            {paymentFeedback ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className={cn(
+                  "rounded-md border px-3 py-2 text-sm",
+                  paymentFeedback.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                    : "border-red-200 bg-red-50 text-red-900"
+                )}
+              >
+                {paymentFeedback.message}
+              </div>
+            ) : null}
+
             <div className="flex justify-end gap-2 border-t pt-3">
-              <Button variant="outline" size="sm" onClick={() => { setPatientId(""); setBillId(""); setAmount(""); }}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
+              <Button variant="outline" size="sm" onClick={clearForm}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
               <Button size="sm" onClick={pay}><Save className="h-3.5 w-3.5" /> Record Payment</Button>
             </div>
           </CardContent>

@@ -25,6 +25,10 @@ export function usePaginatedList<T>(
     return items.slice(start, start + pageSize);
   }, [items, safePage, pageSize]);
 
+  useEffect(() => {
+    setPageRaw((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
   const setPage = (next: number) => {
     setPageRaw(Math.max(1, Math.min(next, totalPages)));
   };

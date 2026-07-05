@@ -3,17 +3,14 @@ import {
   createEmptyBill,
   type BillLineItem,
 } from "@/lib/services/billingService";
-import { isPatientDischarged } from "@/lib/services/admissionService";
-import { todayISO, type AppState, type Bill } from "@/lib/store";
+import { getLatestAdmission } from "@/lib/services/admissionService";
+import { type AppState, type Bill } from "@/lib/store";
 
 export function canPostCharges(
   state: AppState,
-  patientId: string,
+  _patientId: string,
   billId?: string
 ): { allowed: boolean; reason?: string } {
-  if (isPatientDischarged(state, patientId)) {
-    return { allowed: false, reason: "Patient has been discharged. Charge entry is disabled until readmission." };
-  }
   if (billId) {
     const bill = state.bills.find((b) => b.id === billId);
     if (bill?.dischargeDate) {
@@ -23,19 +20,34 @@ export function canPostCharges(
   return { allowed: true };
 }
 
-export function getOrCreateOpenBill(state: AppState, patientId: string): { state: AppState; bill: Bill } {
+function inferBillPatientType(state: AppState, patientId: string): Bill["patientType"] {
+  const admission = getLatestAdmission(state, patientId);
+  if (admission?.status === "Admitted") return "In-Patient";
+  return "Out-Patient";
+}
+
+export function getOrCreateOpenBill(
+  state: AppState,
+  patientId: string,
+  patientType?: Bill["patientType"]
+): { state: AppState; bill: Bill } {
   const open = state.bills.find(
     (b) => b.patientId === patientId && b.status !== "Paid" && !b.dischargeDate
   );
   if (open) return { state, bill: open };
-  return createEmptyBill(state, patientId);
+  return createEmptyBill(
+    state,
+    patientId,
+    patientType ?? inferBillPatientType(state, patientId)
+  );
 }
 
 export function postServiceCharge(
   state: AppState,
   patientId: string,
   lineItem: BillLineItem,
-  existingBillId?: string
+  existingBillId?: string,
+  patientType?: Bill["patientType"]
 ): { state: AppState; bill: Bill } | { error: string } {
   const check = canPostCharges(state, patientId, existingBillId);
   if (!check.allowed) return { error: check.reason ?? "Charges not allowed" };
@@ -47,7 +59,7 @@ export function postServiceCharge(
     if (!found) return { error: "Bill not found" };
     bill = found;
   } else {
-    const created = getOrCreateOpenBill(working, patientId);
+    const created = getOrCreateOpenBill(working, patientId, patientType);
     working = created.state;
     bill = created.bill;
   }

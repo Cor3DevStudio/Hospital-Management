@@ -1,7 +1,14 @@
 import { getPriceAsOf } from "@/lib/priceService";
 import { uid, todayISO, type AppState, type InventoryCategory, type Medicine } from "@/lib/store";
 
-export const INVENTORY_CATEGORIES: InventoryCategory[] = ["Medicine", "Supplies", "Equipment"];
+export const INVENTORY_CATEGORIES: InventoryCategory[] = [
+  "Medicine",
+  "Supplies",
+  "Equipment",
+  "Laboratory",
+  "Radiology",
+  "Miscellaneous",
+];
 
 const EXPIRING_SOON_DAYS = 180;
 

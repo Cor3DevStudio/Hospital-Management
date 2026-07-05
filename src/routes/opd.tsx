@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Save, Trash2, LogOut } from "lucide-react";
+import { Plus, Save, Trash2, LogOut, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,18 +14,28 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { ListPagination } from "@/components/ListPagination";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
-import { usePaginatedList } from "@/lib/hooks/usePaginatedList";
+import { usePaginatedList, useResetPageOnChange } from "@/lib/hooks/usePaginatedList";
 import { getUpcomingForPatient, patientName } from "@/lib/services/appointmentService";
 import {
   createConsultation,
   deleteConsultation,
   emptyConsultation,
-  getAllConsultations,
+  getAllConsultationsFromState,
   getConsultationsForPatient,
   markConsultationSeen,
   updateConsultation,
 } from "@/lib/services/consultationService";
 import { getActiveDoctors } from "@/lib/services/userService";
+import { OPDVisitDocument } from "@/components/clinical/OPDVisitDocument";
+import { buildPatientChartModel } from "@/components/clinical/buildPatientChartModel";
+import { PatientChartDocument } from "@/components/clinical/PatientChartDocument";
+import { ClinicalPrintPreviewModal } from "@/components/clinical/ClinicalPrintPreviewModal";
+import { getClinicalPrintCss, triggerClinicalPrint } from "@/components/clinical/clinicalPrintStyles";
+import {
+  getPatientChartPrintCss,
+  triggerPatientChartPrint,
+  triggerPatientChartSavePdf,
+} from "@/components/clinical/patientChartPrintStyles";
 import { useStore, type Consultation } from "@/lib/store";
 
 export const Route = createFileRoute("/opd")({
@@ -40,14 +50,30 @@ function OPDPage() {
   const [form, setForm] = useState<Consultation>(emptyConsultation(patientId));
   const [editId, setEditId] = useState<string | null>(null);
   const [tab, setTab] = useState<"patient" | "all">("patient");
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showChartPreview, setShowChartPreview] = useState(false);
+
+  const printPatient = useMemo(
+    () => state.patients.find((p) => p.id === form.patientId),
+    [state.patients, form.patientId]
+  );
+  const preparedBy =
+    state.users.find((u) => u.username === state.authedUser)?.fullName || state.authedUser || undefined;
+  const canPrint = Boolean(editId && form.patientId);
+  const canPrintChart = Boolean(form.patientId);
+  const chartModel = useMemo(
+    () => (form.patientId ? buildPatientChartModel(state, form.patientId) : null),
+    [state, form.patientId]
+  );
 
   const doctors = getActiveDoctors(state.users);
   const patientVisits = useMemo(
-    () => getConsultationsForPatient(state.consultations, patientId),
-    [state.consultations, patientId]
+    () => getConsultationsForPatient(state.consultations, patientId, state.opdRecords),
+    [state.consultations, state.opdRecords, patientId]
   );
-  const allVisits = useMemo(() => getAllConsultations(state.consultations), [state.consultations]);
+  const allVisits = useMemo(() => getAllConsultationsFromState(state), [state]);
   const allVisitsList = usePaginatedList(allVisits, 50);
+  useResetPageOnChange(allVisitsList.resetPage, [tab, allVisits.length]);
   const linkedAppointments = useMemo(
     () => getUpcomingForPatient(state.appointments, patientId),
     [state.appointments, patientId]
@@ -104,7 +130,10 @@ function OPDPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
+    <>
+      <style>{getClinicalPrintCss()}</style>
+      <style>{getPatientChartPrintCss()}</style>
+      <div className="no-print h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
       <PageHeader title="OPD" description="Document outpatient visits, prescriptions, and discharge status." />
       <div className="flex-1 grid gap-4 p-4 grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] items-stretch min-h-0 overflow-hidden">
         <Card className="flex min-h-0 min-w-0 flex-col overflow-hidden">
@@ -112,7 +141,9 @@ function OPDPage() {
             <Tabs value={tab} onValueChange={(v) => setTab(v as "patient" | "all")}>
               <TabsList className="h-8 w-full">
                 <TabsTrigger value="patient" className="text-xs flex-1">By Patient</TabsTrigger>
-                <TabsTrigger value="all" className="text-xs flex-1">All Records</TabsTrigger>
+                <TabsTrigger value="all" className="text-xs flex-1">
+                  All Records{allVisitsList.totalItems > 0 ? ` (${allVisitsList.totalItems})` : ""}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
@@ -168,9 +199,9 @@ function OPDPage() {
               <>
                 <div className="min-h-0 flex-1 overflow-y-auto p-4">
                   <ul className="space-y-2">
-                    {allVisits.length === 0 ? (
+                    {allVisitsList.totalItems === 0 ? (
                       <li className="rounded-md border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
-                        No records found
+                        No OPD records found
                       </li>
                     ) : (
                       allVisitsList.pageItems.map((c) => (
@@ -189,6 +220,11 @@ function OPDPage() {
                                   {c.date}
                                   {c.doctor ? ` · ${c.doctor}` : ""}
                                 </p>
+                                {(c.diagnosis || c.chiefComplaint) && (
+                                  <p className="mt-1 line-clamp-2 break-words text-muted-foreground leading-relaxed">
+                                    {c.diagnosis || c.chiefComplaint}
+                                  </p>
+                                )}
                               </div>
                               <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">
                                 {c.status}
@@ -311,6 +347,16 @@ function OPDPage() {
             </div>
 
             <div className="mt-4 flex shrink-0 flex-wrap justify-end gap-2 border-t pt-3">
+              {canPrintChart && (
+                <Button variant="outline" size="sm" onClick={() => setShowChartPreview(true)}>
+                  <Printer className="h-3.5 w-3.5" /> Print Chart
+                </Button>
+              )}
+              {canPrint && (
+                <Button variant="outline" size="sm" onClick={() => setShowPrintPreview(true)}>
+                  <Printer className="h-3.5 w-3.5" /> Print
+                </Button>
+              )}
               {editId && form.status !== "Seen" && (
                 <Button variant="secondary" size="sm" onClick={() => discharge(form)}>
                   <LogOut className="h-3.5 w-3.5" /> Mark Seen
@@ -326,6 +372,59 @@ function OPDPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      <ClinicalPrintPreviewModal
+        open={showPrintPreview}
+        title="OPD Visit Preview"
+        subtitle="Review the consultation record and prescriptions before printing."
+        onClose={() => setShowPrintPreview(false)}
+        onPrint={() => {
+          setShowPrintPreview(false);
+          triggerClinicalPrint();
+        }}
+      >
+        {editId ? (
+          <OPDVisitDocument
+            hospital={state.hospital}
+            consultation={{ ...form, id: editId }}
+            patient={printPatient}
+            preparedBy={preparedBy}
+          />
+        ) : null}
+      </ClinicalPrintPreviewModal>
+
+      <ClinicalPrintPreviewModal
+        open={showChartPreview}
+        title="Patient Chart Preview"
+        subtitle="Review the patient's medical chart before printing or saving as PDF."
+        onClose={() => setShowChartPreview(false)}
+        onPrint={() => {
+          setShowChartPreview(false);
+          triggerPatientChartPrint();
+        }}
+        onSavePdf={() => {
+          setShowChartPreview(false);
+          triggerPatientChartSavePdf();
+        }}
+      >
+        {chartModel ? <PatientChartDocument model={chartModel} /> : null}
+      </ClinicalPrintPreviewModal>
+      </div>
+
+      <div id="clinical-print-area" className="force-light">
+        {editId && form.patientId ? (
+          <OPDVisitDocument
+            hospital={state.hospital}
+            consultation={{ ...form, id: editId }}
+            patient={printPatient}
+            preparedBy={preparedBy}
+          />
+        ) : null}
+      </div>
+
+      <div id="patient-chart-print-area" className="force-light">
+        {chartModel ? <PatientChartDocument model={chartModel} /> : null}
+      </div>
+    </>
   );
 }

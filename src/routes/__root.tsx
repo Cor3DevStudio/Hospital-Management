@@ -20,7 +20,8 @@ import { fetchAuthSessionData } from "../lib/services/userService";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { firstAllowedPage, userCanAccessPage } from "@/lib/pageAccess";
+import { firstAllowedPage, resolveAccessUser, userCanAccessPage } from "@/lib/pageAccess";
+import { getSession } from "@/lib/auth/authService";
 import { SunMoon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -107,24 +108,32 @@ function AppShell() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
-    if (!state.authedUser || state.users.length > 0) return;
+    if (!state.authedUser) return;
 
     let cancelled = false;
     void (async () => {
-      const { users, clinicalPayload, clinicalUpdatedAt } = await fetchAuthSessionData();
-      if (cancelled || users.length === 0) return;
-      const preferDatabase = Boolean(clinicalUpdatedAt);
-      pauseAutoSync();
-      setState((current) =>
-        mergeDatabaseIntoState({ ...current, users }, clinicalPayload, { preferDatabase })
-      );
-      resumeAutoSync();
+      try {
+        const { users, clinicalPayload, clinicalUpdatedAt } = await fetchAuthSessionData();
+        if (cancelled) return;
+        const preferDatabase = Boolean(clinicalUpdatedAt);
+        pauseAutoSync();
+        setState((current) =>
+          mergeDatabaseIntoState(
+            { ...current, users: users.length > 0 ? users : current.users },
+            clinicalPayload,
+            { preferDatabase }
+          )
+        );
+        resumeAutoSync();
+      } catch {
+        // Offline — keep local users/session
+      }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [state.authedUser, state.users.length, setState]);
+  }, [state.authedUser, setState]);
 
   // Public routes (no app shell / auth required)
   if (
@@ -150,16 +159,25 @@ function AuthenticatedLayout() {
   const dashboardBehind = contentExpanded && sidebarHovered;
   const { state } = useStore();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const currentUser = state.users.find(
-    (u) => u.username.toLowerCase() === state.authedUser?.toLowerCase()
-  );
+  const sessionUser = getSession()?.user;
+  const accessUser = resolveAccessUser(state, sessionUser);
 
-  if (
-    currentUser &&
-    pathname !== "/" &&
-    !userCanAccessPage(currentUser, pathname)
-  ) {
-    return <Navigate to={firstAllowedPage(currentUser)} />;
+  const homePath = firstAllowedPage(accessUser);
+
+  if (!accessUser) {
+    return (
+      <div className="flex min-h-[50vh] flex-1 items-center justify-center text-sm text-muted-foreground">
+        Loading your access profile…
+      </div>
+    );
+  }
+
+  if (pathname === "/") {
+    return <Navigate to={homePath} />;
+  }
+
+  if (!userCanAccessPage(accessUser, pathname)) {
+    return <Navigate to={homePath} />;
   }
 
   return (

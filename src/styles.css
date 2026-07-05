@@ -251,16 +251,17 @@
   color: #0f172a !important;
 }
 
-/* PhilHealth claim forms (CF-1 / CF-2) — shared template */
+/* PhilHealth claim forms (CF-1 / CF-2) — shared template (A4 width) */
 .cf-sheet {
   width: 100%;
-  max-width: 820px;
+  max-width: 210mm;
   border: 1px solid #231f20;
   background: #fff !important;
   color: #231f20 !important;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 11px;
   line-height: 1.25;
+  box-sizing: border-box;
 }
 .cf-sheet__body {
   padding: 8px 10px 12px;
@@ -415,6 +416,33 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+.cf-grid--csf-name-dob {
+  grid-template-columns: minmax(0, 1.75fr) minmax(0, 0.85fr);
+  align-items: start;
+  margin-bottom: 8px;
+}
+.cf-grid--csf-patient {
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  align-items: start;
+  margin-bottom: 8px;
+}
+.cf-grid--confinement {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+  align-items: start;
+  margin-bottom: 8px;
+}
+.cf-grid--rep-reason {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.cf-hcp-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr) minmax(0, 0.85fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 8px;
+}
 .cf-line-field__value {
   min-height: 18px;
   border-bottom: 1px solid #231f20;
@@ -426,6 +454,37 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.cf-line-field--editable .cf-line-field__input {
+  display: block;
+  width: 100%;
+  min-height: 18px;
+  border: none;
+  border-bottom: 1px solid #231f20;
+  border-radius: 0;
+  background: #f8fafc;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 1px 2px 2px;
+  color: inherit;
+  outline: none;
+}
+.cf-line-field--editable .cf-line-field__input:focus {
+  background: #eff6ff;
+  border-bottom-color: #2563eb;
+}
+.cf-line-field--editable.cf-line-field--tall .cf-line-field__input {
+  min-height: 36px;
+  white-space: normal;
+}
+.cf-check--editable {
+  cursor: pointer;
+}
+.cf-check--editable:hover .cf-check__box {
+  border-color: #2563eb;
 }
 .cf-line-field--tall .cf-line-field__value {
   min-height: 36px;
@@ -583,6 +642,11 @@
   .cf-grid--addr-sex,
   .cf-grid--rel-sex,
   .cf-grid--sig,
+  .cf-grid--csf-name-dob,
+  .cf-grid--csf-patient,
+  .cf-grid--confinement,
+  .cf-grid--rep-reason,
+  .cf-hcp-row,
   .cf-phic-use,
   .cf-code-grid,
   .cf-code-grid--rvs {
@@ -593,6 +657,7 @@
 @media print {
   .cf-sheet {
     max-width: none;
+    width: 210mm;
     border-color: #000;
   }
   .cf-sheet,
@@ -600,6 +665,126 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+}
+
+/* Compact claim-form layout when printing / saving as PDF (#cf-print-area) */
+@media print {
+  #cf-print-area .cf-sheet {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    font-size: 9.5px;
+    line-height: 1.2;
+  }
+  #cf-print-area .cf-sheet__body {
+    padding: 5px 7px 8px;
+  }
+  #cf-print-area .cf-header {
+    padding: 6px 8px 5px;
+  }
+  #cf-print-area .cf-header__logo-img {
+    height: 38px;
+    max-width: 160px;
+  }
+  #cf-print-area .cf-header__code {
+    font-size: 22px;
+  }
+  #cf-print-area .cf-header__reminders {
+    margin-top: 5px;
+    padding-top: 4px;
+    font-size: 7px;
+  }
+  #cf-print-area .cf-part-bar {
+    margin: 6px 0 5px;
+    padding: 3px 6px;
+    font-size: 9.5px;
+  }
+  #cf-print-area .cf-label {
+    font-size: 9.5px;
+    margin-bottom: 3px;
+  }
+  #cf-print-area .cf-row {
+    margin-bottom: 5px;
+    gap: 4px 8px;
+  }
+  #cf-print-area .cf-grid {
+    gap: 5px 8px;
+  }
+  #cf-print-area .cf-grid--name-dob,
+  #cf-print-area .cf-grid--addr-sex,
+  #cf-print-area .cf-grid--csf-name-dob,
+  #cf-print-area .cf-grid--csf-patient,
+  #cf-print-area .cf-grid--confinement {
+    margin-bottom: 5px;
+  }
+  #cf-print-area .cf-line-field__value,
+  #cf-print-area .cf-line-field--editable .cf-line-field__input {
+    font-size: 9.5px;
+    min-height: 15px;
+    padding: 0 2px 1px;
+  }
+  #cf-print-area .cf-line-field--tall .cf-line-field__value,
+  #cf-print-area .cf-line-field--editable.cf-line-field--tall .cf-line-field__input {
+    min-height: 28px;
+  }
+  #cf-print-area .cf-line-field__label,
+  #cf-print-area .cf-mini-label,
+  #cf-print-area .cf-digit-group__label {
+    font-size: 7px;
+  }
+  #cf-print-area .cf-digit {
+    width: 13px;
+    height: 15px;
+    font-size: 9px;
+  }
+  #cf-print-area .cf-digit-group {
+    padding-bottom: 10px;
+  }
+  #cf-print-area .cf-check {
+    font-size: 9px;
+  }
+  #cf-print-area .cf-check__box {
+    width: 11px;
+    height: 11px;
+    font-size: 9px;
+  }
+  #cf-print-area .cf-hint {
+    font-size: 7px;
+    margin: 0 0 4px;
+  }
+  #cf-print-area .cf-attest,
+  #cf-print-area .cf-employer-cert {
+    font-size: 9px;
+    margin: 4px 0 6px;
+  }
+  #cf-print-area .cf-phic-box {
+    min-height: 28px;
+    font-size: 8px;
+  }
+  #cf-print-area .cf-phic-box--wide {
+    min-height: 56px;
+  }
+  #cf-print-area .cf-part-bar {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
+
+/* Hospital SOA — A4 Statement of Account */
+.hospital-soa-sheet {
+  width: 210mm;
+  max-width: 100%;
+}
+
+/* Admission Clinical Cover Sheet — A4 preview */
+.admission-sheet {
+  width: 210mm;
+  max-width: 100%;
+}
+
+/* ESOA official HTML — exact A4 page (595.25pt × 841.85pt) */
+.esoa-official-sheet {
+  width: 595.25pt;
+  max-width: 100%;
 }
 
 /* CF-3 / CF-4 / CF-5 exact official HTML layouts */

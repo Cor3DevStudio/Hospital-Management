@@ -107,6 +107,7 @@ export function inferChargeCategoryFromDescription(description: string): BillCha
   if (
     d.includes("pharmacy") ||
     d.includes("medicine") ||
+    d.includes("dispensed") ||
     d.includes("tablet") ||
     d.includes("capsule") ||
     d.includes("vial") ||
@@ -133,7 +134,10 @@ export function resolveChargeCategory(
   if (input.medicineId) return "Medicine";
   if (input.priceItemId) {
     const price = state.prices.find((p) => p.id === input.priceItemId);
-    if (price) return priceCategoryToChargeCategory(price.category);
+    if (price) {
+      if (price.category === "Miscellaneous") return "Other";
+      return priceCategoryToChargeCategory(price.category);
+    }
   }
   return inferChargeCategoryFromDescription(input.description ?? "");
 }

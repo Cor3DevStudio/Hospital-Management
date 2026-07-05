@@ -1,11 +1,13 @@
-import type { Bill, Patient } from "@/lib/store";
+import { useEffect, useState } from "react";
+import type { AppState, Bill, CaseRate, Patient } from "@/lib/store";
 import {
   DEFAULT_SOA_PRINT_OPTIONS,
   type SOAPrintOptions,
 } from "@/components/billing/soaPrintOptions";
-import { buildSoaValues, type SoaHospital } from "@/components/billing/buildSoaValues";
-import { fillFormTemplate } from "@/lib/forms/fillFormTemplate";
-import soaTemplate from "@/assets/forms/SOA.template.html?raw";
+import { buildHospitalSoaModel } from "@/components/billing/buildHospitalSoaModel";
+import type { SoaHospital } from "@/components/billing/buildSoaValues";
+import { HospitalSoaDocument } from "@/components/billing/HospitalSoaDocument";
+import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
 
 export type OfficialSOASheetProps = {
   bill: Bill;
@@ -14,13 +16,12 @@ export type OfficialSOASheetProps = {
   billingOfficerName: string;
   printOptions?: SOAPrintOptions;
   caseRateDescription?: string;
+  caseRate?: CaseRate | null;
+  state: AppState;
   roomWard?: string;
 };
 
-/**
- * Official hospital SOA — exact layout from SOA.html (SautinSoft export).
- * Only placeholder values are filled; positions, borders, and typography are unchanged.
- */
+/** Official hospital Statement of Account — Villanueva-Tanchuling style layout (A4). */
 export function OfficialSOASheet({
   bill,
   patient,
@@ -28,24 +29,46 @@ export function OfficialSOASheet({
   billingOfficerName,
   printOptions = DEFAULT_SOA_PRINT_OPTIONS,
   caseRateDescription,
-  roomWard,
+  caseRate,
+  state,
+  roomWard: _roomWard,
 }: OfficialSOASheetProps) {
   const options = { ...DEFAULT_SOA_PRINT_OPTIONS, ...printOptions };
-  const values = buildSoaValues({
+  const [resolvedCaseRate, setResolvedCaseRate] = useState<CaseRate | null>(caseRate ?? null);
+
+  useEffect(() => {
+    if (caseRate) {
+      setResolvedCaseRate(caseRate);
+      return;
+    }
+    const code = bill.caseRateCode;
+    if (!code || code === "none") {
+      setResolvedCaseRate(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchCaseRateByCode(code).then((rate) => {
+      if (!cancelled) setResolvedCaseRate(rate);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [bill.caseRateCode, caseRate]);
+
+  const model = buildHospitalSoaModel({
     bill,
     patient,
     hospital,
+    state,
     billingOfficerName,
     printOptions: options,
-    caseRateDescription,
-    roomWard,
+    caseRateDescription: caseRateDescription ?? resolvedCaseRate?.description,
+    caseRate: resolvedCaseRate,
   });
-  const html = fillFormTemplate(soaTemplate, values);
-  const isTentative = options.status === "Tentative";
 
   return (
-    <div className="soa-official-sheet relative mx-auto bg-white text-black">
-      {isTentative && (
+    <div className="hospital-soa-sheet soa-official-sheet relative mx-auto bg-white text-black">
+      {model.isTentative && (
         <div
           className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
           aria-hidden
@@ -55,16 +78,9 @@ export function OfficialSOASheet({
           </span>
         </div>
       )}
-      <div
-        className="soa-official-sheet__page relative z-0"
-        dangerouslySetInnerHTML={{ __html: extractPageBody(html) }}
-      />
+      <div className="soa-official-sheet__page relative z-0">
+        <HospitalSoaDocument model={model} />
+      </div>
     </div>
   );
-}
-
-/** Use only the page container from the template (drop html/head/body wrappers). */
-function extractPageBody(fullHtml: string): string {
-  const match = fullHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  return match ? match[1] : fullHtml;
 }

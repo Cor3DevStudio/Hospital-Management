@@ -29,7 +29,7 @@ import { searchCaseRatesApi } from "@/lib/services/caseRateApi";
 import { useStore, todayISO, type CaseRate, type PriceItem } from "@/lib/store";
 
 export const Route = createFileRoute("/pricelist")({
-  head: () => ({ meta: [{ title: "Price List — Hospital CMS" }] }),
+  head: () => ({ meta: [{ title: "PhilHealth Case Rates — Hospital CMS" }] }),
   component: PriceListPage,
 });
 
@@ -154,7 +154,7 @@ function PriceListPage() {
     try {
       const payload = crEditId ? { ...crForm, id: crEditId } : { ...crForm, id: "" };
       await persistCaseRate(payload);
-      toast.success("Case rate saved to price list / database");
+      toast.success("PhilHealth case rate saved to database");
       setCrEditId(null);
       setCrForm(emptyCaseRate());
       await loadCaseRates();
@@ -180,7 +180,7 @@ function PriceListPage() {
   return (
     <div>
       <PageHeader
-        title="Price List"
+        title="PhilHealth Case Rates"
         description="Hospital charges and PhilHealth case rates — edit amounts, add new codes, and keep billing consistent."
       />
       <div className="space-y-4 p-6">

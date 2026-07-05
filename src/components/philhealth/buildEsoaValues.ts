@@ -10,6 +10,7 @@ import {
   inferChargeCategoryFromDescription,
   type BillChargeCategory,
 } from "@/lib/services/billChargeCategories";
+import { escapeXml } from "@/lib/philhealth/xmlEscape";
 
 export type EsoaHospital = {
   name: string;
@@ -80,22 +81,16 @@ export function buildEsoaXmlPayload(input: {
 }): string {
   const values = buildEsoaValues(input);
   const items = normalizeItems(input.bill);
-  const esc = (s: string) =>
-    s
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
 
   const itemXml = items
     .map(
       (it) => `    <Item>
-      <Description>${esc(it.description)}</Description>
-      <Category>${esc(String(it.category || ""))}</Category>
+      <Description>${escapeXml(it.description)}</Description>
+      <Category>${escapeXml(String(it.category || ""))}</Category>
       <UnitPrice>${money2(it.unitPrice)}</UnitPrice>
       <Quantity>${it.qty}</Quantity>
       <Amount>${money2(it.amount)}</Amount>
-      <ServiceDate>${esc(it.effectiveDate || input.bill.date)}</ServiceDate>
+      <ServiceDate>${escapeXml(it.effectiveDate || input.bill.date)}</ServiceDate>
     </Item>`
     )
     .join("\n");
@@ -103,26 +98,26 @@ export function buildEsoaXmlPayload(input: {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <ElectronicStatementOfAccount>
   <DocumentType>ESOA</DocumentType>
-  <ClaimId>${esc(input.claimId || "")}</ClaimId>
-  <BillId>${esc(input.bill.id)}</BillId>
-  <SOAReferenceNo>${esc(values.SOA_REF)}${esc(values.SOA_REF_SUFFIX)}</SOAReferenceNo>
+  <ClaimId>${escapeXml(input.claimId || "")}</ClaimId>
+  <BillId>${escapeXml(input.bill.id)}</BillId>
+  <SOAReferenceNo>${escapeXml(values.SOA_REF)}${escapeXml(values.SOA_REF_SUFFIX)}</SOAReferenceNo>
   <Hospital>
-    <Name>${esc(values.HOSPITAL_NAME)}</Name>
-    <Address>${esc(values.HOSPITAL_ADDRESS)}</Address>
-    <AccreditationNo>${esc(input.hospital.philhealthAccreditation || "")}</AccreditationNo>
+    <Name>${escapeXml(values.HOSPITAL_NAME)}</Name>
+    <Address>${escapeXml(values.HOSPITAL_ADDRESS)}</Address>
+    <AccreditationNo>${escapeXml(input.hospital.philhealthAccreditation || "")}</AccreditationNo>
   </Hospital>
   <Patient>
-    <Name>${esc(values.PATIENT_NAME)}</Name>
-    <Address>${esc(values.PATIENT_ADDRESS)}</Address>
-    <AgeYears>${esc(values.AGE_YRS)}</AgeYears>
-    <PhilHealthNumber>${esc(input.patient?.philhealth?.memberNumber || "")}</PhilHealthNumber>
+    <Name>${escapeXml(values.PATIENT_NAME)}</Name>
+    <Address>${escapeXml(values.PATIENT_ADDRESS)}</Address>
+    <AgeYears>${escapeXml(values.AGE_YRS)}</AgeYears>
+    <PhilHealthNumber>${escapeXml(input.patient?.philhealth?.memberNumber || "")}</PhilHealthNumber>
   </Patient>
   <Encounter>
-    <AdmissionDateTime>${esc(values.ADMIT_DT)}</AdmissionDateTime>
-    <DischargeDateTime>${esc(values.DISCHARGE_DT)}</DischargeDateTime>
-    <FinalDiagnosis>${esc(values.DIAGNOSIS)}</FinalDiagnosis>
-    <PatientType>${esc(input.bill.patientType)}</PatientType>
-    <CaseRateCode>${esc(input.bill.caseRateCode || "")}</CaseRateCode>
+    <AdmissionDateTime>${escapeXml(values.ADMIT_DT)}</AdmissionDateTime>
+    <DischargeDateTime>${escapeXml(values.DISCHARGE_DT)}</DischargeDateTime>
+    <FinalDiagnosis>${escapeXml(values.DIAGNOSIS)}</FinalDiagnosis>
+    <PatientType>${escapeXml(input.bill.patientType)}</PatientType>
+    <CaseRateCode>${escapeXml(input.bill.caseRateCode || "")}</CaseRateCode>
   </Encounter>
   <SummaryOfFees>
     <Amount>${values.FEE_AMOUNT}</Amount>

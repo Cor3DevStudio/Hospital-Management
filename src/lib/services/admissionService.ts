@@ -19,6 +19,45 @@ export function getPatientAdmissions(state: AppState, patientId: string): Admiss
     .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate));
 }
 
+export type PatientAdmissionSummary = {
+  admissions: Admission[];
+  totalCount: number;
+  /** Prior admissions, optionally excluding the record being edited. */
+  priorCount: number;
+  isReAdmission: boolean;
+  isCurrentlyAdmitted: boolean;
+  latestAdmission?: Admission;
+};
+
+export function getPatientAdmissionSummary(
+  state: AppState,
+  patientId: string,
+  options?: { excludeAdmissionId?: string }
+): PatientAdmissionSummary {
+  const admissions = getPatientAdmissions(state, patientId);
+  const prior = options?.excludeAdmissionId
+    ? admissions.filter((a) => a.id !== options.excludeAdmissionId)
+    : admissions;
+
+  return {
+    admissions,
+    totalCount: admissions.length,
+    priorCount: prior.length,
+    isReAdmission: prior.length > 0,
+    isCurrentlyAdmitted: isPatientAdmitted(state, patientId),
+    latestAdmission: admissions[0],
+  };
+}
+
+/** Count admissions per patient for search-result badges. */
+export function buildAdmissionCountByPatient(state: AppState): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const admission of state.admissions) {
+    map.set(admission.patientId, (map.get(admission.patientId) ?? 0) + 1);
+  }
+  return map;
+}
+
 export function isPatientAdmitted(state: AppState, patientId: string): boolean {
   const latest = getLatestAdmission(state, patientId);
   return !!latest && latest.status === "Admitted" && !latest.dischargeDate;

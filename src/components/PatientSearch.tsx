@@ -40,7 +40,7 @@ export function filterPatients(
         fullName.includes(lowerQuery) ||
         patient.contactNumber.toLowerCase().includes(lowerQuery) ||
         patient.email?.toLowerCase().includes(lowerQuery) ||
-        patient.philhealth.memberNumber?.toLowerCase().includes(lowerQuery)
+        patient.philhealth?.memberNumber?.toLowerCase().includes(lowerQuery)
       );
     })
     .sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));

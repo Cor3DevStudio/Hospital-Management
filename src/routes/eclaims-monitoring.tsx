@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Send, FilterX, Printer, Plus, Save, Trash2, Paperclip, FileDown } from "lucide-react";
+import { Send, FilterX, Printer, Plus, Save, Trash2, Paperclip, FileDown, FileCode } from "lucide-react";
 import { toast } from "sonner";
 import { validateAttachmentFile } from "@/lib/attachmentValidation";
 import { ListPagination } from "@/components/ListPagination";
@@ -37,6 +37,18 @@ import {
   updateEClaim,
   updateEClaimStatus,
 } from "@/lib/services/eclaimService";
+import type { Cf4FormData } from "@/components/philhealth/buildCf4Values";
+import {
+  buildPhilHealthXmlFile,
+  findPhilHealthXmlAttachments,
+  validatePhilHealthXml,
+  type PhilHealthXmlForm,
+} from "@/lib/services/philhealthXmlService";
+import {
+  buildEclaimMergedPdfPackage,
+  downloadBlob,
+  getMergeableAttachments,
+} from "@/lib/services/eclaimDocumentService";
 import { useStore, todayISO, type EClaim, type EClaimStatus } from "@/lib/store";
 
 type PrintMode = "registry" | "slip";
@@ -58,7 +70,7 @@ const emptyClaim = (): Omit<EClaim, "id" | "createdAt" | "updatedAt"> => ({
 });
 
 function EClaimsPage() {
-  const { state, setState, addAttachment, deleteAttachment } = useStore();
+  const { state, setState, addAttachment, deleteAttachment, getAttachmentBlob } = useStore();
   const [typeFilter, setTypeFilter] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -99,6 +111,9 @@ function EClaimsPage() {
   const stats = useMemo(() => getEClaimStats(filteredClaims), [filteredClaims]);
 
   const ageDays = (d: string) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+
+  const getDischargeDate = (claim: EClaim, bill?: { dischargeDate?: string; date?: string }) =>
+    bill?.dischargeDate ?? "";
 
   const openCreate = () => {
     setEditId(null);
@@ -228,6 +243,82 @@ function EClaimsPage() {
     }
   };
 
+  const handleAttachGeneratedXml = async (claimId: string, form: PhilHealthXmlForm) => {
+    const claim = (state.eClaims ?? []).find((c) => c.id === claimId);
+    if (!claim?.billId) return toast.error("Link a bill to this eClaim before generating XML");
+    const bill = billMap.get(claim.billId);
+    const patient = patientMap.get(claim.patientId);
+    const admission = state.admissions
+      .filter((a) => a.patientId === claim.patientId)
+      .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
+    const xmlValidation = validatePhilHealthXml({
+      form,
+      bill,
+      patient,
+      claim,
+      hospital: state.hospital,
+      attach: true,
+    });
+    if (!xmlValidation.valid) return toast.error(xmlValidation.errors[0] ?? "Cannot generate XML");
+    const file = buildPhilHealthXmlFile({
+      form,
+      bill: bill!,
+      patient,
+      hospital: state.hospital,
+      admission,
+      claimId: claim.id,
+      cf4Overrides: claim.cf4Overrides as Partial<Cf4FormData> | undefined,
+    });
+    try {
+      const existing = findPhilHealthXmlAttachments(state, claimId, form);
+      for (const attachment of existing) {
+        await deleteAttachment(attachment.id);
+      }
+      await addAttachment("eclaim", claimId, file);
+      toast.success(`${form}.xml attached`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to attach XML");
+    }
+  };
+
+  const handleDownloadAttachment = async (attachmentId: string) => {
+    const attachment = (state.attachments ?? []).find((a) => a.id === attachmentId);
+    if (!attachment) return toast.error("Attachment not found");
+    try {
+      const blob = await getAttachmentBlob(attachment.key);
+      if (!blob) {
+        return toast.error("File data is missing — please re-upload this document.");
+      }
+      downloadBlob(blob, attachment.filename);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to download file");
+    }
+  };
+
+  const handleMergeAttachments = async (claimId: string) => {
+    const claim = (state.eClaims ?? []).find((c) => c.id === claimId);
+    const attachments = getClaimAttachments(state, claimId);
+    const mergeable = getMergeableAttachments(attachments);
+    if (mergeable.length === 0) {
+      return toast.error("Upload at least one PDF or image to merge into a package.");
+    }
+
+    try {
+      const result = await buildEclaimMergedPdfPackage(attachments, getAttachmentBlob);
+      const filename = `${claim?.id ?? claimId}-documents.pdf`;
+      downloadBlob(result.blob, filename);
+      if (result.skipped.length > 0) {
+        toast.message(
+          `Merged ${result.mergedCount} file(s). Skipped: ${result.skipped.map((s) => s.filename).join(", ")}`
+        );
+      } else {
+        toast.success(`Merged ${result.mergedCount} document(s) into one PDF`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to merge documents");
+    }
+  };
+
   const statusBadgeClass = (status: EClaimStatus) => {
     if (status === "Submitted" || status === "Approved") return "bg-success/15 text-success border-success/20";
     if (status === "Denied") return "bg-destructive/15 text-destructive border-destructive/20";
@@ -326,7 +417,8 @@ function EClaimsPage() {
                 <TableRow>
                   <TableHead>Patient</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Admission</TableHead>
+                  <TableHead>Admission Date</TableHead>
+                  <TableHead>Discharged Date</TableHead>
                   <TableHead>Room/Ward</TableHead>
                   <TableHead>PhilHealth</TableHead>
                   <TableHead>Case Rate</TableHead>
@@ -338,20 +430,21 @@ function EClaimsPage() {
               <TableBody>
                 {filteredClaims.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">No records yet</TableCell>
+                    <TableCell colSpan={10} className="py-8 text-center text-sm text-muted-foreground">No records yet</TableCell>
                   </TableRow>
                 ) : (
                   claimList.pageItems.map((claim) => {
                     const p = patientMap.get(claim.patientId);
                     const bill = claim.billId ? billMap.get(claim.billId) : undefined;
-                    const dischargeDate = bill?.dischargeDate ?? bill?.date ?? claim.admissionDate;
-                    const age = ageDays(dischargeDate);
+                    const dischargeDate = getDischargeDate(claim, bill);
+                    const age = dischargeDate ? ageDays(dischargeDate) : ageDays(claim.admissionDate);
                     const attachments = getClaimAttachments(state, claim.id);
                     return (
                       <TableRow key={claim.id}>
                         <TableCell className="font-medium">{p ? `${p.lastName}, ${p.firstName}` : "—"}</TableCell>
                         <TableCell><Badge variant="outline">{bill?.patientType ?? "—"}</Badge></TableCell>
                         <TableCell>{claim.admissionDate}</TableCell>
+                        <TableCell>{dischargeDate || "—"}</TableCell>
                         <TableCell>{claim.roomWard || "—"}</TableCell>
                         <TableCell><Badge variant="outline">{claim.philhealthStatus}</Badge></TableCell>
                         <TableCell className="font-mono text-xs">{claim.caseRateCode || "—"}</TableCell>
@@ -479,19 +572,50 @@ function EClaimsPage() {
               <div className="space-y-3">
                 <Input
                   type="file"
-                  accept=".pdf,.xml,.jpg,.jpeg,.png"
+                  accept="application/pdf,application/xml,text/xml,image/jpeg,image/png,.pdf,.xml,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file && attachClaimId) void handleAttachFile(attachClaimId, file);
                     e.target.value = "";
                   }}
                 />
-                <p className="text-xs text-muted-foreground">Max file size: 1.5MB (SOA, supporting documents, XML)</p>
+                <p className="text-xs text-muted-foreground">
+                  Max file size: 1.5MB. PDF and images can be merged into one package for submission.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 text-xs"
+                    onClick={() => attachClaimId && void handleMergeAttachments(attachClaimId)}
+                    disabled={getMergeableAttachments(getClaimAttachments(state, attachClaimId)).length < 1}
+                  >
+                    <FileDown className="mr-1 h-3 w-3" /> Merge PDF Package
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(["ESOA", "CF4", "CF5"] as PhilHealthXmlForm[]).map((form) => (
+                    <Button
+                      key={form}
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => attachClaimId && void handleAttachGeneratedXml(attachClaimId, form)}
+                    >
+                      <FileCode className="mr-1 h-3 w-3" /> Attach {form}.xml
+                    </Button>
+                  ))}
+                </div>
                 <ul className="text-sm space-y-2">
                   {getClaimAttachments(state, attachClaimId).map((a) => (
-                    <li key={a.id} className="flex justify-between items-center border rounded p-2">
-                      <span className="truncate">{a.filename}</span>
-                      <Button size="sm" variant="ghost" onClick={() => void deleteAttachment(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <li key={a.id} className="flex justify-between items-center gap-2 border rounded p-2">
+                      <span className="truncate text-sm">{a.filename}</span>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => void handleDownloadAttachment(a.id)}>
+                          <FileDown className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => void deleteAttachment(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
                     </li>
                   ))}
                   {getClaimAttachments(state, attachClaimId).length === 0 && (

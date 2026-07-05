@@ -1,4 +1,4 @@
-import { and, count, eq, like, or } from "drizzle-orm";
+import { and, count, eq, like, or, sql } from "drizzle-orm";
 
 import type { CaseRate } from "@/lib/store";
 
@@ -17,13 +17,20 @@ function formatDate(value: Date | string | null | undefined): string | undefined
   return value.toISOString().slice(0, 10);
 }
 
+function normalizeCaseType(caseType: string): string {
+  const lower = caseType.trim().toLowerCase();
+  if (lower.startsWith("surg")) return "Surgical";
+  if (lower.startsWith("med")) return "Medical";
+  return caseType;
+}
+
 export function rowToCaseRate(row: typeof philhealthRecords.$inferSelect): CaseRate {
   return {
     id: String(row.id),
     code: row.caseCode,
     description: row.caseDescription,
     amount: toNumber(row.caseRate),
-    category: row.caseType,
+    category: normalizeCaseType(row.caseType),
     effectiveDate: formatDate(row.priceEffectiveDate),
     healthFacilityFee: toNumber(row.healthFacilityFee),
     professionalFeeAmount: toNumber(row.professionalFeeAmount),
@@ -79,12 +86,63 @@ export async function searchCaseRates(
 ): Promise<CaseRateSearchResult> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 50));
+  const type = params.type && params.type !== "All" ? params.type : undefined;
+  const q = params.query?.trim();
+
+  if (type) {
+    return queryCaseRates({ ...params, page, pageSize, type, query: q });
+  }
+
+  // Balanced Medical + Surgical results so surgical numeric codes do not crowd out medical ICD rows.
+  const medicalSize = Math.ceil(pageSize / 2);
+  const surgicalSize = pageSize - medicalSize;
+  const [medical, surgical] = await Promise.all([
+    queryCaseRates({
+      query: q,
+      type: "Medical",
+      page,
+      pageSize: medicalSize,
+    }),
+    queryCaseRates({
+      query: q,
+      type: "Surgical",
+      page,
+      pageSize: surgicalSize,
+    }),
+  ]);
+
+  const items = interleaveCaseRates(medical.items, surgical.items).slice(0, pageSize);
+  return {
+    items,
+    total: medical.total + surgical.total,
+    page,
+    pageSize,
+  };
+}
+
+function interleaveCaseRates(medical: CaseRate[], surgical: CaseRate[]): CaseRate[] {
+  const merged: CaseRate[] = [];
+  const max = Math.max(medical.length, surgical.length);
+  for (let i = 0; i < max; i++) {
+    if (i < medical.length) merged.push(medical[i]);
+    if (i < surgical.length) merged.push(surgical[i]);
+  }
+  return merged;
+}
+
+async function queryCaseRates(
+  params: CaseRateSearchParams & { type?: string }
+): Promise<CaseRateSearchResult> {
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 50));
   const offset = (page - 1) * pageSize;
   const db = getDb();
 
-  const conditions = [];
-  if (params.type && params.type !== "All") {
-    conditions.push(eq(philhealthRecords.caseType, params.type));
+  const conditions = [eq(philhealthRecords.isActive, true)];
+  if (params.type) {
+    conditions.push(
+      sql`LOWER(${philhealthRecords.caseType}) = ${params.type.toLowerCase()}`
+    );
   }
   const q = params.query?.trim();
   if (q) {
@@ -108,7 +166,7 @@ export async function searchCaseRates(
     .select()
     .from(philhealthRecords)
     .where(where)
-    .orderBy(philhealthRecords.caseCode)
+    .orderBy(philhealthRecords.caseType, philhealthRecords.caseCode)
     .limit(pageSize)
     .offset(offset);
 

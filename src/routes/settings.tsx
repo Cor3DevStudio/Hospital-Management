@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { PageAccessModal } from "@/components/PageAccessModal";
 import { PageHeader } from "@/components/PageHeader";
-import { pageAccessSummary } from "@/lib/pageAccess";
-import { useStore, todayISO, type PriceItem, type User } from "@/lib/store";
+import { pageAccessSummary, normalizePageAccess } from "@/lib/pageAccess";
+import { updateSessionPageAccess } from "@/lib/auth/authService";
+import { useStore, todayISO, persistStoreNow, type AppState, type PriceItem, type User } from "@/lib/store";
 import { loadAllFromDatabase, mergeDatabaseIntoState, saveAllToDatabase } from "@/lib/services/syncService";
 import { pauseAutoSync, resumeAutoSync } from "@/lib/services/autoSyncService";
 import {
@@ -173,6 +174,36 @@ function SettingsPage() {
     toast.success("Miscellaneous fee type removed.");
   };
 
+  const saveSecuritySettings = async () => {
+    if (!isAdmin) return toast.error("Administrator access required.");
+
+    pauseAutoSync();
+    persistStoreNow();
+
+    let snapshot: AppState | null = null;
+    setState((current) => {
+      snapshot = current;
+      return current;
+    });
+
+    if (!snapshot) {
+      resumeAutoSync();
+      return toast.error("Could not read current settings.");
+    }
+
+    try {
+      setDbSyncing(true);
+      const result = await saveAllToDatabase(snapshot);
+      setLastDbSync(result.updatedAt ?? new Date().toISOString());
+      toast.success("Security settings saved locally and to MariaDB.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Database sync failed.");
+    } finally {
+      setDbSyncing(false);
+      resumeAutoSync();
+    }
+  };
+
   const saveHospital = async () => {
     const nextHospital = hospital;
     setState((s) => ({ ...s, hospital: nextHospital }));
@@ -218,16 +249,24 @@ function SettingsPage() {
     if (!pageAccessUser) return;
     setPageAccessSaving(true);
     try {
-      const result = await updateUserPageAccessViaApi(pageAccessUser.id, pageAccess);
+      const normalized = normalizePageAccess(pageAccess);
+      const result = await updateUserPageAccessViaApi(pageAccessUser.id, normalized);
       if (!result.success) {
         return toast.error(result.message ?? "Failed to update page access.");
       }
+      const editedUsername = pageAccessUser.username;
       setState((s) => ({
         ...s,
         users: s.users.map((u) =>
-          u.id === pageAccessUser.id ? { ...u, pageAccess } : u
+          u.id === pageAccessUser.id ? { ...u, pageAccess: normalized } : u
         ),
       }));
+      if (
+        state.authedUser &&
+        editedUsername.toLowerCase() === state.authedUser.toLowerCase()
+      ) {
+        updateSessionPageAccess(normalized);
+      }
       setPageAccessUser(null);
       toast.success("Page access updated.");
     } finally {
@@ -407,6 +446,7 @@ function SettingsPage() {
                       const minutes = Math.max(0, Number(e.target.value) || 0);
                       setState((s) => ({ ...s, inactivityTimeoutMinutes: minutes }));
                     }}
+                    onBlur={() => persistStoreNow()}
                     className="h-9 text-xs max-w-xs"
                     disabled={!isAdmin}
                   />
@@ -429,23 +469,7 @@ function SettingsPage() {
 
                 <div className="md:col-span-2 flex justify-end pt-2">
                   <Button
-                    onClick={async () => {
-                      setState((s) => ({
-                        ...s,
-                        inactivityTimeoutMinutes: s.inactivityTimeoutMinutes,
-                        inactivityWarningSeconds: s.inactivityWarningSeconds,
-                      }));
-                      try {
-                        setDbSyncing(true);
-                        const result = await saveAllToDatabase(state);
-                        setLastDbSync(result.updatedAt ?? new Date().toISOString());
-                        toast.success("Security settings saved to database.");
-                      } catch (error) {
-                        toast.error(error instanceof Error ? error.message : "Database sync failed.");
-                      } finally {
-                        setDbSyncing(false);
-                      }
-                    }}
+                    onClick={() => void saveSecuritySettings()}
                     disabled={!isAdmin || dbSyncing}
                     className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9"
                   >
@@ -903,7 +927,7 @@ function SettingsPage() {
                     <Database className="h-4 w-4 text-blue-600" /> Save All Pages to MariaDB
                   </CardTitle>
                   <CardDescription className="text-xs text-blue-800/80">
-                    Persists every module — Patients, Appointments, Billing, Inventory, Admissions, ER, OPD, Pharmacy, Lab, Radiology, Miscellaneous, Cashier, Medical Records, Price List, and Case Rates — to the database.
+                    Persists every module — Patients, Appointments, Billing, Inventory, Admissions, ER, OPD, Pharmacy, Lab, Radiology, Miscellaneous, Cashier, Medical Records, and PhilHealth Case Rates — to the database.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">

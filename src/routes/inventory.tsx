@@ -132,7 +132,7 @@ function InventoryPage() {
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[140px] h-9 text-xs">
+                <SelectTrigger className="w-[160px] h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -266,7 +266,7 @@ function InventoryPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Link to Price List (optional)</Label>
+                <Label className="text-xs text-muted-foreground">Link to Hospital Prices (optional)</Label>
                 <Select
                   value={form.priceItemId ?? "none"}
                   onValueChange={(v) => setForm({ ...form, priceItemId: v === "none" ? undefined : v })}

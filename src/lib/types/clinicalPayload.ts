@@ -58,8 +58,14 @@ export function extractClinicalPayload(state: AppState): ClinicalPayload {
     eClaims: state.eClaims ?? [],
     hospital: state.hospital,
     attachments: state.attachments ?? [],
-    inactivityTimeoutMinutes: state.inactivityTimeoutMinutes,
-    inactivityWarningSeconds: state.inactivityWarningSeconds,
+    inactivityTimeoutMinutes:
+      typeof state.inactivityTimeoutMinutes === "number"
+        ? Math.max(0, Math.round(state.inactivityTimeoutMinutes))
+        : 15,
+    inactivityWarningSeconds:
+      typeof state.inactivityWarningSeconds === "number"
+        ? Math.max(0, Math.round(state.inactivityWarningSeconds))
+        : 60,
   };
 }
 
@@ -94,6 +100,10 @@ export function applyClinicalPayload(state: AppState, payload: ClinicalPayload):
     miscellaneousRecords: payload.miscellaneousRecords ?? [],
     eClaims: payload.eClaims ?? [],
     attachments: payload.attachments ?? [],
+    inactivityTimeoutMinutes:
+      payload.inactivityTimeoutMinutes ?? state.inactivityTimeoutMinutes,
+    inactivityWarningSeconds:
+      payload.inactivityWarningSeconds ?? state.inactivityWarningSeconds,
     authedUser: state.authedUser,
     users: state.users,
   };

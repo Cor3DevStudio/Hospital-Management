@@ -1,8 +1,9 @@
-import { uid, todayISO, type AppState, type Consultation } from "@/lib/store";
+import { uid, todayISO, type AppState, type Consultation, type OPDRecord } from "@/lib/store";
 
 export function normalizeConsultation(c: Consultation): Consultation {
   return {
     ...c,
+    date: c.date || todayISO(),
     status: c.status ?? (c.discharged ? "Seen" : "Pending"),
   };
 }
@@ -11,12 +12,64 @@ export function normalizeConsultations(consultations: Consultation[]): Consultat
   return consultations.map(normalizeConsultation);
 }
 
-export function getAllConsultations(consultations: Consultation[]): Consultation[] {
-  return normalizeConsultations(consultations).sort((a, b) => b.date.localeCompare(a.date));
+function sortConsultationsByDate(consultations: Consultation[]): Consultation[] {
+  return [...consultations].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 }
 
-export function getConsultationsForPatient(consultations: Consultation[], patientId: string): Consultation[] {
-  return getAllConsultations(consultations.filter((c) => c.patientId === patientId));
+/** Map legacy OPD records into consultation rows for list/history views. */
+export function opdRecordToConsultation(record: OPDRecord, id = record.consultationId ?? `opd:${record.id}`): Consultation {
+  return normalizeConsultation({
+    id,
+    patientId: record.patientId,
+    doctor: record.doctor,
+    date: record.visitDate,
+    chiefComplaint: record.reasonForVisit || record.serviceType || "",
+    diagnosis: record.diagnosis || "",
+    notes: record.notes || "",
+    prescriptions: [],
+    status: record.status === "Closed" ? "Seen" : "Pending",
+    discharged: record.status === "Closed",
+    dischargeDate: record.status === "Closed" ? record.visitDate : undefined,
+  });
+}
+
+/** Merge canonical consultations with unlinked legacy `opdRecords`. */
+export function mergeConsultationSources(
+  consultations: Consultation[] | undefined,
+  opdRecords?: OPDRecord[]
+): Consultation[] {
+  const normalized = normalizeConsultations(consultations ?? []);
+  const linkedIds = new Set(normalized.map((c) => c.id));
+  const merged = [...normalized];
+
+  for (const record of opdRecords ?? []) {
+    if (!record.patientId) continue;
+    if (record.consultationId && linkedIds.has(record.consultationId)) continue;
+    const id = record.consultationId ?? `opd:${record.id}`;
+    if (linkedIds.has(id)) continue;
+    linkedIds.add(id);
+    merged.push(opdRecordToConsultation(record, id));
+  }
+
+  return sortConsultationsByDate(merged);
+}
+
+export function getAllConsultations(consultations: Consultation[], opdRecords?: OPDRecord[]): Consultation[] {
+  return mergeConsultationSources(consultations, opdRecords);
+}
+
+/** Read all OPD visits from app state (consultations + legacy opdRecords). */
+export function getAllConsultationsFromState(state: AppState): Consultation[] {
+  return getAllConsultations(state.consultations, state.opdRecords);
+}
+
+export function getConsultationsForPatient(
+  consultations: Consultation[],
+  patientId: string,
+  opdRecords?: OPDRecord[]
+): Consultation[] {
+  if (!patientId) return [];
+  return getAllConsultations(consultations, opdRecords).filter((c) => c.patientId === patientId);
 }
 
 export function getTodayConsultations(consultations: Consultation[], today = todayISO()): Consultation[] {

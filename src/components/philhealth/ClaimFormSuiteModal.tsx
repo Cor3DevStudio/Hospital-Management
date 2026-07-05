@@ -1,16 +1,32 @@
-import { Printer, Save, Send } from "lucide-react";
+import { FileCode, Printer, Save, Send } from "lucide-react";
 
 import { OfficialCF1Sheet } from "@/components/philhealth/OfficialCF1Sheet";
 import { OfficialCF2Sheet } from "@/components/philhealth/OfficialCF2Sheet";
 import { OfficialCF3Sheet } from "@/components/philhealth/OfficialCF3Sheet";
 import { OfficialCF4Sheet } from "@/components/philhealth/OfficialCF4Sheet";
 import { OfficialCF5Sheet } from "@/components/philhealth/OfficialCF5Sheet";
+import { OfficialCSFSheet } from "@/components/philhealth/OfficialCSFSheet";
+import { OfficialESOASheet } from "@/components/philhealth/OfficialESOASheet";
+import type { Cf2FormData } from "@/components/philhealth/buildCf2Values";
+import type { Cf4FormData } from "@/components/philhealth/buildCf4Values";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Admission, Bill, HospitalInfo, Patient } from "@/lib/store";
+import type { PhilHealthXmlForm } from "@/lib/services/philhealthXmlService";
 import { cn } from "@/lib/utils";
 
-export type ClaimFormId = "CF1" | "CF2" | "CF3" | "CF4" | "CF5" | "CSF";
+export type ClaimFormId = "CF1" | "CF2" | "CF3" | "CF4" | "CF5" | "ESOA" | "CSF";
+
+/** Claim forms included in the printable suite. */
+export const PRINTABLE_CLAIM_FORM_IDS = ["CF1", "CF2", "CF3", "CF4", "CF5", "ESOA", "CSF"] as const satisfies readonly ClaimFormId[];
 
 export const CLAIM_FORM_TABS: {
   id: ClaimFormId;
@@ -49,6 +65,12 @@ export const CLAIM_FORM_TABS: {
     headerTitle: "CF5 – DRG INFORMATION",
   },
   {
+    id: "ESOA",
+    label: "ESOA",
+    subtitle: "Statement of Account",
+    headerTitle: "ESOA – ELECTRONIC STATEMENT OF ACCOUNT",
+  },
+  {
     id: "CSF",
     label: "CSF",
     subtitle: "Signature Form",
@@ -75,10 +97,15 @@ type ClaimFormSuiteModalProps = {
   patient: Patient | undefined;
   hospital: HospitalInfo;
   admission?: Admission;
+  cf2Overrides?: Partial<Cf2FormData>;
+  cf4Overrides?: Partial<Cf4FormData>;
+  onCf2FieldChange?: (field: keyof Cf2FormData, value: string | boolean) => void;
+  onCf4FieldChange?: (field: keyof Cf4FormData, value: string | boolean) => void;
   onValidate: () => void;
   onSave: () => void;
   onTransmit: () => void;
   onPrint: () => void;
+  onExportXml?: (form: PhilHealthXmlForm, attach: boolean) => void;
 };
 
 const STATUS_BADGE: Record<SuiteClaimMeta["statusTone"], string> = {
@@ -87,22 +114,6 @@ const STATUS_BADGE: Record<SuiteClaimMeta["statusTone"], string> = {
   approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
 };
-
-function BlankFormSheet({ headerTitle }: { headerTitle: string }) {
-  return (
-    <div className="mx-auto max-w-[900px] overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#1b5e3b] px-4 py-2.5 text-white">
-        <p className="text-xs font-bold tracking-wide sm:text-sm">{headerTitle}</p>
-        <p className="text-[10px] font-medium opacity-90 sm:text-xs">
-          Republic of the Philippines | Philippine Health Insurance Corporation
-        </p>
-      </div>
-      <div className="min-h-[480px] bg-white p-8">
-        {/* Official layout pending — intentionally blank */}
-      </div>
-    </div>
-  );
-}
 
 export function ClaimFormSuiteModal({
   open,
@@ -114,18 +125,24 @@ export function ClaimFormSuiteModal({
   patient,
   hospital,
   admission,
+  cf2Overrides,
+  cf4Overrides,
+  onCf2FieldChange,
+  onCf4FieldChange,
   onValidate,
   onSave,
   onTransmit,
   onPrint,
+  onExportXml,
 }: ClaimFormSuiteModalProps) {
-  const activeMeta = CLAIM_FORM_TABS.find((t) => t.id === activeForm) ?? CLAIM_FORM_TABS[0];
   const isCf1 = activeForm === "CF1";
   const isCf2 = activeForm === "CF2";
   const isCf3 = activeForm === "CF3";
   const isCf4 = activeForm === "CF4";
   const isCf5 = activeForm === "CF5";
-  const hasReadyForm = isCf1 || isCf2 || isCf3 || isCf4 || isCf5;
+  const isEsoa = activeForm === "ESOA";
+  const isCsf = activeForm === "CSF";
+  const hasReadyForm = isCf1 || isCf2 || isCf3 || isCf4 || isCf5 || isEsoa || isCsf;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,6 +183,36 @@ export function ClaimFormSuiteModal({
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
+              {onExportXml && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="h-8 text-xs">
+                      <FileCode className="mr-1 h-3.5 w-3.5" /> XML
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuLabel>Generate supporting XML</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {(["ESOA", "CF4", "CF5"] as PhilHealthXmlForm[]).map((form) => (
+                      <div key={form}>
+                        <DropdownMenuItem
+                          className="text-xs"
+                          onClick={() => onExportXml(form, false)}
+                        >
+                          Download {form}.xml
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-xs"
+                          onClick={() => onExportXml(form, true)}
+                        >
+                          Attach {form}.xml to eClaim
+                        </DropdownMenuItem>
+                        {form !== "CF5" ? <DropdownMenuSeparator /> : null}
+                      </div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={onValidate}>
                 Validate
               </Button>
@@ -220,7 +267,7 @@ export function ClaimFormSuiteModal({
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-100/70 p-4 sm:p-6">
           {hasReadyForm ? (
             bill ? (
-              <div className="force-light mx-auto rounded-md border border-slate-200 bg-white shadow-sm">
+              <div className="force-light mx-auto w-full max-w-[210mm] rounded-md border border-slate-200 bg-white shadow-sm">
                 {isCf1 ? (
                   <OfficialCF1Sheet bill={bill} patient={patient} />
                 ) : isCf2 ? (
@@ -229,6 +276,9 @@ export function ClaimFormSuiteModal({
                     patient={patient}
                     hospital={hospital}
                     admission={admission}
+                    editable
+                    overrides={cf2Overrides}
+                    onFieldChange={onCf2FieldChange}
                   />
                 ) : isCf3 ? (
                   <OfficialCF3Sheet
@@ -243,7 +293,14 @@ export function ClaimFormSuiteModal({
                     patient={patient}
                     hospital={hospital}
                     admission={admission}
+                    editable
+                    overrides={cf4Overrides}
+                    onFieldChange={onCf4FieldChange}
                   />
+                ) : isEsoa ? (
+                  <OfficialESOASheet bill={bill} patient={patient} hospital={hospital} />
+                ) : isCsf ? (
+                  <OfficialCSFSheet bill={bill} patient={patient} admission={admission} />
                 ) : (
                   <OfficialCF5Sheet
                     bill={bill}
@@ -258,9 +315,7 @@ export function ClaimFormSuiteModal({
                 Select a claim from the directory to load {activeForm}.
               </div>
             )
-          ) : (
-            <BlankFormSheet headerTitle={activeMeta.headerTitle} />
-          )}
+          ) : null}
         </div>
 
         {/* Footer */}

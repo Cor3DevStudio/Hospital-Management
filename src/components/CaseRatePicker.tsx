@@ -13,6 +13,8 @@ type CaseRatePickerProps = {
   className?: string;
 };
 
+const TYPE_OPTIONS = ["All", "Medical", "Surgical"] as const;
+
 /**
  * Search-as-you-type picker for PhilHealth case rates.
  * Queries MariaDB via API — never loads the full catalog into memory.
@@ -25,6 +27,7 @@ export function CaseRatePicker({
   className,
 }: CaseRatePickerProps) {
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<(typeof TYPE_OPTIONS)[number]>("All");
   const [results, setResults] = useState<CaseRate[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,7 +52,11 @@ export function CaseRatePicker({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const result = await searchCaseRatesApi({ query: q, pageSize: 20 });
+        const result = await searchCaseRatesApi({
+          query: q,
+          type: typeFilter,
+          pageSize: 24,
+        });
         setResults(result.items);
       } catch {
         setResults([]);
@@ -59,7 +66,7 @@ export function CaseRatePicker({
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [query, open]);
+  }, [query, open, typeFilter]);
 
   const label =
     value && value !== "none"
@@ -85,7 +92,23 @@ export function CaseRatePicker({
         />
       </div>
       {open && (
-        <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+        <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+          <div className="flex gap-1 border-b p-2">
+            {TYPE_OPTIONS.map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={`rounded px-2 py-1 text-[10px] font-medium ${
+                  typeFilter === type
+                    ? "bg-blue-600 text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+                onClick={() => setTypeFilter(type)}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             className="block w-full px-3 py-2 text-left text-xs hover:bg-muted"
@@ -116,6 +139,9 @@ export function CaseRatePicker({
                 }}
               >
                 <span className="font-mono font-semibold">{r.code}</span>
+                <span className="ml-1 rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold uppercase text-slate-600">
+                  {r.category || "Medical"}
+                </span>
                 <span className="text-muted-foreground"> — {r.description}</span>
                 <span className="float-right font-medium">₱{r.amount.toLocaleString()}</span>
               </button>

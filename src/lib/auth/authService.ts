@@ -21,6 +21,15 @@ export function saveSession(session: AuthSession): void {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
+export function updateSessionPageAccess(pageAccess: string[] | null): void {
+  const session = getSession();
+  if (!session) return;
+  saveSession({
+    ...session,
+    user: { ...session.user, pageAccess },
+  });
+}
+
 export function getSession(): AuthSession | null {
   if (typeof window === "undefined") return null;
   try {
