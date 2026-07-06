@@ -13,9 +13,11 @@ export const DEFAULT_LAB_TESTS: { code: string; description: string; amount: num
 /** Seed effective date so default catalog items price on any order date. */
 const DEFAULT_PRICE_EFFECTIVE_DATE = "1900-01-01";
 
+const LAB_PRICE_CATEGORIES = new Set(["laboratory", "lab", "diagnostic", "diagnostics"]);
+
 export function getLabPriceItems(state: AppState): PriceItem[] {
   return state.prices
-    .filter((p) => String(p.category).toLowerCase() === "laboratory")
+    .filter((p) => LAB_PRICE_CATEGORIES.has(String(p.category).toLowerCase()))
     .sort((a, b) => a.description.localeCompare(b.description));
 }
 

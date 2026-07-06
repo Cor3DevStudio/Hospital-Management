@@ -18,7 +18,7 @@ echo.
 REM --------------------------------------------------------------------------
 REM 1) Terminate existing connections / processes
 REM --------------------------------------------------------------------------
-echo [1/3] Terminating existing dev server connections...
+echo [1/4] Terminating existing dev server connections...
 
 call :KillPort 5173
 call :KillPort 3000
@@ -35,7 +35,7 @@ echo.
 REM --------------------------------------------------------------------------
 REM 2) Start MariaDB (database backend)
 REM --------------------------------------------------------------------------
-echo [2/3] Ensuring MariaDB is running...
+echo [2/4] Ensuring MariaDB is running...
 
 set "DB_STARTED=0"
 for %%S in (MariaDB MySQL MySQL80 mariadb) do (
@@ -65,10 +65,36 @@ if "!DB_STARTED!"=="0" (
 echo.
 
 REM --------------------------------------------------------------------------
+REM 2b) Ensure database schema (drop + install only when a table is missing)
+REM --------------------------------------------------------------------------
+echo [3/4] Checking database schema...
+
+where npm >nul 2>&1
+if errorlevel 1 (
+  echo        WARNING: npm not found — skipping database check.
+  goto :SkipDbEnsure
+)
+
+if not exist "node_modules\" (
+  echo        Installing dependencies for database check...
+  call npm install >nul 2>&1
+)
+
+call npm run db:ensure
+if errorlevel 1 (
+  echo        WARNING: Database setup failed. Check .env and MariaDB credentials.
+  echo        You can retry with:  npm run db:seed
+) else (
+  echo        Database check complete.
+)
+:SkipDbEnsure
+echo.
+
+REM --------------------------------------------------------------------------
 REM 3) Start frontend + API server
 REM    TanStack Start runs UI + /api routes in one process (npm run dev)
 REM --------------------------------------------------------------------------
-echo [3/3] Starting frontend + API server...
+echo [4/4] Starting frontend + API server...
 echo.
 echo   App URL:    http://localhost:5173
 echo   DB health:  http://localhost:5173/api/health/db

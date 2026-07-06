@@ -10,9 +10,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "db:ensure": "node scripts/ensure-database.mjs",
     "db:seed": "node scripts/seed-db.mjs",
     "db:import-case-rates": "node scripts/import-case-rates.mjs",
-    "db:export-case-rates-seed": "node scripts/export-case-rates-seed.mjs"
+    "db:export-case-rates-seed": "node scripts/export-case-rates-seed.mjs",
+    "proposal:missing-features": "node scripts/generate-missing-features-proposal.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

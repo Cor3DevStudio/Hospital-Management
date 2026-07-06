@@ -1,5 +1,5 @@
 import type { LoginRequest, LoginResponse, UserRole } from "@/lib/auth/types";
-import { parsePageAccessJson } from "@/lib/pageAccess";
+import { getDefaultPageAccessForRole, parsePageAccessJson } from "@/lib/pageAccess";
 import {
   findUserByUsername,
   verifyUserCredentials,
@@ -12,7 +12,10 @@ function authUserFromRow(row: NonNullable<Awaited<ReturnType<typeof findUserByUs
     username: row.username,
     fullName: row.fullName,
     role: row.role as UserRole,
-    pageAccess: row.pageAccess == null ? null : parsePageAccessJson(row.pageAccess),
+    pageAccess:
+      row.pageAccess == null
+        ? getDefaultPageAccessForRole(row.role)
+        : parsePageAccessJson(row.pageAccess),
   };
 }
 

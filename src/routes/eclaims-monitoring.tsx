@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Send, FilterX, Printer, Plus, Save, Trash2, Paperclip, FileDown, FileCode } from "lucide-react";
 import { toast } from "sonner";
-import { validateAttachmentFile } from "@/lib/attachmentValidation";
+import { MAX_ATTACHMENT_SIZE_LABEL, validateAttachmentFile } from "@/lib/attachmentValidation";
 import { ListPagination } from "@/components/ListPagination";
 import { usePaginatedList, useResetPageOnChange } from "@/lib/hooks/usePaginatedList";
 import { buildBillMap, buildPatientMap } from "@/lib/stateIndexes";
@@ -33,6 +33,8 @@ import {
   getClaimAttachments,
   getEClaimStats,
   getPatientPhilhealthStatus,
+  resolveClaimAdmission,
+  resolveClaimDates,
   syncEClaimFromBill,
   updateEClaim,
   updateEClaimStatus,
@@ -112,8 +114,10 @@ function EClaimsPage() {
 
   const ageDays = (d: string) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
-  const getDischargeDate = (claim: EClaim, bill?: { dischargeDate?: string; date?: string }) =>
-    bill?.dischargeDate ?? "";
+  const latestAdmissionForPatient = (patientId: string) =>
+    state.admissions
+      .filter((a) => a.patientId === patientId)
+      .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
 
   const openCreate = () => {
     setEditId(null);
@@ -122,12 +126,14 @@ function EClaimsPage() {
   };
 
   const openEdit = (claim: EClaim) => {
+    const bill = claim.billId ? billMap.get(claim.billId) : undefined;
+    const dates = resolveClaimDates(state, claim, bill);
     setEditId(claim.id);
     setForm({
       patientId: claim.patientId,
       billId: claim.billId,
-      admissionDate: claim.admissionDate,
-      roomWard: claim.roomWard ?? "",
+      admissionDate: dates.admissionDate || claim.admissionDate,
+      roomWard: dates.roomWard ?? claim.roomWard ?? "",
       philhealthStatus: claim.philhealthStatus,
       caseRateCode: claim.caseRateCode ?? "",
       claimStatus: claim.claimStatus,
@@ -232,14 +238,24 @@ function EClaimsPage() {
   const slipPatient = slipClaim ? patientMap.get(slipClaim.patientId) : undefined;
   const slipBill = slipClaim?.billId ? billMap.get(slipClaim.billId) : undefined;
 
-  const handleAttachFile = async (claimId: string, file: File) => {
-    const validation = validateAttachmentFile(file);
-    if (!validation.valid) return toast.error(validation.message);
-    try {
-      await addAttachment("eclaim", claimId, file);
-      toast.success("Document attached");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to attach file");
+  const handleAttachFiles = async (claimId: string, files: File[]) => {
+    if (files.length === 0) return;
+    let attached = 0;
+    for (const file of files) {
+      const validation = validateAttachmentFile(file);
+      if (!validation.valid) {
+        toast.error(validation.message);
+        continue;
+      }
+      try {
+        await addAttachment("eclaim", claimId, file);
+        attached += 1;
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : `Failed to attach ${file.name}`);
+      }
+    }
+    if (attached > 0) {
+      toast.success(attached === 1 ? "Document attached" : `${attached} documents attached`);
     }
   };
 
@@ -248,9 +264,7 @@ function EClaimsPage() {
     if (!claim?.billId) return toast.error("Link a bill to this eClaim before generating XML");
     const bill = billMap.get(claim.billId);
     const patient = patientMap.get(claim.patientId);
-    const admission = state.admissions
-      .filter((a) => a.patientId === claim.patientId)
-      .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
+    const admission = resolveClaimAdmission(state, claim, bill);
     const xmlValidation = validatePhilHealthXml({
       form,
       bill,
@@ -436,16 +450,16 @@ function EClaimsPage() {
                   claimList.pageItems.map((claim) => {
                     const p = patientMap.get(claim.patientId);
                     const bill = claim.billId ? billMap.get(claim.billId) : undefined;
-                    const dischargeDate = getDischargeDate(claim, bill);
-                    const age = dischargeDate ? ageDays(dischargeDate) : ageDays(claim.admissionDate);
+                    const dates = resolveClaimDates(state, claim, bill);
+                    const age = dates.dischargeDate ? ageDays(dates.dischargeDate) : ageDays(dates.admissionDate);
                     const attachments = getClaimAttachments(state, claim.id);
                     return (
                       <TableRow key={claim.id}>
                         <TableCell className="font-medium">{p ? `${p.lastName}, ${p.firstName}` : "—"}</TableCell>
                         <TableCell><Badge variant="outline">{bill?.patientType ?? "—"}</Badge></TableCell>
-                        <TableCell>{claim.admissionDate}</TableCell>
-                        <TableCell>{dischargeDate || "—"}</TableCell>
-                        <TableCell>{claim.roomWard || "—"}</TableCell>
+                        <TableCell>{dates.admissionDate || "—"}</TableCell>
+                        <TableCell>{dates.dischargeDate || "—"}</TableCell>
+                        <TableCell>{dates.roomWard || "—"}</TableCell>
                         <TableCell><Badge variant="outline">{claim.philhealthStatus}</Badge></TableCell>
                         <TableCell className="font-mono text-xs">{claim.caseRateCode || "—"}</TableCell>
                         <TableCell>
@@ -495,17 +509,33 @@ function EClaimsPage() {
                   selectedPatientId={form.patientId}
                   onSelect={(id) => {
                     const patient = state.patients.find((p) => p.id === id);
+                    const admission = latestAdmissionForPatient(id);
                     setForm((f) => ({
                       ...f,
                       patientId: id,
                       philhealthStatus: getPatientPhilhealthStatus(patient),
+                      admissionDate: admission?.admissionDate ?? f.admissionDate,
+                      roomWard: admission?.roomWard ?? f.roomWard,
                     }));
                   }}
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Linked Bill (optional)</Label>
-                <Select value={form.billId ?? "none"} onValueChange={(v) => setForm({ ...form, billId: v === "none" ? undefined : v })}>
+                <Select value={form.billId ?? "none"} onValueChange={(v) => {
+                  const billId = v === "none" ? undefined : v;
+                  const bill = billId ? state.bills.find((b) => b.id === billId) : undefined;
+                  const admission = bill
+                    ? resolveClaimAdmission(state, { patientId: form.patientId, admissionDate: form.admissionDate }, bill)
+                    : latestAdmissionForPatient(form.patientId);
+                  setForm((f) => ({
+                    ...f,
+                    billId,
+                    admissionDate: admission?.admissionDate ?? f.admissionDate,
+                    roomWard: admission?.roomWard ?? f.roomWard,
+                    caseRateCode: bill?.caseRateCode ?? f.caseRateCode,
+                  }));
+                }}>
                   <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
@@ -572,15 +602,17 @@ function EClaimsPage() {
               <div className="space-y-3">
                 <Input
                   type="file"
-                  accept="application/pdf,application/xml,text/xml,image/jpeg,image/png,.pdf,.xml,.jpg,.jpeg,.png"
+                  multiple
+                  accept="application/pdf,application/xml,text/xml,image/jpeg,image/png,image/gif,image/webp,.pdf,.xml,.jpg,.jpeg,.png"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file && attachClaimId) void handleAttachFile(attachClaimId, file);
+                    const files = Array.from(e.target.files ?? []);
+                    if (files.length > 0 && attachClaimId) void handleAttachFiles(attachClaimId, files);
                     e.target.value = "";
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Max file size: 1.5MB. PDF and images can be merged into one package for submission.
+                  Max {MAX_ATTACHMENT_SIZE_LABEL} per file. Select one or more PDF, XML, or image files —
+                  they can be merged into one package for submission.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -665,6 +697,7 @@ function EClaimsPage() {
                     claim={slipClaim}
                     patient={slipPatient}
                     bill={slipBill}
+                    admissions={state.admissions}
                     preparedBy={preparedBy}
                   />
                 ) : (
@@ -673,6 +706,7 @@ function EClaimsPage() {
                     pages={printPages}
                     patientMap={patientMap}
                     billMap={billMap}
+                    admissions={state.admissions}
                     filters={registryFilters}
                     stats={stats}
                     preparedBy={preparedBy}
@@ -706,6 +740,7 @@ function EClaimsPage() {
             claim={slipClaim}
             patient={slipPatient}
             bill={slipBill}
+            admissions={state.admissions}
             preparedBy={preparedBy}
           />
         ) : printOpen || printPages.length > 0 ? (
@@ -714,6 +749,7 @@ function EClaimsPage() {
             pages={printPages}
             patientMap={patientMap}
             billMap={billMap}
+            admissions={state.admissions}
             filters={registryFilters}
             stats={stats}
             preparedBy={preparedBy}

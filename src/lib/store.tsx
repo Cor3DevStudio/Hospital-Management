@@ -12,7 +12,7 @@ import { InactivityHandler } from "@/components/InactivityHandler";
 import { fetchAuthSessionData, updateUserDarkModeViaApi } from "./services/userService";
 import { normalizeConsultations } from "./services/consultationService";
 import { mergeDatabaseIntoState } from "./services/syncService";
-import { pauseAutoSync, resumeAutoSync, scheduleAutoSync } from "./services/autoSyncService";
+import { cancelPendingAutoSync, pauseAutoSync, resumeAutoSync, scheduleAutoSync } from "./services/autoSyncService";
 import type { UserRole } from "./auth/types";
 
 // ---------- Types ----------
@@ -624,6 +624,7 @@ type Ctx = {
 const StoreCtx = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  // Always start from seed so SSR and the first client render match; restore localStorage in useEffect.
   const [state, _setState] = useState<State>(seed);
   const [hydrated, setHydrated] = useState(false);
 
@@ -631,11 +632,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem(LEGACY_KEY);
     } catch {}
-    authService.clearAuthOnStartup();
+    authService.migrateSessionFromSessionStorage();
     const loaded = load();
-    loaded.authedUser = null;
+    const sessionUser = authService.getSessionUsername();
+    if (sessionUser) loaded.authedUser = sessionUser;
     _setState(loaded);
     setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== authService.AUTH_SESSION_STORAGE_KEY) return;
+      if (!e.newValue) {
+        cancelPendingAutoSync();
+        flushPendingSave();
+        _setState((s) => ({ ...s, authedUser: null }));
+        return;
+      }
+      try {
+        const session = JSON.parse(e.newValue) as { user?: { username?: string }; expiresAt?: string };
+        if (session.expiresAt && new Date(session.expiresAt) <= new Date()) {
+          cancelPendingAutoSync();
+          _setState((s) => ({ ...s, authedUser: null }));
+          return;
+        }
+        const username = session.user?.username;
+        if (username) _setState((s) => ({ ...s, authedUser: username }));
+      } catch {
+        // ignore corrupt session payload from another tab
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  useEffect(() => {
+    const onAuthExpired = () => {
+      cancelPendingAutoSync();
+      flushPendingSave();
+      _setState((s) => ({ ...s, authedUser: null }));
+    };
+    window.addEventListener(authService.AUTH_EXPIRED_EVENT, onAuthExpired);
+    return () => window.removeEventListener(authService.AUTH_EXPIRED_EVENT, onAuthExpired);
   }, []);
 
   const setState = (updater: (s: State) => State) => {
@@ -700,11 +738,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    cancelPendingAutoSync();
     flushPendingSave();
     authService.clearSession();
     setState((s) => ({ ...s, authedUser: null }));
   };
   const resetAll = () => {
+    cancelPendingAutoSync();
     flushPendingSave();
     authService.clearSession();
     localStorage.removeItem(KEY);
@@ -731,6 +771,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       refId,
     };
     setState((s) => ({ ...s, attachments: [...(s.attachments || []), meta] }));
+    persistStoreNow();
     return meta;
   };
 
@@ -743,6 +784,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ...prev, attachments: (prev.attachments || []).filter((a) => a.id !== attachmentId) };
     });
     if (fileKey) await fileStore.deleteFile(fileKey);
+    persistStoreNow();
   };
 
   const getAttachmentBlob = async (key: string) => {
@@ -756,6 +798,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const u = state.users.find((x) => x.username === state.authedUser);
         if (u && u.preferences && typeof u.preferences.darkMode === 'boolean') return u.preferences.darkMode;
       }
+      if (!hydrated || typeof window === "undefined") return false;
       const local = localStorage.getItem('pref_dark');
       if (local !== null) return local === '1';
       // fallback to prefers-color-scheme
@@ -790,14 +833,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const dark = resolveDarkPref();
       if (dark) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
     } catch {}
-  }, [state.authedUser, state.users]);
-
-  if (!hydrated) return null;
+  }, [state.authedUser, state.users, hydrated]);
 
   return (
     <StoreCtx.Provider value={{ state, setState, login, register, logout, resetAll, addAttachment, deleteAttachment, getAttachmentBlob, setDarkMode, isDark }}>
       {children}
-      <InactivityHandler />
+      {hydrated ? <InactivityHandler /> : null}
     </StoreCtx.Provider>
   );
 }

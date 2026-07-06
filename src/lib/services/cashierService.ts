@@ -9,6 +9,12 @@ export function getPatientOpenBills(state: AppState, patientId: string): Bill[] 
   return getPatientBills(state, patientId).filter((b) => computeBillBalance(b) > 0);
 }
 
+export function getPatientPayments(state: AppState, patientId: string): CashierTransaction[] {
+  return state.cashierTransactions
+    .filter((t) => t.patientId === patientId && t.status === "Paid")
+    .sort((a, b) => b.transactionDate.localeCompare(a.transactionDate) || b.id.localeCompare(a.id));
+}
+
 export function getRevenueForDate(state: AppState, date: string): number {
   return state.cashierTransactions
     .filter((t) => t.status === "Paid" && t.transactionDate === date)

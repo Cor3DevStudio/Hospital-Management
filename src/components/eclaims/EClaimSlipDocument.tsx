@@ -1,11 +1,13 @@
 import { computeBillBalance, computeBillNetTotal } from "@/lib/services/billingService";
-import type { Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
+import { resolveClaimDates } from "@/lib/services/eclaimService";
+import type { Admission, Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
 
 export type EClaimSlipDocumentProps = {
   hospital: HospitalInfo;
   claim: EClaim;
   patient: Patient | undefined;
   bill: Bill | undefined;
+  admissions: Admission[];
   preparedBy?: string;
 };
 
@@ -38,11 +40,13 @@ export function EClaimSlipDocument({
   claim,
   patient,
   bill,
+  admissions,
   preparedBy,
 }: EClaimSlipDocumentProps) {
   const printedAt = new Date().toLocaleString();
   const tone = statusStyle(claim.claimStatus);
   const philhealthNo = patient?.philhealth?.memberNumber?.trim() || "—";
+  const dates = resolveClaimDates({ admissions }, claim, bill);
 
   return (
     <div className="eclaims-doc eclaims-page border border-slate-200 bg-white p-6 text-black shadow-sm print:border-0 print:p-0 print:shadow-none">
@@ -97,9 +101,9 @@ export function EClaimSlipDocument({
         <div className="grid grid-cols-2 gap-x-6 gap-y-3">
           <Field label="Claim ID" value={claim.id} />
           <Field label="Linked Bill" value={claim.billId ?? "—"} />
-          <Field label="Admission Date" value={claim.admissionDate} />
-          <Field label="Discharged Date" value={bill?.dischargeDate || "—"} />
-          <Field label="Room / Ward" value={claim.roomWard || "—"} />
+          <Field label="Admission Date" value={dates.admissionDate} />
+          <Field label="Discharged Date" value={dates.dischargeDate} />
+          <Field label="Room / Ward" value={dates.roomWard || "—"} />
           <Field label="Case Rate Code" value={claim.caseRateCode || "—"} />
           <Field
             label="Bill Net / Balance"

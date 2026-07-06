@@ -33,6 +33,31 @@ export const APP_PAGES: AppPage[] = [
 
 export const ALL_PAGE_PATHS = APP_PAGES.map((p) => p.path);
 
+/** Default page access when creating users or when page_access is unset in DB. */
+export const ROLE_DEFAULT_PAGE_ACCESS: Record<string, string[]> = {
+  Administrator: [...ALL_PAGE_PATHS],
+  Doctor: [...ALL_PAGE_PATHS],
+  Receptionist: [
+    "/dashboard",
+    "/patients",
+    "/appointments",
+    "/admission",
+    "/er",
+    "/opd",
+    "/pharmacy",
+    "/supplies",
+    "/laboratory",
+    "/radiology",
+    "/miscellaneous",
+    "/medical-records",
+  ],
+  Cashier: ["/cashier", "/billing", "/patients", "/medical-records"],
+};
+
+export function getDefaultPageAccessForRole(role: string): string[] {
+  return ROLE_DEFAULT_PAGE_ACCESS[role] ?? [...ALL_PAGE_PATHS];
+}
+
 export const PAGE_GROUPS: PageGroup[] = [
   "Main",
   "Operations",

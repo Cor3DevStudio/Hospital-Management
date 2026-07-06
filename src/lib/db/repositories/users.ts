@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { eq, sql } from "drizzle-orm";
 
 import type { AuthUser, UserRole } from "@/lib/auth/types";
-import { ALL_PAGE_PATHS, normalizePageAccess, parsePageAccessJson } from "@/lib/pageAccess";
+import { ALL_PAGE_PATHS, getDefaultPageAccessForRole, normalizePageAccess, parsePageAccessJson } from "@/lib/pageAccess";
 import type { User } from "@/lib/store";
 
 import { getDb } from "../client";
@@ -17,7 +17,10 @@ function toStoreUser(row: DbUserRow): User {
     fullName: row.fullName,
     role: row.role as User["role"],
     active: row.active,
-    pageAccess: parsePageAccessJson(row.pageAccess),
+    pageAccess:
+      row.pageAccess == null
+        ? getDefaultPageAccessForRole(row.role)
+        : parsePageAccessJson(row.pageAccess),
     preferences: row.darkMode ? { darkMode: true } : undefined,
   };
 }
@@ -79,6 +82,7 @@ export async function createUser(input: {
     role: input.role,
     active: true,
     darkMode: false,
+    pageAccess: getDefaultPageAccessForRole(input.role),
   });
 
   return {

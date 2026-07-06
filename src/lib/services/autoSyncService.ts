@@ -1,3 +1,4 @@
+import { hasValidSession } from "@/lib/auth/authService";
 import type { AppState } from "@/lib/store";
 
 import { saveAllToDatabase } from "./syncService";
@@ -21,8 +22,17 @@ export function resumeAutoSync(): void {
   paused = false;
 }
 
+/** Drops any in-flight debounced save without blocking future syncs. */
+export function cancelPendingAutoSync(): void {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  pendingState = null;
+}
+
 export function scheduleAutoSync(state: AppState): void {
-  if (paused || !state.authedUser) return;
+  if (paused || !state.authedUser || !hasValidSession()) return;
 
   pendingState = state;
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -31,7 +41,7 @@ export function scheduleAutoSync(state: AppState): void {
     debounceTimer = null;
     const toSave = pendingState;
     pendingState = null;
-    if (!toSave?.authedUser || paused) return;
+    if (!toSave?.authedUser || paused || !hasValidSession()) return;
 
     void saveAllToDatabase(toSave).catch((error) => {
       console.warn("[autoSync] Failed to persist to database:", error);

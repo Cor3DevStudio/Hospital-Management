@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
+import { OrderingDoctorField } from "@/components/OrderingDoctorField";
 import {
   createLabOrder,
   deleteLabRecord,
@@ -24,7 +25,7 @@ import {
   getLabPriceItems,
   updateLabRecord,
 } from "@/lib/services/laboratoryService";
-import { getActiveDoctors } from "@/lib/services/userService";
+import { getOrderingProviders } from "@/lib/services/userService";
 import { resolveLineItemPrice } from "@/lib/services/billingService";
 import { useStore, type LaboratoryRecord } from "@/lib/store";
 
@@ -42,7 +43,8 @@ function LaboratoryPage() {
     setState((s) => ensureDefaultLabPrices(s));
   }, [setState]);
 
-  const doctors = getActiveDoctors(state.users);
+  const doctors = getOrderingProviders(state.users);
+  const authedProfile = state.users.find((u) => u.username === state.authedUser);
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const labList = usePaginatedList(state.laboratoryRecords, 50);
   const labOptions = useMemo(
@@ -212,7 +214,13 @@ function LaboratoryPage() {
             <PatientSearchWithHistory
               patients={state.patients}
               selectedPatientId={form.patientId}
-              onSelect={(id) => setForm({ ...form, patientId: id })}
+              onSelect={(id) => {
+                const patch: Partial<LaboratoryRecord> = { patientId: id };
+                if (!form.requestedBy && authedProfile?.fullName) {
+                  patch.requestedBy = authedProfile.fullName;
+                }
+                setForm({ ...form, ...patch });
+              }}
             />
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Test (Hospital Prices)</Label>
@@ -295,24 +303,11 @@ function LaboratoryPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Ordering Doctor</Label>
-              <Select
-                value={form.requestedBy}
-                onValueChange={(v) => setForm({ ...form, requestedBy: v })}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((d) => (
-                    <SelectItem key={d.id} value={d.fullName}>
-                      {d.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <OrderingDoctorField
+              value={form.requestedBy}
+              onChange={(requestedBy) => setForm({ ...form, requestedBy })}
+              doctors={doctors}
+            />
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Result Value / Notes</Label>
               <Textarea

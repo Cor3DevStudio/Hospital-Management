@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
+import { OrderingDoctorField } from "@/components/OrderingDoctorField";
 import {
   createRadiologyOrder,
   deleteRadiologyRecord,
@@ -25,7 +26,7 @@ import {
   RADIOLOGY_EXAM_TYPES,
   updateRadiologyRecord,
 } from "@/lib/services/radiologyService";
-import { getActiveDoctors } from "@/lib/services/userService";
+import { getOrderingProviders } from "@/lib/services/userService";
 import { resolveLineItemPrice } from "@/lib/services/billingService";
 import { useStore, type RadiologyRecord } from "@/lib/store";
 
@@ -43,7 +44,8 @@ function RadiologyPage() {
     setState((s) => ensureDefaultRadiologyPrices(s));
   }, [setState]);
 
-  const doctors = getActiveDoctors(state.users);
+  const doctors = getOrderingProviders(state.users);
+  const authedProfile = state.users.find((u) => u.username === state.authedUser);
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const radList = usePaginatedList(state.radiologyRecords, 50);
   const radOptions = useMemo(
@@ -224,7 +226,13 @@ function RadiologyPage() {
             <PatientSearchWithHistory
               patients={state.patients}
               selectedPatientId={form.patientId}
-              onSelect={(id) => setForm({ ...form, patientId: id })}
+              onSelect={(id) => {
+                const patch: Partial<RadiologyRecord> = { patientId: id };
+                if (!form.requestedBy && authedProfile?.fullName) {
+                  patch.requestedBy = authedProfile.fullName;
+                }
+                setForm({ ...form, ...patch });
+              }}
             />
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Exam Type</Label>
@@ -317,24 +325,11 @@ function RadiologyPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Ordering Doctor</Label>
-              <Select
-                value={form.requestedBy}
-                onValueChange={(v) => setForm({ ...form, requestedBy: v })}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((d) => (
-                    <SelectItem key={d.id} value={d.fullName}>
-                      {d.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <OrderingDoctorField
+              value={form.requestedBy}
+              onChange={(requestedBy) => setForm({ ...form, requestedBy })}
+              doctors={doctors}
+            />
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Findings / Notes</Label>
               <Textarea

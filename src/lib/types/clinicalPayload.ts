@@ -1,4 +1,5 @@
 import type { AppState } from "@/lib/store";
+import { mergeAttachmentLists } from "@/lib/attachmentValidation";
 
 /** Clinical/registry data persisted to MariaDB (excludes auth session fields). */
 export type ClinicalPayload = Pick<
@@ -99,7 +100,7 @@ export function applyClinicalPayload(state: AppState, payload: ClinicalPayload):
     suppliesRecords: payload.suppliesRecords ?? [],
     miscellaneousRecords: payload.miscellaneousRecords ?? [],
     eClaims: payload.eClaims ?? [],
-    attachments: payload.attachments ?? [],
+    attachments: mergeAttachmentLists(state.attachments ?? [], payload.attachments ?? []),
     inactivityTimeoutMinutes:
       payload.inactivityTimeoutMinutes ?? state.inactivityTimeoutMinutes,
     inactivityWarningSeconds:

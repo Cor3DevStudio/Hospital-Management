@@ -1,15 +1,35 @@
 import { config } from "dotenv";
 import bcrypt from "bcryptjs";
 import mysql from "mysql2/promise";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { buildDemoClinicalPayload, summarizePayload } from "./demo-clinical-seed.mjs";
+import {
+  ensureDatabase,
+  getDatabaseConnectionOptions,
+  getDatabaseName,
+} from "./ensure-database.mjs";
 
 config();
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const ALL_PAGE_PATHS = [
+  "/dashboard", "/patients", "/appointments", "/inventory", "/billing", "/philhealth",
+  "/eclaims-monitoring", "/pricelist", "/admission", "/er", "/opd", "/pharmacy", "/supplies",
+  "/laboratory", "/radiology", "/miscellaneous", "/cashier", "/medical-records", "/reports", "/settings",
+];
+
+const ROLE_DEFAULT_PAGE_ACCESS = {
+  Administrator: ALL_PAGE_PATHS,
+  Doctor: ALL_PAGE_PATHS,
+  Receptionist: [
+    "/dashboard", "/patients", "/appointments", "/admission", "/er", "/opd",
+    "/pharmacy", "/supplies", "/laboratory", "/radiology", "/miscellaneous", "/medical-records",
+  ],
+  Cashier: ["/cashier", "/billing", "/patients", "/medical-records"],
+};
+
+function defaultPageAccessForRole(role) {
+  return ROLE_DEFAULT_PAGE_ACCESS[role] ?? ALL_PAGE_PATHS;
+}
 
 const users = [
   { id: "u-admin", username: "admin", password: "admin123", fullName: "System Administrator", role: "Administrator" },
@@ -51,23 +71,15 @@ function patientToSqlParams(p) {
 }
 
 async function main() {
-  const connection = await mysql.createConnection({
-    host: process.env.DATABASE_HOST ?? "127.0.0.1",
-    port: Number(process.env.DATABASE_PORT ?? 3306),
-    user: process.env.DATABASE_USER ?? "root",
-    password: process.env.DATABASE_PASSWORD ?? "",
-    multipleStatements: true,
-  });
+  await ensureDatabase();
 
-  const installAllPath = join(__dirname, "../database/install_all.sql");
-  console.log("Running database/install_all.sql (schema + seeds)...");
-  const installAll = readFileSync(installAllPath, "utf8");
-  await connection.query(installAll);
+  const databaseName = getDatabaseName();
+  const connection = await mysql.createConnection(getDatabaseConnectionOptions());
 
   // Upgrade older patients tables that predate extended_data
   try {
     await connection.query(
-      "ALTER TABLE medical_center.patients ADD COLUMN `extended_data` JSON NULL AFTER `philhealth_no`"
+      `ALTER TABLE \`${databaseName}\`.patients ADD COLUMN \`extended_data\` JSON NULL AFTER \`philhealth_no\``
     );
     console.log("  Added patients.extended_data column.");
   } catch (error) {
@@ -79,7 +91,7 @@ async function main() {
   // Page-level access permissions per user
   try {
     await connection.query(
-      "ALTER TABLE medical_center.users ADD COLUMN `page_access` JSON NULL AFTER `dark_mode`"
+      `ALTER TABLE \`${databaseName}\`.users ADD COLUMN \`page_access\` JSON NULL AFTER \`dark_mode\``
     );
     console.log("  Added users.page_access column.");
   } catch (error) {
@@ -91,16 +103,17 @@ async function main() {
   console.log("Ensuring bcrypt user passwords...");
   for (const user of users) {
     const hash = await bcrypt.hash(user.password, 10);
+    const pageAccess = JSON.stringify(defaultPageAccessForRole(user.role));
     await connection.execute(
-      `INSERT INTO medical_center.users (id, username, password_hash, full_name, role, active, dark_mode)
-       VALUES (?, ?, ?, ?, ?, 1, 0)
-       ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), full_name = VALUES(full_name), role = VALUES(role), active = 1`,
-      [user.id, user.username, hash, user.fullName, user.role]
+      `INSERT INTO \`${databaseName}\`.users (id, username, password_hash, full_name, role, active, dark_mode, page_access)
+       VALUES (?, ?, ?, ?, ?, 1, 0, ?)
+       ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), full_name = VALUES(full_name), role = VALUES(role), active = 1, page_access = VALUES(page_access)`,
+      [user.id, user.username, hash, user.fullName, user.role, pageAccess]
     );
   }
 
   const [countRows] = await connection.query(
-    "SELECT COUNT(*) AS n FROM medical_center.philhealth_records"
+    `SELECT COUNT(*) AS n FROM \`${databaseName}\`.philhealth_records`
   );
   console.log(`  philhealth_records: ${countRows[0]?.n ?? 0} case rates loaded.`);
 
@@ -110,7 +123,7 @@ async function main() {
   console.log("Seeding demo clinical data for all modules...");
 
   await connection.execute(
-    `INSERT INTO medical_center.app_clinical_state (id, payload)
+    `INSERT INTO \`${databaseName}\`.app_clinical_state (id, payload)
      VALUES ('default', ?)
      ON DUPLICATE KEY UPDATE payload = VALUES(payload)`,
     [JSON.stringify(payload)]
@@ -118,7 +131,7 @@ async function main() {
 
   for (const patient of payload.patients) {
     await connection.execute(
-      `INSERT INTO medical_center.patients (
+      `INSERT INTO \`${databaseName}\`.patients (
          id, first_name, middle_name, last_name, suffix, birth_date, gender, civil_status,
          contact_number, email, street, barangay, city, province, zip,
          emergency_name, emergency_phone, emergency_rel, philhealth_no, extended_data, archived

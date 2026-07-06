@@ -80,10 +80,13 @@ const model = buildHospitalSoaModel({
 
 assert.equal(model.soaReference, "2023-149638");
 assert.equal(model.hciRows.find((r) => r.label === "Room and Board")?.actual, 4000);
-assert.equal(model.hciRows.find((r) => r.label === "Drugs and Medicines")?.actual, 2392);
-assert.equal(model.hciRows.find((r) => r.label === "Laboratory & Diagnostics")?.actual, 5136);
+assert.equal(model.hciRows.find((r) => r.label === "Pharmacy")?.actual, 2392);
+assert.equal(model.hciRows.find((r) => r.label === "Laboratory")?.actual, 3936);
+assert.equal(model.hciRows.find((r) => r.label === "Radiology")?.actual, 1200);
 assert.equal(model.hciRows.find((r) => r.label === "Supplies")?.actual, 823);
 assert.equal(model.hciRows.find((r) => r.label === "Miscellaneous")?.actual, 1110);
+assert.equal(model.hciRows.find((r) => r.label === "Room and Board")?.phicFirst, 4000);
+assert.equal(model.hciRows.find((r) => r.label === "Pharmacy")?.phicFirst, 0);
 assert.equal(model.hciSubtotal.actual, 13461);
 assert.equal(model.total.actual, 19836);
 assert.equal(model.pfSubtotal.actual, 6375);

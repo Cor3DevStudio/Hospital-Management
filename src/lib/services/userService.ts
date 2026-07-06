@@ -39,6 +39,13 @@ export function getActiveDoctors(users: User[]): User[] {
   return users.filter((u) => u.role === "Doctor" && Boolean(u.active));
 }
 
+/** Physicians available as ordering providers on lab/radiology orders. */
+export function getOrderingProviders(users: User[]): User[] {
+  return users
+    .filter((u) => Boolean(u.active) && (u.role === "Doctor" || u.role === "Administrator"))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
 type CreateUserBody = {
   username: string;
   fullName: string;

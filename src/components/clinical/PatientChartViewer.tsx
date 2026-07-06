@@ -43,17 +43,27 @@ export function PatientChartViewer({
           <div className="mt-2 space-y-2">
             <Input
               type="file"
-              accept="application/pdf,application/xml,text/xml"
+              multiple
+              accept="application/pdf,application/xml,text/xml,image/jpeg,image/png,.pdf,.xml,.jpg,.jpeg,.png"
               onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !onUploadAttachment) return;
-                const validation = validateAttachmentFile(file);
-                if (!validation.valid) return toast.error(validation.message);
-                try {
-                  await onUploadAttachment(file);
-                  toast.success("Attachment uploaded");
-                } catch (err) {
-                  toast.error(err instanceof Error ? err.message : "Failed to upload attachment");
+                const files = Array.from(e.target.files ?? []);
+                if (files.length === 0 || !onUploadAttachment) return;
+                let uploaded = 0;
+                for (const file of files) {
+                  const validation = validateAttachmentFile(file);
+                  if (!validation.valid) {
+                    toast.error(validation.message);
+                    continue;
+                  }
+                  try {
+                    await onUploadAttachment(file);
+                    uploaded += 1;
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : `Failed to upload ${file.name}`);
+                  }
+                }
+                if (uploaded > 0) {
+                  toast.success(uploaded === 1 ? "Attachment uploaded" : `${uploaded} attachments uploaded`);
                 }
                 e.target.value = "";
               }}

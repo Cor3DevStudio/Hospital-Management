@@ -1,10 +1,13 @@
 import { getHospitalSoaCss } from "@/components/billing/hospitalSoaStyles";
+import { getStandardBillingSoaCss } from "@/components/billing/standardBillingSoaStyles";
 
 /** Print CSS for hospital SOA (A4 portrait). */
 export function getBillingPrintCss() {
   return `
     ${getHospitalSoaCss()}
-    #print-area {
+    ${getStandardBillingSoaCss()}
+    #print-area,
+    #cashier-print-area {
       display: none;
     }
     .soa-official-sheet,
@@ -13,7 +16,7 @@ export function getBillingPrintCss() {
     }
     @media print {
       body > #root > *,
-      body > #root > div:not(#print-area),
+      body > #root > div:not(#print-area):not(#cashier-print-area),
       header,
       aside,
       .h-\\[calc\\(100vh-3rem\\)\\],
@@ -28,7 +31,8 @@ export function getBillingPrintCss() {
         margin: 0 !important;
         padding: 0 !important;
       }
-      #print-area {
+      #print-area,
+      #cashier-print-area {
         display: block !important;
         position: absolute;
         left: 0;
@@ -39,7 +43,14 @@ export function getBillingPrintCss() {
         margin: 0 !important;
         box-sizing: border-box !important;
       }
-      .hospital-soa-sheet {
+      #print-area {
+        display: block !important;
+      }
+      #cashier-print-area {
+        display: block !important;
+      }
+      .hospital-soa-sheet,
+      .standard-billing-soa {
         width: 210mm !important;
         max-width: 210mm !important;
       }

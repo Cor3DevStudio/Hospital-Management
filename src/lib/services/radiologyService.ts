@@ -15,7 +15,15 @@ export const DEFAULT_RAD_PROCEDURES: { code: string; description: string; amount
   { code: "RAD-ECG", description: "Electrocardiogram", amount: 600 },
 ];
 
-const RADIOLOGY_PRICE_CATEGORIES = new Set(["procedure", "other", "radiology", "equipment"]);
+const RADIOLOGY_PRICE_CATEGORIES = new Set([
+  "procedure",
+  "other",
+  "radiology",
+  "equipment",
+  "imaging",
+  "x-ray",
+  "xray",
+]);
 
 export function getRadiologyPriceItems(state: AppState): PriceItem[] {
   return state.prices

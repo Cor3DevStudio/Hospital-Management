@@ -26,8 +26,6 @@ import {
 
   allocatePhilhealthToSoaRows,
 
-  sumSoaRows,
-
 } from "@/lib/services/soaPhilhealthAllocation";
 
 import type { SOAPrintOptions } from "@/components/billing/soaPrintOptions";
@@ -60,7 +58,14 @@ export type SoaAmountRow = {
 
 };
 
-
+export type SoaItemizedLine = {
+  serviceDate: string;
+  itemName: string;
+  unit: string;
+  price: number;
+  quantity: number;
+  amount: number;
+};
 
 export type SoaPhilhealthCoverage = {
   caseRateCode: string;
@@ -123,6 +128,12 @@ export type HospitalSoaModel = {
 
   phicCoverage: SoaPhilhealthCoverage | null;
 
+  itemizedLines: SoaItemizedLine[];
+
+  ageYears: string;
+  ageMonths: string;
+  ageDays: string;
+
 };
 
 
@@ -147,7 +158,7 @@ type NormalizedItem = {
 
 
 
-type HciBucket = "room" | "medicine" | "lab" | "or" | "supplies" | "misc" | "other";
+type HciBucket = "room" | "medicine" | "lab" | "radiology" | "or" | "supplies" | "misc" | "other";
 
 
 
@@ -263,9 +274,11 @@ function hciBucketFor(item: NormalizedItem, state: AppState): HciBucket {
 
     case "Lab":
 
+      return "lab";
+
     case "Radiology":
 
-      return "lab";
+      return "radiology";
 
     case "Supplies":
 
@@ -324,6 +337,40 @@ function roomDetail(items: NormalizedItem[]): string | undefined {
 }
 
 
+
+function resolveItemUnit(state: AppState, item: NormalizedItem): string {
+  if (item.medicineId) {
+    const med = state.medicines.find((m) => m.id === item.medicineId);
+    if (med?.unit) return med.unit;
+  }
+  if (item.category === "Room") return "day(s)";
+  if (item.category === "Lab" || item.category === "Radiology") return "test";
+  return "pc/s";
+}
+
+function getAgeParts(birthDate?: string): { years: string; months: string; days: string } {
+  if (!birthDate) return { years: "", months: "", days: "" };
+  const birth = new Date(`${birthDate}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return { years: "", months: "", days: "" };
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  let days = now.getDate() - birth.getDate();
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    days += prevMonth;
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  return {
+    years: years >= 0 ? String(years) : "",
+    months: years >= 0 ? String(months) : "",
+    days: years >= 0 ? String(days) : "",
+  };
+}
 
 function amountRow(
 
@@ -396,6 +443,20 @@ export function buildHospitalSoaModel(input: {
   const balance = Math.max(0, subtotal - phic - paid);
 
   const age = getAgeYears(patient?.birthDate);
+  const ageParts = getAgeParts(patient?.birthDate);
+
+  const admission = (state.admissions ?? [])
+    .filter((a) => a.patientId === bill.patientId)
+    .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
+
+  const itemizedLines: SoaItemizedLine[] = items.map((item) => ({
+    serviceDate: bill.items.find((bi) => bi.description === item.description)?.effectiveDate ?? bill.date,
+    itemName: item.description,
+    unit: resolveItemUnit(state, item),
+    price: item.unitPrice,
+    quantity: item.qty,
+    amount: item.amount,
+  }));
 
 
 
@@ -404,6 +465,8 @@ export function buildHospitalSoaModel(input: {
   const medicineAmount = sumBucket(items, "medicine", state);
 
   const labAmount = sumBucket(items, "lab", state);
+
+  const radiologyAmount = sumBucket(items, "radiology", state);
 
   const orAmount = sumBucket(items, "or", state);
 
@@ -419,17 +482,19 @@ export function buildHospitalSoaModel(input: {
 
     amountRow("Room and Board", roomAmount, { detail: roomDetail(items) }),
 
-    amountRow("Drugs and Medicines", medicineAmount),
-
-    amountRow("Laboratory & Diagnostics", labAmount),
-
-    amountRow("Operating Room fee", orAmount, { highlight: true }),
+    amountRow("Pharmacy", medicineAmount),
 
     amountRow("Supplies", suppliesAmount),
 
-    amountRow("Others", otherAmount, { detail: otherAmount > 0 ? undefined : "pls. specify" }),
+    amountRow("Laboratory", labAmount),
+
+    amountRow("Radiology", radiologyAmount),
+
+    amountRow("Operating Room fee", orAmount, { highlight: true }),
 
     amountRow("Miscellaneous", miscAmount),
+
+    amountRow("Others", otherAmount, { detail: otherAmount > 0 ? undefined : "pls. specify" }),
 
   ];
 
@@ -469,7 +534,15 @@ export function buildHospitalSoaModel(input: {
 
   const hciRows = allocation.hciRows;
 
-  const hciSubtotal = sumSoaRows(hciRows, "Subtotal (HCI fees)");
+  const hciActualTotal = hciRows.reduce((s, r) => s + r.actual, 0);
+
+  const hciSubtotal = amountRow("Subtotal (HCI fees)", hciActualTotal, {
+
+    phicFirst: allocation.hciBenefit,
+
+    outOfPocket: Math.max(0, hciActualTotal - allocation.hciBenefit),
+
+  });
 
 
 
@@ -483,7 +556,15 @@ export function buildHospitalSoaModel(input: {
 
 
 
-  const pfSubtotal = sumSoaRows(allocation.pfRows, "Subtotal (Professional fee/s)");
+  const pfActualTotal = allocation.pfRows.reduce((s, r) => s + r.actual, 0);
+
+  const pfSubtotal = amountRow("Subtotal (Professional fee/s)", pfActualTotal, {
+
+    phicFirst: allocation.pfBenefit,
+
+    outOfPocket: Math.max(0, pfActualTotal - allocation.pfBenefit),
+
+  });
 
 
 
@@ -533,9 +614,13 @@ export function buildHospitalSoaModel(input: {
 
     address: formatAddress(patient?.address) || "",
 
-    admitDateTime: formatDateTime12(bill.date),
+    admitDateTime: formatDateTime12(admission?.admissionDate ?? bill.date),
 
-    dischargeDateTime: bill.dischargeDate ? formatDateTime12(bill.dischargeDate) : "",
+    dischargeDateTime: admission?.dischargeDate
+      ? formatDateTime12(admission.dischargeDate)
+      : bill.dischargeDate
+        ? formatDateTime12(bill.dischargeDate)
+        : "",
 
     admittingDiagnosis: diagnosisText,
 
@@ -601,6 +686,12 @@ export function buildHospitalSoaModel(input: {
             balanceDue: balance,
           }
         : null,
+
+    itemizedLines,
+
+    ageYears: ageParts.years,
+    ageMonths: ageParts.months,
+    ageDays: ageParts.days,
 
   };
 

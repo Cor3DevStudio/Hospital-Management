@@ -1,6 +1,7 @@
 import {
   computeBillBalance,
 } from "@/lib/services/billingService";
+import { getConsultationsForPatient } from "@/lib/services/consultationService";
 import { getPatientAdmissions } from "@/lib/services/admissionService";
 import type { AppState } from "@/lib/store";
 import { buildPatientRecordIndex, type PatientRecordIndex } from "@/lib/stateIndexes";
@@ -51,13 +52,16 @@ export function getPatientClinicalHistory(
   }));
 
   // OPD module uses consultations as the canonical visit store (legacy opdRecords remain in state).
-  const opd = mapSection(idx.consultations.get(patientId), (c) => ({
-    id: c.id,
-    date: c.date,
-    title: c.chiefComplaint,
-    detail: c.diagnosis,
-    status: c.status,
-  }));
+  const opd = mapSection(
+    getConsultationsForPatient(state.consultations, patientId, state.opdRecords),
+    (c) => ({
+      id: c.id,
+      date: c.date,
+      title: c.chiefComplaint,
+      detail: c.diagnosis,
+      status: c.status,
+    })
+  );
 
   const lab = mapSection(idx.laboratory.get(patientId), (r) => ({
     id: r.id,

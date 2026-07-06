@@ -8,6 +8,48 @@ import type {
 
 const SESSION_KEY = "cms_auth_session";
 
+/** localStorage key for the auth session (shared across browser tabs). */
+export const AUTH_SESSION_STORAGE_KEY = SESSION_KEY;
+
+export const AUTH_EXPIRED_EVENT = "cms:auth-expired";
+
+let authExpiredNotified = false;
+
+function readSessionRaw(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(SESSION_KEY);
+}
+
+function writeSessionRaw(value: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(SESSION_KEY, value);
+}
+
+/** One-time migration from tab-scoped sessionStorage to shared localStorage. */
+export function migrateSessionFromSessionStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const legacy = sessionStorage.getItem(SESSION_KEY);
+    if (!legacy) return;
+    if (!readSessionRaw()) writeSessionRaw(legacy);
+    sessionStorage.removeItem(SESSION_KEY);
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function parseSession(raw: string): AuthSession | null {
+  try {
+    const session = JSON.parse(raw) as AuthSession;
+    if (session.expiresAt && new Date(session.expiresAt) <= new Date()) {
+      return null;
+    }
+    return session;
+  } catch {
+    return null;
+  }
+}
+
 function createClientSession(token: string, user: AuthSession["user"]): AuthSession {
   return {
     token,
@@ -18,7 +60,16 @@ function createClientSession(token: string, user: AuthSession["user"]): AuthSess
 
 export function saveSession(session: AuthSession): void {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  authExpiredNotified = false;
+  writeSessionRaw(JSON.stringify(session));
+}
+
+/** Clears session and notifies listeners once (e.g. after 401). */
+export function notifyAuthExpired(): void {
+  if (typeof window === "undefined" || authExpiredNotified) return;
+  authExpiredNotified = true;
+  clearSession();
+  window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
 }
 
 export function updateSessionPageAccess(pageAccess: string[] | null): void {
@@ -33,34 +84,34 @@ export function updateSessionPageAccess(pageAccess: string[] | null): void {
 export function getSession(): AuthSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = readSessionRaw();
     if (!raw) return null;
-    return JSON.parse(raw) as AuthSession;
+    const session = parseSession(raw);
+    if (!session) {
+      clearSession();
+      return null;
+    }
+    return session;
   } catch {
     return null;
   }
 }
 
-export function clearSession(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(SESSION_KEY);
+export function getSessionUsername(): string | null {
+  return getSession()?.user?.username ?? null;
 }
 
-/** Clears leftover mock/real auth tokens so each app load requires a fresh sign-in. */
-export function clearAuthOnStartup(): void {
-  clearSession();
+export function hasValidSession(): boolean {
+  return Boolean(getSession()?.token);
+}
+
+export function clearSession(): void {
   if (typeof window === "undefined") return;
+  localStorage.removeItem(SESSION_KEY);
   try {
-    const key = "cms_state_v2";
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (parsed.authedUser) {
-      parsed.authedUser = null;
-      localStorage.setItem(key, JSON.stringify(parsed));
-    }
+    sessionStorage.removeItem(SESSION_KEY);
   } catch {
-    // ignore corrupt storage
+    // ignore
   }
 }
 

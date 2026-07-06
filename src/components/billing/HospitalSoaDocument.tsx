@@ -10,21 +10,30 @@ function UnderlineField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MoneyCell({ value }: { value: number }) {
+function MoneyCell({ value, blankIfZero }: { value: number; blankIfZero?: boolean }) {
+  if (blankIfZero && value === 0) {
+    return <td className="hospital-soa-table__money">—</td>;
+  }
   const text = value > 0 ? formatSoaMoney(value) : value === 0 ? "0.00" : "";
   return <td className="hospital-soa-table__money">{text}</td>;
 }
 
-function FeeRowCells({ row }: { row: SoaAmountRow }) {
+function FeeRowCells({
+  row,
+  blankPhilhealthIfZero,
+}: {
+  row: SoaAmountRow;
+  blankPhilhealthIfZero?: boolean;
+}) {
   return (
     <>
       <MoneyCell value={row.actual} />
       <MoneyCell value={row.vatExempt} />
       <MoneyCell value={row.discountScPwd} />
       <td className="hospital-soa-table__discount-check" />
-      <MoneyCell value={row.phicFirst} />
-      <MoneyCell value={row.phicSecond} />
-      <MoneyCell value={row.outOfPocket} />
+      <MoneyCell value={row.phicFirst} blankIfZero={blankPhilhealthIfZero} />
+      <MoneyCell value={row.phicSecond} blankIfZero={blankPhilhealthIfZero} />
+      <MoneyCell value={row.outOfPocket} blankIfZero={blankPhilhealthIfZero} />
     </>
   );
 }
@@ -141,7 +150,7 @@ export function HospitalSoaDocument({ model }: { model: HospitalSoaModel }) {
                     </span>
                   ) : null}
                 </td>
-                <FeeRowCells row={row} />
+                <FeeRowCells row={row} blankPhilhealthIfZero />
               </tr>
             ))}
             <tr className="hospital-soa-table__subtotal">
@@ -155,7 +164,7 @@ export function HospitalSoaDocument({ model }: { model: HospitalSoaModel }) {
             {model.professionalFees.map((pf) => (
               <tr key={pf.name}>
                 <td className="hospital-soa-table__particulars">{pf.name}</td>
-                <FeeRowCells row={pf.row} />
+                <FeeRowCells row={pf.row} blankPhilhealthIfZero />
               </tr>
             ))}
             <tr className="hospital-soa-table__subtotal">

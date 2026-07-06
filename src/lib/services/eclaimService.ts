@@ -1,5 +1,5 @@
 import { buildBillMap, buildPatientMap } from "@/lib/stateIndexes";
-import { uid, type AppState, type Bill, type EClaim, type EClaimStatus, type Patient } from "@/lib/store";
+import { uid, type Admission, type AppState, type Bill, type EClaim, type EClaimStatus, type Patient } from "@/lib/store";
 
 export type EClaimFilter = {
   startDate?: string;
@@ -15,6 +15,61 @@ export function getPatientPhilhealthStatus(patient: Patient | undefined): EClaim
   const type = patient.philhealth.memberType?.toLowerCase() ?? "";
   if (type.includes("dependent")) return "Dependent";
   return "Member";
+}
+
+function admissionIdFromBill(bill: Bill): string | undefined {
+  for (const item of bill.items) {
+    if (item.admissionId) return item.admissionId;
+  }
+  return undefined;
+}
+
+/** Admission record that best matches an eClaim (linked bill → patient stay). */
+export function resolveClaimAdmission(
+  state: Pick<AppState, "admissions">,
+  claim: Pick<EClaim, "patientId" | "admissionDate">,
+  bill?: Bill
+): Admission | undefined {
+  const patientAdmissions = state.admissions.filter((a) => a.patientId === claim.patientId);
+
+  if (bill) {
+    const linkedId = admissionIdFromBill(bill);
+    if (linkedId) {
+      const linked = patientAdmissions.find((a) => a.id === linkedId);
+      if (linked) return linked;
+    }
+    if (bill.dischargeDate) {
+      const byDischarge = patientAdmissions.find((a) => a.dischargeDate === bill.dischargeDate);
+      if (byDischarge) return byDischarge;
+    }
+  }
+
+  if (claim.admissionDate) {
+    const exact = patientAdmissions.find((a) => a.admissionDate === claim.admissionDate);
+    if (exact) return exact;
+  }
+
+  return patientAdmissions.sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
+}
+
+export type ResolvedClaimDates = {
+  admissionDate: string;
+  dischargeDate: string;
+  roomWard?: string;
+};
+
+/** Display dates from the patient admission record, with bill/claim fallbacks. */
+export function resolveClaimDates(
+  state: Pick<AppState, "admissions">,
+  claim: EClaim,
+  bill?: Bill
+): ResolvedClaimDates {
+  const admission = resolveClaimAdmission(state, claim, bill);
+  return {
+    admissionDate: admission?.admissionDate ?? claim.admissionDate ?? bill?.date ?? "",
+    dischargeDate: admission?.dischargeDate ?? bill?.dischargeDate ?? "",
+    roomWard: admission?.roomWard ?? claim.roomWard,
+  };
 }
 
 export function createEClaim(
@@ -57,32 +112,30 @@ export function updateEClaimStatus(state: AppState, claimId: string, status: ECl
 
 export function syncEClaimFromBill(state: AppState, bill: Bill): AppState {
   const patient = state.patients.find((p) => p.id === bill.patientId);
-  const admission = state.admissions
-    .filter((a) => a.patientId === bill.patientId)
-    .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
+  const admission = resolveClaimAdmission(
+    state,
+    { patientId: bill.patientId, admissionDate: "" },
+    bill
+  );
 
   const existing = (state.eClaims ?? []).find((c) => c.billId === bill.id);
   const claimStatus = mapBillEclaimStatus(bill.eclaimStatus);
+  const synced = {
+    caseRateCode: bill.caseRateCode,
+    admissionDate: admission?.admissionDate ?? bill.date,
+    roomWard: admission?.roomWard,
+    philhealthStatus: getPatientPhilhealthStatus(patient),
+    claimStatus,
+  };
 
   if (existing) {
-    return updateEClaim(state, {
-      ...existing,
-      caseRateCode: bill.caseRateCode,
-      admissionDate: admission?.admissionDate ?? bill.date,
-      roomWard: admission?.roomWard,
-      philhealthStatus: getPatientPhilhealthStatus(patient),
-      claimStatus,
-    });
+    return updateEClaim(state, { ...existing, ...synced });
   }
 
   return createEClaim(state, {
     patientId: bill.patientId,
     billId: bill.id,
-    admissionDate: admission?.admissionDate ?? bill.date,
-    roomWard: admission?.roomWard,
-    philhealthStatus: getPatientPhilhealthStatus(patient),
-    caseRateCode: bill.caseRateCode,
-    claimStatus,
+    ...synced,
     notes: bill.notes,
   });
 }
@@ -110,10 +163,11 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
   return (state.eClaims ?? [])
     .filter((claim) => {
       const bill = claim.billId ? billMap.get(claim.billId) : undefined;
-      const dischargeDate = bill?.dischargeDate ?? bill?.date ?? claim.admissionDate;
+      const { dischargeDate } = resolveClaimDates(state, claim, bill);
+      const filterDischarge = dischargeDate || bill?.date || claim.admissionDate;
 
-      if (filter.startDate && dischargeDate < filter.startDate) return false;
-      if (filter.endDate && dischargeDate > filter.endDate) return false;
+      if (filter.startDate && filterDischarge < filter.startDate) return false;
+      if (filter.endDate && filterDischarge > filter.endDate) return false;
       if (filter.patientType && filter.patientType !== "All" && bill?.patientType !== filter.patientType)
         return false;
       if (filter.caseRateFilter === "90935" && claim.caseRateCode !== "90935") return false;

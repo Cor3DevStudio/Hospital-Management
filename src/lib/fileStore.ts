@@ -1,5 +1,5 @@
 // Simple IndexedDB helper for storing binary files (PDFs)
-import { MAX_ATTACHMENT_SIZE_BYTES, getFileSizeLabel } from "./attachmentValidation";
+import { MAX_ATTACHMENT_SIZE_BYTES, MAX_ATTACHMENT_SIZE_LABEL, getFileSizeLabel } from "./attachmentValidation";
 
 const DB_NAME = "cms_files_db";
 const STORE_NAME = "files";
@@ -30,7 +30,7 @@ function openDb(): Promise<IDBDatabase> {
 export async function saveFile(key: string, file: Blob, meta: { filename?: string; mime?: string; size?: number } = {}) {
   const fileSize = meta.size ?? (file as Blob & { size?: number }).size ?? 0;
   if (fileSize > MAX_ATTACHMENT_SIZE_BYTES) {
-    throw new Error(`File "${meta.filename || (file as Blob & { name?: string }).name || key}" is too large (${getFileSizeLabel(fileSize)}). Maximum allowed size is 1.5MB.`);
+    throw new Error(`File "${meta.filename || (file as Blob & { name?: string }).name || key}" is too large (${getFileSizeLabel(fileSize)}). Maximum allowed size is ${MAX_ATTACHMENT_SIZE_LABEL}.`);
   }
 
   const db = await openDb();

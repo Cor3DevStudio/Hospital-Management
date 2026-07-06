@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { PageAccessModal } from "@/components/PageAccessModal";
 import { PageHeader } from "@/components/PageHeader";
 import { pageAccessSummary, normalizePageAccess } from "@/lib/pageAccess";
-import { updateSessionPageAccess } from "@/lib/auth/authService";
+import { hasValidSession, updateSessionPageAccess } from "@/lib/auth/authService";
 import { useStore, todayISO, persistStoreNow, type AppState, type PriceItem, type User } from "@/lib/store";
 import { loadAllFromDatabase, mergeDatabaseIntoState, saveAllToDatabase } from "@/lib/services/syncService";
 import { pauseAutoSync, resumeAutoSync } from "@/lib/services/autoSyncService";
@@ -51,8 +51,9 @@ function SettingsPage() {
   const [caseRateCount, setCaseRateCount] = useState(0);
 
   useEffect(() => {
+    if (!state.authedUser || !hasValidSession()) return;
     void fetchCaseRateCount().then(setCaseRateCount).catch(() => setCaseRateCount(0));
-  }, []);
+  }, [state.authedUser]);
   const [defaultPEN, setDefaultPEN] = useState<string>("PEN-12-89271821-3");
   const [dbSyncing, setDbSyncing] = useState(false);
   const [dbLoading, setDbLoading] = useState(false);

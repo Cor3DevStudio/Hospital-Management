@@ -302,12 +302,32 @@ function ReportsPage() {
     return Object.values(map).sort((a, b) => a.label.localeCompare(b.label));
   };
 
-  const openOptions = (kind: ReportKind) => {
+  const buildReportForKind = (kind: ReportKind): ActiveReport | null => {
+    if (kind === "dossier") {
+      if (!activePatient) return null;
+      return buildDossierReport(dossierOptions, activePatient);
+    }
+    if (kind === "income") return buildIncomeReport(incomeOptions);
+    if (kind === "revenue") return buildRevenueReport(revenueOptions);
+    if (kind === "clinical") return buildClinicalReport(clinicalOptions);
+    if (kind === "roster") return buildRosterReport(rosterOptions);
+    return null;
+  };
+
+  const openReportPreview = (kind: ReportKind) => {
     if (kind === "dossier" && !activePatient) {
       toast.error("Select a patient first");
       return;
     }
     setActiveKind(kind);
+    const report = buildReportForKind(kind);
+    if (!report) return;
+    setActiveReport(report);
+    setPreviewOpen(true);
+  };
+
+  const openPrintOptions = () => {
+    if (!activeKind) return;
     setOptionsOpen(true);
   };
 
@@ -656,24 +676,12 @@ function ReportsPage() {
   const handleOptionsConfirm = () => {
     if (!activeKind) return;
 
-    let report: ActiveReport | null = null;
-    if (activeKind === "dossier") {
-      if (!activePatient) {
-        toast.error("Select a patient first");
-        return;
-      }
-      report = buildDossierReport(dossierOptions, activePatient);
-    } else if (activeKind === "income") {
-      report = buildIncomeReport(incomeOptions);
-    } else if (activeKind === "revenue") {
-      report = buildRevenueReport(revenueOptions);
-    } else if (activeKind === "clinical") {
-      report = buildClinicalReport(clinicalOptions);
-    } else if (activeKind === "roster") {
-      report = buildRosterReport(rosterOptions);
+    const report = buildReportForKind(activeKind);
+    if (!report) {
+      if (activeKind === "dossier") toast.error("Select a patient first");
+      return;
     }
 
-    if (!report) return;
     setActiveReport(report);
     setOptionsOpen(false);
     setPreviewOpen(true);
@@ -791,7 +799,7 @@ function ReportsPage() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => openOptions("dossier")}
+                  onClick={() => openReportPreview("dossier")}
                   className="h-9 shrink-0 bg-slate-800 text-xs text-white hover:bg-slate-700"
                   disabled={!activePatient}
                 >
@@ -1010,15 +1018,15 @@ function ReportsPage() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => openOptions("income")}
+                  onClick={() => openReportPreview("income")}
                   className="h-9 bg-slate-800 text-xs text-white hover:bg-slate-700"
                 >
                   <Printer className="mr-1 h-3.5 w-3.5" /> Generate Report
                 </Button>
               </CardHeader>
               <CardContent className="pt-4 text-sm text-muted-foreground">
-                Click Generate Report to open print options (period, filters, summary/details), then
-                review the on-screen preview before printing or saving as PDF.
+                Click Generate Report to open a preview. Use Print Options… in the preview to change
+                period, filters, or summary/details before printing or saving as PDF.
               </CardContent>
             </Card>
           </TabsContent>
@@ -1038,7 +1046,7 @@ function ReportsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => openOptions("revenue")}
+                    onClick={() => openReportPreview("revenue")}
                     className="h-7 px-2 text-[10px]"
                   >
                     <Printer className="mr-1 h-3 w-3" /> Generate Report
@@ -1094,7 +1102,7 @@ function ReportsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => openOptions("clinical")}
+                    onClick={() => openReportPreview("clinical")}
                     className="h-7 px-2 text-[10px]"
                   >
                     <Printer className="mr-1 h-3 w-3" /> Generate Report
@@ -1148,7 +1156,7 @@ function ReportsPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => openOptions("roster")}
+                  onClick={() => openReportPreview("roster")}
                   className="h-9 text-xs"
                 >
                   <Printer className="mr-1 h-3.5 w-3.5" /> Generate Report
@@ -1208,7 +1216,7 @@ function ReportsPage() {
       <ReportPrintOptionsModal
         open={optionsOpen}
         title={optionsTitle}
-        confirmLabel="Preview"
+        confirmLabel="Apply"
         onCancel={() => setOptionsOpen(false)}
         onConfirm={handleOptionsConfirm}
       >
@@ -1548,10 +1556,7 @@ function ReportsPage() {
         title={activeReport?.title ?? "Report Preview"}
         subtitle={activeReport?.subtitle}
         onClose={() => setPreviewOpen(false)}
-        onPrintOptions={() => {
-          setPreviewOpen(false);
-          setOptionsOpen(true);
-        }}
+        onPrintOptions={openPrintOptions}
         onPrint={runPrint}
         onGeneratePdf={() => {
           toast.info("Use your browser’s print dialog and choose “Save as PDF”.");

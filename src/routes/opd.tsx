@@ -10,11 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { ListPagination } from "@/components/ListPagination";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
 import { usePaginatedList, useResetPageOnChange } from "@/lib/hooks/usePaginatedList";
+import { buildPatientMap } from "@/lib/stateIndexes";
 import { getUpcomingForPatient, patientName } from "@/lib/services/appointmentService";
 import {
   createConsultation,
@@ -50,6 +52,7 @@ function OPDPage() {
   const [form, setForm] = useState<Consultation>(emptyConsultation(patientId));
   const [editId, setEditId] = useState<string | null>(null);
   const [tab, setTab] = useState<"patient" | "all">("patient");
+  const [allQuery, setAllQuery] = useState("");
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [showChartPreview, setShowChartPreview] = useState(false);
 
@@ -66,14 +69,30 @@ function OPDPage() {
     [state, form.patientId]
   );
 
+  const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const doctors = getActiveDoctors(state.users);
   const patientVisits = useMemo(
     () => getConsultationsForPatient(state.consultations, patientId, state.opdRecords),
     [state.consultations, state.opdRecords, patientId]
   );
-  const allVisits = useMemo(() => getAllConsultationsFromState(state), [state]);
+  const allVisits = useMemo(() => {
+    const q = allQuery.trim().toLowerCase();
+    const visits = getAllConsultationsFromState(state);
+    if (!q) return visits;
+    return visits.filter((c) => {
+      const name = patientName(state.patients, c.patientId).toLowerCase();
+      return (
+        name.includes(q) ||
+        c.date.includes(q) ||
+        c.doctor.toLowerCase().includes(q) ||
+        c.chiefComplaint.toLowerCase().includes(q) ||
+        c.diagnosis.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q)
+      );
+    });
+  }, [state, allQuery]);
   const allVisitsList = usePaginatedList(allVisits, 50);
-  useResetPageOnChange(allVisitsList.resetPage, [tab, allVisits.length]);
+  useResetPageOnChange(allVisitsList.resetPage, [tab, allQuery, state.consultations.length, state.opdRecords.length]);
   const linkedAppointments = useMemo(
     () => getUpcomingForPatient(state.appointments, patientId),
     [state.appointments, patientId]
@@ -136,75 +155,50 @@ function OPDPage() {
       <div className="no-print h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
       <PageHeader title="OPD" description="Document outpatient visits, prescriptions, and discharge status." />
       <div className="flex-1 grid gap-4 p-4 grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] items-stretch min-h-0 overflow-hidden">
-        <Card className="flex min-h-0 min-w-0 flex-col overflow-hidden">
-          <CardHeader className="shrink-0 space-y-0 pb-3 pt-4 px-4">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as "patient" | "all")}>
+        <Card className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as "patient" | "all")}
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
+            <CardHeader className="shrink-0 space-y-3 pb-3 pt-4 px-4">
               <TabsList className="h-8 w-full">
                 <TabsTrigger value="patient" className="text-xs flex-1">By Patient</TabsTrigger>
                 <TabsTrigger value="all" className="text-xs flex-1">
                   All Records{allVisitsList.totalItems > 0 ? ` (${allVisitsList.totalItems})` : ""}
                 </TabsTrigger>
               </TabsList>
-            </Tabs>
-          </CardHeader>
-
-          <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden border-t p-0">
-            {tab === "patient" ? (
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-                <PatientSearchWithHistory
-                  patients={state.patients}
-                  selectedPatientId={patientId}
-                  onSelect={(id) => {
-                    setPatientId(id);
-                    resetForm(id);
-                  }}
+              {tab === "all" && (
+                <Input
+                  value={allQuery}
+                  onChange={(e) => setAllQuery(e.target.value)}
+                  placeholder="Search patient, date, doctor, complaint…"
+                  className="h-8 text-xs"
                 />
+              )}
+            </CardHeader>
 
-                <div className="min-w-0">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    OPD Visit History
-                  </p>
-                  <ul className="space-y-2">
-                    {patientVisits.map((c) => (
-                      <li key={c.id}>
-                        <button
-                          type="button"
-                          onClick={() => selectVisit(c)}
-                          className={`w-full rounded-md border p-3 text-left text-xs hover:bg-muted ${editId === c.id ? "bg-muted border-primary/40" : ""}`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-semibold whitespace-nowrap">{c.date}</span>
-                            <Badge
-                              className={`shrink-0 text-[10px] px-1.5 py-0 ${c.status === "Seen" ? "bg-success/15 text-success border-success/20" : "bg-warning/20 text-warning-foreground border-warning/30"}`}
-                              variant="outline"
-                            >
-                              {c.status}
-                            </Badge>
-                          </div>
-                          <p className="mt-1 line-clamp-2 break-words text-muted-foreground leading-relaxed">
-                            {c.diagnosis || c.chiefComplaint}
-                          </p>
-                        </button>
-                      </li>
-                    ))}
-                    {patientVisits.length === 0 && (
-                      <li className="rounded-md border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
-                        No OPD visits for this patient yet.
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                  <ul className="space-y-2">
-                    {allVisitsList.totalItems === 0 ? (
-                      <li className="rounded-md border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
-                        No OPD records found
-                      </li>
-                    ) : (
-                      allVisitsList.pageItems.map((c) => (
+            <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden border-t p-0">
+              <TabsContent
+                value="patient"
+                className="mt-0 min-h-0 flex-1 overflow-y-auto p-4 focus-visible:outline-none"
+              >
+                <div className="space-y-4">
+                  <PatientSearchWithHistory
+                    patients={state.patients}
+                    selectedPatientId={patientId}
+                    onSelect={(id) => {
+                      setPatientId(id);
+                      resetForm(id);
+                    }}
+                  />
+
+                  <div className="min-w-0">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      OPD Visit History
+                    </p>
+                    <ul className="space-y-2">
+                      {patientVisits.map((c) => (
                         <li key={c.id}>
                           <button
                             type="button"
@@ -212,39 +206,90 @@ function OPDPage() {
                             className={`w-full rounded-md border p-3 text-left text-xs hover:bg-muted ${editId === c.id ? "bg-muted border-primary/40" : ""}`}
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold break-words">
-                                  {patientName(state.patients, c.patientId)}
-                                </p>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                  {c.date}
-                                  {c.doctor ? ` · ${c.doctor}` : ""}
-                                </p>
-                                {(c.diagnosis || c.chiefComplaint) && (
-                                  <p className="mt-1 line-clamp-2 break-words text-muted-foreground leading-relaxed">
-                                    {c.diagnosis || c.chiefComplaint}
-                                  </p>
-                                )}
-                              </div>
-                              <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">
+                              <span className="font-semibold whitespace-nowrap">{c.date}</span>
+                              <Badge
+                                className={`shrink-0 text-[10px] px-1.5 py-0 ${c.status === "Seen" ? "bg-success/15 text-success border-success/20" : "bg-warning/20 text-warning-foreground border-warning/30"}`}
+                                variant="outline"
+                              >
                                 {c.status}
                               </Badge>
                             </div>
+                            <p className="mt-1 line-clamp-2 break-words text-muted-foreground leading-relaxed">
+                              {c.diagnosis || c.chiefComplaint}
+                            </p>
                           </button>
                         </li>
-                      ))
-                    )}
-                  </ul>
+                      ))}
+                      {patientVisits.length === 0 && (
+                        <li className="rounded-md border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
+                          No OPD visits for this patient yet.
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent
+                value="all"
+                className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden focus-visible:outline-none"
+              >
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="pl-4">Date</TableHead>
+                        <TableHead>Patient</TableHead>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>Chief Complaint</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allVisitsList.totalItems === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                            {allQuery.trim() ? "No OPD records match your search" : "No OPD records yet"}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        allVisitsList.pageItems.map((c) => (
+                          <TableRow
+                            key={c.id}
+                            className={`cursor-pointer ${editId === c.id ? "bg-muted" : ""}`}
+                            onClick={() => selectVisit(c)}
+                          >
+                            <TableCell className="pl-4 text-xs whitespace-nowrap">{c.date}</TableCell>
+                            <TableCell className="text-xs font-medium">
+                              {patientMap.get(c.patientId)
+                                ? patientName(state.patients, c.patientId)
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="text-xs">{c.doctor || "—"}</TableCell>
+                            <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+                              {c.chiefComplaint || c.diagnosis || "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {c.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
                 <ListPagination
+                  className="shrink-0"
                   page={allVisitsList.page}
                   totalPages={allVisitsList.totalPages}
                   totalItems={allVisitsList.totalItems}
                   onPageChange={allVisitsList.setPage}
                 />
-              </>
-            )}
-          </CardContent>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
         </Card>
 
         <Card className="flex min-h-0 min-w-0 flex-col overflow-hidden">

@@ -6,7 +6,7 @@ import {
 } from "@/components/billing/soaPrintOptions";
 import { buildHospitalSoaModel } from "@/components/billing/buildHospitalSoaModel";
 import type { SoaHospital } from "@/components/billing/buildSoaValues";
-import { HospitalSoaDocument } from "@/components/billing/HospitalSoaDocument";
+import { StandardBillingSoaDocument } from "@/components/billing/StandardBillingSoaDocument";
 import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
 
 export type OfficialSOASheetProps = {
@@ -21,7 +21,7 @@ export type OfficialSOASheetProps = {
   roomWard?: string;
 };
 
-/** Official hospital Statement of Account — Villanueva-Tanchuling style layout (A4). */
+/** Official hospital Statement of Account — standard PhilHealth SOA layout (A4). */
 export function OfficialSOASheet({
   bill,
   patient,
@@ -79,7 +79,7 @@ export function OfficialSOASheet({
         </div>
       )}
       <div className="soa-official-sheet__page relative z-0">
-        <HospitalSoaDocument model={model} />
+        <StandardBillingSoaDocument model={model} />
       </div>
     </div>
   );

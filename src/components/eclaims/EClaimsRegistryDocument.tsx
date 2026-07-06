@@ -1,4 +1,5 @@
-import type { Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
+import type { Admission, Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
+import { resolveClaimDates } from "@/lib/services/eclaimService";
 
 export type EClaimsRegistryFilters = {
   startDate?: string;
@@ -14,6 +15,7 @@ export type EClaimsRegistryDocumentProps = {
   pages: EClaim[][];
   patientMap: Map<string, Patient>;
   billMap: Map<string, Bill>;
+  admissions: Admission[];
   filters: EClaimsRegistryFilters;
   stats: { total: number; pendingCount: number; submittedCount: number };
   preparedBy?: string;
@@ -59,6 +61,7 @@ export function EClaimsRegistryDocument({
   pages,
   patientMap,
   billMap,
+  admissions,
   filters,
   stats,
   preparedBy,
@@ -137,6 +140,7 @@ export function EClaimsRegistryDocument({
                 {page.map((claim, i) => {
                   const patient = patientMap.get(claim.patientId);
                   const bill = claim.billId ? billMap.get(claim.billId) : undefined;
+                  const dates = resolveClaimDates({ admissions }, claim, bill);
                   const rowNo = startNo + i;
                   const zebra = i % 2 === 1;
                   return (
@@ -158,13 +162,13 @@ export function EClaimsRegistryDocument({
                         {bill?.patientType ?? "—"}
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1 whitespace-nowrap">
-                        {claim.admissionDate}
+                        {dates.admissionDate || "—"}
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1 whitespace-nowrap">
-                        {bill?.dischargeDate || "—"}
+                        {dates.dischargeDate || "—"}
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1">
-                        {claim.roomWard || "—"}
+                        {dates.roomWard || "—"}
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1">
                         {claim.philhealthStatus}
