@@ -7,6 +7,7 @@ import {
 import { buildHospitalSoaModel } from "@/components/billing/buildHospitalSoaModel";
 import type { SoaHospital } from "@/components/billing/buildSoaValues";
 import { StandardBillingSoaDocument } from "@/components/billing/StandardBillingSoaDocument";
+import { HospitalSoaDocument } from "@/components/billing/HospitalSoaDocument";
 import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
 
 export type OfficialSOASheetProps = {
@@ -79,7 +80,11 @@ export function OfficialSOASheet({
         </div>
       )}
       <div className="soa-official-sheet__page relative z-0">
-        <StandardBillingSoaDocument model={model} />
+        {options.forPhilHealth ? (
+          <HospitalSoaDocument model={model} printOptions={options} />
+        ) : (
+          <StandardBillingSoaDocument model={model} printOptions={options} />
+        )}
       </div>
     </div>
   );

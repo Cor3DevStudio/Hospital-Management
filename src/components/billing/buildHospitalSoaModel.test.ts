@@ -94,10 +94,81 @@ assert.equal(model.total.phicFirst, 8000);
 assert.equal(model.hciSubtotal.phicFirst, 5600);
 assert.equal(model.pfSubtotal.phicFirst, 2400);
 assert.equal(model.total.outOfPocket, 11836);
+assert.equal(model.admittingDiagnosis.includes("L02.8 - ABSCESS OCCIPITAL AREA"), true);
+assert.equal(model.finalDiagnoses.some((d) => d.includes("L02.8 - ABSCESS OCCIPITAL AREA")), true);
 assert.ok(model.phicCoverage);
 assert.equal(model.phicCoverage!.totalBenefit, 8000);
 assert.equal(model.phicCoverage!.patientExcess, 11836);
 assert.equal(model.phicCoverage!.hciBenefit, 5600);
 assert.equal(model.phicCoverage!.pfBenefit, 2400);
+
+// RVS 44960 — Appendectomy sample (7 days × ₱600 room, PhilHealth HF ₱28,080 / PF ₱18,720)
+const appendectomyBill: Bill = {
+  id: "bill-44853",
+  patientId: "p2",
+  date: "2026-07-07",
+  patientType: "In-Patient",
+  dischargeDate: "2026-07-05",
+  items: [
+    { description: "ROOM - Surgical Nurse Station Room 14 (7 day/s) (600.00)", amount: 4200, qty: 7, unitPrice: 600, category: "Room" },
+    { description: "Paracetamol", amount: 13454, category: "Medicine" },
+    { description: "Gauze", amount: 9437.3, category: "Supplies" },
+    { description: "CBC", amount: 2520, category: "Lab" },
+    { description: "Chest AP/PA", amount: 365, category: "Radiology" },
+    { description: "Admission Fee", amount: 13090, category: "Other", priceItemId: "misc-adm" },
+    { description: "Operating Room Fee", amount: 3500, category: "Other", priceItemId: "misc-or" },
+    { description: "DR. Harper, Emily R.", amount: 13104, category: "PF" },
+    { description: "DR. Santos, Ruth C.", amount: 5616, category: "PF" },
+  ],
+  philhealthDeduction: 46800,
+  amountPaid: 0,
+  caseRateCode: "44960",
+};
+
+const appendectomyState = {
+  ...emptyState,
+  admissions: [
+    {
+      id: "adm-1",
+      patientId: "p2",
+      admissionDate: "2026-06-28",
+      dischargeDate: "2026-07-05",
+      status: "Discharged",
+      roomWard: "Surgical Nurse Station Room 14",
+      roomTypeId: "rb-ward",
+    },
+  ],
+  prices: [
+    { id: "misc-adm", code: "MISC-ADM", description: "Admission Fee", category: "Miscellaneous", caseRate: 300, effectiveDate: "2026-01-01" },
+    { id: "misc-or", code: "MISC-OR", description: "Operating Room Fee", category: "Miscellaneous", caseRate: 3500, effectiveDate: "2026-01-01" },
+  ],
+} as AppState;
+
+const appendectomy = buildHospitalSoaModel({
+  bill: appendectomyBill,
+  state: appendectomyState,
+  patient: { id: "p2", firstName: "Jose", lastName: "Rizal", birthDate: "2008-01-01", gender: "Male", civilStatus: "Single", contactNumber: "", address: {} },
+  hospital: { name: "Medical Center", address: "Manila", phone: "" },
+  caseRate: {
+    id: "44960",
+    code: "44960",
+    description: "APPENDECTOMY; FOR RUPTURED APPENDIX W/ ABSCESS OR GENERALIZED PERITONITIS",
+    amount: 46800,
+    category: "Surgical",
+    healthFacilityFee: 28080,
+    professionalFeeAmount: 18720,
+    hospitalSharePct: 70,
+    professionalFeePct: 30,
+  },
+});
+
+assert.equal(appendectomy.hciRows.find((r) => r.label === "Room and Board")?.actual, 4200);
+assert.equal(appendectomy.hciRows.find((r) => r.label === "Pharmacy")?.actual, 13454);
+assert.equal(appendectomy.hciSubtotal.phicFirst, 28080);
+assert.equal(appendectomy.pfSubtotal.phicFirst, 18720);
+assert.equal(appendectomy.total.phicFirst, 46800);
+assert.equal(appendectomy.phicCoverage!.caseRateCode, "44960");
+assert.equal(appendectomy.phicCoverage!.hciBenefit, 28080);
+assert.equal(appendectomy.phicCoverage!.pfBenefit, 18720);
 
 console.log("buildHospitalSoaModel.test.ts: all assertions passed");

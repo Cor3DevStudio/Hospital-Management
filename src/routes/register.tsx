@@ -35,7 +35,7 @@ function RegisterPage() {
     if (!state.authedUser) return;
     const accessUser = resolveAccessUser(state, getSession()?.user);
     navigate({ to: firstAllowedPage(accessUser) });
-  }, [state.authedUser, state.users, navigate, state]);
+  }, [state.authedUser, state.users, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

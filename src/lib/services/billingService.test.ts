@@ -1,9 +1,11 @@
 import { strict as assert } from "assert";
 import {
+  applyCaseRateToBill,
   canCancelBillDischarge,
   createBill,
   normalizeBillPaymentMethod,
   recordPayment,
+  setBillDischargeDate,
   type BillLineItem,
 } from "./billingService";
 import { processBillPayment } from "./cashierService";
@@ -31,6 +33,7 @@ function baseState(): AppState {
     labOrders: [],
     radiologyOrders: [],
     settings: {},
+    priceHistories: [],
   } as unknown as AppState;
 }
 
@@ -120,6 +123,73 @@ function run() {
   } as unknown as AppState;
   const blocked = canCancelBillDischarge(goneHomeState, dischargedBill);
   assert(!blocked.allowed, "Should block cancel after patient discharged from admission");
+
+  // setBillDischargeDate — auto Room & Board from admission stay
+  const roomRateId = "room-600";
+  const inpatientState = {
+    ...baseState(),
+    prices: [
+      {
+        id: roomRateId,
+        code: "RB-WARD",
+        description: "Ward",
+        category: "Room Rate",
+        caseRate: 600,
+        effectiveDate: "2026-01-01",
+      },
+    ],
+    admissions: [
+      {
+        id: "ADM-RB",
+        patientId: "P1",
+        admissionDate: "2026-06-28",
+        status: "Admitted",
+        roomTypeId: roomRateId,
+        roomWard: "Surgical Nurse Station",
+        roomStays: [
+          {
+            id: "stay-1",
+            roomTypeId: roomRateId,
+            roomWard: "Surgical Nurse Station",
+            startDate: "2026-06-28",
+          },
+        ],
+      },
+    ],
+    bills: [sampleBill({ id: "BIL-RB", date: "2026-06-28" })],
+  } as unknown as AppState;
+
+  const discharged = setBillDischargeDate(inpatientState, "BIL-RB", "2026-07-05");
+  assert(!discharged.error, "setBillDischargeDate should succeed");
+  const rbBill = discharged.state.bills.find((b) => b.id === "BIL-RB");
+  const roomLine = rbBill?.items.find((i) => i.category === "Room");
+  assert(roomLine, "Room & Board line should be auto-posted");
+  assert.equal(roomLine?.qty, 7);
+  assert.equal(roomLine?.unitPrice, 600);
+  assert.equal(roomLine?.amount, 4200);
+
+  // applyCaseRateToBill — auto PF line from selected case rate when no manual PF exists
+  const caseRateState = {
+    ...baseState(),
+    caseRates: [
+      {
+        id: "cr-1",
+        code: "44960",
+        description: "Appendectomy",
+        amount: 46800,
+        category: "Surgical",
+        professionalFeeAmount: 18720,
+        healthFacilityFee: 28080,
+      },
+    ],
+    bills: [sampleBill({ id: "BIL-CR", items: [{ description: "Room", amount: 1000, category: "Room" }] })],
+  } as unknown as AppState;
+  const withCaseRate = applyCaseRateToBill(caseRateState, "BIL-CR", "44960");
+  const caseRateBill = withCaseRate.bills.find((b) => b.id === "BIL-CR");
+  assert.equal(caseRateBill?.philhealthDeduction, 46800);
+  const autoPf = caseRateBill?.items.find((i) => i.source === "case-rate-pf-auto");
+  assert(autoPf, "Should add auto PF line from case rate");
+  assert.equal(autoPf?.amount, 18720);
 
   // truncateSoaField
   assert.equal(truncateSoaField("Short name", 20), "Short name");

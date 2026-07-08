@@ -159,6 +159,34 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
   const q = (filter.query ?? "").trim().toLowerCase();
   const billMap = buildBillMap(state.bills);
   const patientMap = buildPatientMap(state.patients);
+  const admissionByPatient = new Map(
+    state.admissions
+      .slice()
+      .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))
+      .map((admission) => [admission.patientId, admission] as const)
+  );
+
+  const searchBlobForPatient = (patientId: string): string => {
+    const admission = admissionByPatient.get(patientId);
+    const consultations = state.consultations
+      .filter((item) => item.patientId === patientId)
+      .map((item) => `${item.chiefComplaint} ${item.diagnosis} ${item.notes}`);
+    const opd = state.opdRecords
+      .filter((item) => item.patientId === patientId)
+      .map((item) => `${item.reasonForVisit ?? ""} ${item.diagnosis ?? ""} ${item.notes ?? ""}`);
+    const er = state.erVisits
+      .filter((item) => item.patientId === patientId)
+      .map((item) => `${item.chiefComplaint ?? ""} ${item.notes ?? ""}`);
+    return [
+      admission?.notes ?? "",
+      admission?.roomWard ?? "",
+      ...consultations,
+      ...opd,
+      ...er,
+    ]
+      .join(" ")
+      .toLowerCase();
+  };
 
   return (state.eClaims ?? [])
     .filter((claim) => {
@@ -170,7 +198,13 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
       if (filter.endDate && filterDischarge > filter.endDate) return false;
       if (filter.patientType && filter.patientType !== "All" && bill?.patientType !== filter.patientType)
         return false;
-      if (filter.caseRateFilter === "90935" && claim.caseRateCode !== "90935") return false;
+      if (
+        filter.caseRateFilter &&
+        filter.caseRateFilter !== "All" &&
+        (claim.caseRateCode ?? "").trim() !== filter.caseRateFilter
+      ) {
+        return false;
+      }
       if (filter.claimStatus && filter.claimStatus !== "All") {
         if (filter.claimStatus === "Not Transmitted") {
           if (claim.claimStatus !== "Pending") return false;
@@ -183,7 +217,17 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
         const name = patient
           ? `${patient.firstName} ${patient.lastName}`.toLowerCase()
           : "";
-        if (!name.includes(q) && !claim.id.toLowerCase().includes(q)) return false;
+        const diagnosisBlob = searchBlobForPatient(claim.patientId);
+        const claimBlob = [
+          claim.id,
+          claim.caseRateCode ?? "",
+          claim.notes ?? "",
+          bill?.notes ?? "",
+          bill?.caseRateCode ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!name.includes(q) && !claimBlob.includes(q) && !diagnosisBlob.includes(q)) return false;
       }
       return true;
     })

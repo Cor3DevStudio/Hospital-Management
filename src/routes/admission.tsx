@@ -22,6 +22,7 @@ import {
   deleteAdmission,
   dischargePatient,
   emptyAdmission,
+  isPatientAdmitted,
   transferRoom,
   updateAdmission,
 } from "@/lib/services/admissionService";
@@ -104,6 +105,9 @@ function AdmissionPage() {
   const save = () => {
     if (!form.patientId || !form.roomTypeId || !form.admissionDate || !form.attendingDoctor) {
       return toast.error("Patient, room type, date, and doctor are required");
+    }
+    if (!editId && isPatientAdmitted(state, form.patientId)) {
+      return toast.error("Patient is still admitted. Discharge first before creating a new admission record.");
     }
     const payload = {
       ...form,

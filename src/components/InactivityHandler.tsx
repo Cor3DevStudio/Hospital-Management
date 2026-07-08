@@ -13,7 +13,8 @@ export function InactivityHandler() {
   const authedUser = state.authedUser;
   const timeoutMinutes = Number(state.inactivityTimeoutMinutes) || 0;
   const timeoutMs = Math.max(0, Math.round(timeoutMinutes * 60 * 1000));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const checkRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastActivityAtRef = useRef<number>(Date.now());
   const sessionRef = useRef(0);
   const logoutRef = useRef(logout);
   logoutRef.current = logout;
@@ -34,28 +35,35 @@ export function InactivityHandler() {
       legacy.__inactivity_warn_ref.id = null;
     }
 
-    const clearTimer = () => {
-      if (timerRef.current != null) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
+    const clearCheck = () => {
+      if (checkRef.current != null) {
+        clearInterval(checkRef.current);
+        checkRef.current = null;
       }
     };
 
     sessionRef.current += 1;
     const session = sessionRef.current;
-    clearTimer();
+    clearCheck();
 
     if (!authedUser || timeoutMs <= 0) {
       return () => {
         sessionRef.current += 1;
-        clearTimer();
+        clearCheck();
       };
     }
+
+    const markActivity = () => {
+      if (session !== sessionRef.current) return;
+      lastActivityAtRef.current = Date.now();
+    };
+
+    markActivity();
 
     const runAutoLogout = () => {
       if (session !== sessionRef.current) return;
       sessionRef.current += 1;
-      clearTimer();
+      clearCheck();
       try {
         logoutRef.current();
       } catch (error) {
@@ -69,29 +77,39 @@ export function InactivityHandler() {
       toast.message("You have been logged out due to inactivity.");
     };
 
-    const armTimer = () => {
+    checkRef.current = setInterval(() => {
       if (session !== sessionRef.current) return;
-      clearTimer();
-      timerRef.current = setTimeout(runAutoLogout, timeoutMs);
-    };
+      if (Date.now() - lastActivityAtRef.current >= timeoutMs) {
+        runAutoLogout();
+      }
+    }, 1000);
 
-    armTimer();
-
-    const onActivity = () => armTimer();
-    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"] as const;
+    const events = [
+      "pointermove",
+      "pointerdown",
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "wheel",
+      "touchstart",
+      "scroll",
+      "focus",
+    ] as const;
     for (const ev of events) {
-      window.addEventListener(ev, onActivity, { passive: true });
+      window.addEventListener(ev, markActivity, { passive: true, capture: true });
+      document.addEventListener(ev, markActivity, { passive: true, capture: true });
     }
     const onVis = () => {
-      if (document.visibilityState === "visible") armTimer();
+      if (document.visibilityState === "visible") markActivity();
     };
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
       sessionRef.current += 1;
-      clearTimer();
+      clearCheck();
       for (const ev of events) {
-        window.removeEventListener(ev, onActivity);
+        window.removeEventListener(ev, markActivity, { capture: true });
+        document.removeEventListener(ev, markActivity, { capture: true });
       }
       document.removeEventListener("visibilitychange", onVis);
     };

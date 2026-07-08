@@ -111,6 +111,14 @@ function EClaimsPage() {
   const billMap = useMemo(() => buildBillMap(state.bills), [state.bills]);
 
   const stats = useMemo(() => getEClaimStats(filteredClaims), [filteredClaims]);
+  const caseRateFilterOptions = useMemo(() => {
+    const codes = new Set<string>();
+    for (const claim of state.eClaims ?? []) {
+      const code = claim.caseRateCode?.trim();
+      if (code) codes.add(code);
+    }
+    return Array.from(codes).sort((a, b) => a.localeCompare(b));
+  }, [state.eClaims]);
 
   const ageDays = (d: string) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
@@ -387,7 +395,11 @@ function EClaimsPage() {
                   <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="All">All case rates</SelectItem>
-                    <SelectItem value="90935">Dialysis — 90935</SelectItem>
+                    {caseRateFilterOptions.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {code}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -410,7 +422,12 @@ function EClaimsPage() {
               </Button>
             </div>
             <div className="mt-3">
-              <Input placeholder="Search patient or claim ID…" value={query} onChange={(e) => setQuery(e.target.value)} className="h-9 text-xs max-w-sm" />
+              <Input
+                placeholder="Search patient, claim ID, diagnosis code/description…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="h-9 text-xs max-w-sm"
+              />
             </div>
           </CardContent>
         </Card>

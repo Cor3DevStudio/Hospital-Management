@@ -135,9 +135,10 @@ export function computeRoomBoardCharges(
       0;
     if (rate <= 0) continue;
     const typeName = roomTypeLabel(state, stay.roomTypeId);
-    const label = stay.roomWard && stay.roomWard !== typeName ? `${typeName} (${stay.roomWard})` : typeName;
+    const wardLabel =
+      stay.roomWard && stay.roomWard !== typeName ? stay.roomWard : typeName;
     lines.push({
-      description: `Room & Board — ${label} · ${days} day${days === 1 ? "" : "s"} (${stay.startDate} to ${stay.endDate})`,
+      description: `ROOM - ${wardLabel} (${days} day/s) (${rate.toFixed(2)})`,
       category: "Room",
       qty: days,
       unitPrice: rate,
@@ -156,9 +157,9 @@ export function isAutoRoomBoardItem(
   admissionId: string
 ): boolean {
   if (item.source === "room-board-auto" && item.admissionId === admissionId) return true;
-  // Legacy/fallback match by description prefix + admission id marker
+  const desc = item.description ?? "";
   return (
-    !!item.description?.startsWith("Room & Board —") &&
+    (desc.startsWith("ROOM -") || desc.startsWith("Room & Board —")) &&
     item.admissionId === admissionId
   );
 }
@@ -179,7 +180,15 @@ export function removeRoomBoardCharges(state: AppState, admissionId: string): Ap
   };
 }
 
-function getOrCreateInpatientBill(state: AppState, patientId: string): { state: AppState; billId: string } {
+function getOrCreateInpatientBill(
+  state: AppState,
+  patientId: string,
+  preferredBillId?: string
+): { state: AppState; billId: string } {
+  if (preferredBillId) {
+    const preferred = state.bills.find((b) => b.id === preferredBillId);
+    if (preferred) return { state, billId: preferred.id };
+  }
   const open = state.bills.find(
     (b) =>
       b.patientId === patientId &&
@@ -192,7 +201,11 @@ function getOrCreateInpatientBill(state: AppState, patientId: string): { state: 
 }
 
 /** Remove prior auto lines for this admission, then post fresh Room & Board charges. */
-export function applyRoomBoardCharges(state: AppState, admissionId: string): AppState {
+export function applyRoomBoardCharges(
+  state: AppState,
+  admissionId: string,
+  targetBillId?: string
+): AppState {
   const admission = state.admissions.find((a) => a.id === admissionId);
   if (!admission?.dischargeDate) return state;
 
@@ -200,7 +213,7 @@ export function applyRoomBoardCharges(state: AppState, admissionId: string): App
   const lines = computeRoomBoardCharges(next, admission);
   if (lines.length === 0) return next;
 
-  const billRef = getOrCreateInpatientBill(next, admission.patientId);
+  const billRef = getOrCreateInpatientBill(next, admission.patientId, targetBillId);
   next = billRef.state;
 
   for (const line of lines) {

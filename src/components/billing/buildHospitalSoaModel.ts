@@ -311,29 +311,26 @@ function sumBucket(items: NormalizedItem[], bucket: HciBucket, state: AppState):
 
 
 function roomDetail(items: NormalizedItem[]): string | undefined {
-
   const room = items.find((i) => i.category === "Room");
-
   if (!room) return undefined;
 
-  const daysMatch = room.description.match(/(\d+)\s*day/i);
+  const roomFormat = room.description.match(/ROOM\s*-\s*.+\((\d+)\s*day\/s\)\s*\(([\d,]+(?:\.\d+)?)\)/i);
+  if (roomFormat) {
+    return `${roomFormat[1]}.00 Day(s) @ ${roomFormat[2].replace(/,/g, "")}`;
+  }
 
-  const rateMatch = room.description.match(/@\s*₱?([\d,]+(?:\.\d+)?)/i);
+  const daysMatch = room.description.match(/(\d+)\s*day/i);
+  const rateMatch = room.description.match(/@\s*₱?([\d,]+(?:\.\d+)?)/i) ?? room.description.match(/\(([\d,]+(?:\.\d+)?)\)\s*$/);
 
   if (daysMatch && rateMatch) {
-
     return `${daysMatch[1]}.00 Day(s) @ ${rateMatch[1].replace(/,/g, "")}`;
-
   }
 
   if (room.qty > 0 && room.unitPrice > 0) {
-
     return `${room.qty.toFixed(2)} Day(s) @ ${money2(room.unitPrice).replace(/,/g, "")}`;
-
   }
 
   return undefined;
-
 }
 
 
@@ -515,6 +512,17 @@ export function buildHospitalSoaModel(input: {
 
 
   const pfRowsBase = [...pfByName.entries()].map(([name, actual]) => amountRow(name, actual));
+  if (pfRowsBase.length === 0 && input.caseRate) {
+    const fallbackPf =
+      input.caseRate.professionalFeeAmount && input.caseRate.professionalFeeAmount > 0
+        ? input.caseRate.professionalFeeAmount
+        : input.caseRate.amount > 0
+          ? Math.round(input.caseRate.amount * ((input.caseRate.professionalFeePct ?? 30) / 100) * 100) / 100
+          : 0;
+    if (fallbackPf > 0) {
+      pfRowsBase.push(amountRow(`PhilHealth PF - ${input.caseRate.code}`, fallbackPf));
+    }
+  }
 
 
 
@@ -574,17 +582,20 @@ export function buildHospitalSoaModel(input: {
 
 
 
-  const diagnosisText =
-
-    input.caseRateDescription ||
-
-    input.caseRate?.description ||
-
-    bill.caseRateCode ||
-
-    bill.notes ||
-
-    "";
+  const diagnosisParts: string[] = [];
+  if (admission?.notes?.trim()) diagnosisParts.push(admission.notes.trim());
+  if (bill.notes?.trim()) diagnosisParts.push(bill.notes.trim());
+  if (input.caseRate?.description?.trim()) {
+    const withCode = `${input.caseRate.code} - ${input.caseRate.description.trim()}`;
+    diagnosisParts.push(withCode);
+  } else if (input.caseRateDescription?.trim()) {
+    diagnosisParts.push(
+      bill.caseRateCode ? `${bill.caseRateCode} - ${input.caseRateDescription.trim()}` : input.caseRateDescription.trim()
+    );
+  } else if (bill.caseRateCode) {
+    diagnosisParts.push(bill.caseRateCode);
+  }
+  const diagnosisText = [...new Set(diagnosisParts)].join("; ");
 
 
 

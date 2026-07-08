@@ -64,7 +64,7 @@ function LoginPage() {
     if (!state.authedUser) return;
     const accessUser = resolveAccessUser(state, getSession()?.user);
     navigate({ to: firstAllowedPage(accessUser) });
-  }, [state.authedUser, state.users, navigate, state]);
+  }, [state.authedUser, state.users, navigate]);
 
   const showFieldError = (field: keyof LoginFieldErrors) =>
     (touched[field] || submitted) && fieldErrors[field];

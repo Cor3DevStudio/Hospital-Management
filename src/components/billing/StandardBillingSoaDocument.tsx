@@ -1,5 +1,7 @@
 import type { HospitalSoaModel, SoaAmountRow } from "@/components/billing/buildHospitalSoaModel";
 import { formatSoaMoney } from "@/components/billing/buildHospitalSoaModel";
+import type { SOAPrintOptions } from "@/components/billing/soaPrintOptions";
+import { DEFAULT_SOA_PRINT_OPTIONS } from "@/components/billing/soaPrintOptions";
 
 function moneyCell(value: number, blankIfZero = false) {
   if (blankIfZero && value === 0) return "—";
@@ -21,7 +23,15 @@ function summaryCells(row: SoaAmountRow, blankPhilhealth = false) {
   );
 }
 
-export function StandardBillingSoaDocument({ model }: { model: HospitalSoaModel }) {
+export function StandardBillingSoaDocument({
+  model,
+  printOptions = DEFAULT_SOA_PRINT_OPTIONS,
+}: {
+  model: HospitalSoaModel;
+  printOptions?: SOAPrintOptions;
+}) {
+  const showSummary = printOptions.viewMode !== "details";
+  const showDetails = printOptions.viewMode !== "summary";
   const diagnosis =
     model.finalDiagnoses.length > 0
       ? model.finalDiagnoses.join("; ")
@@ -72,6 +82,8 @@ export function StandardBillingSoaDocument({ model }: { model: HospitalSoaModel 
           </div>
         </div>
 
+        {showSummary ? (
+          <>
         <h2 className="standard-billing-soa__section-title">Summary of Fees</h2>
         <table className="standard-billing-soa__table">
           <thead>
@@ -148,7 +160,11 @@ export function StandardBillingSoaDocument({ model }: { model: HospitalSoaModel 
             </tr>
           </tbody>
         </table>
+          </>
+        ) : null}
 
+        {showDetails ? (
+          <>
         <h2 className="standard-billing-soa__section-title">Itemized Charges</h2>
         <table className="standard-billing-soa__table">
           <thead>
@@ -180,8 +196,10 @@ export function StandardBillingSoaDocument({ model }: { model: HospitalSoaModel 
             </tr>
           </tbody>
         </table>
+          </>
+        ) : null}
 
-        {model.phicCoverage ? (
+        {showSummary && model.phicCoverage ? (
           <table className="standard-billing-soa__table" style={{ marginTop: 8 }}>
             <tbody>
               <tr>

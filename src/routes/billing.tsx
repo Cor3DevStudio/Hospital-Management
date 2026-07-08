@@ -25,6 +25,7 @@ import {
   deleteBill,
   normalizeBillPaymentMethod,
   resolveLineItemPrice,
+  setBillDischargeDate,
   type BillLineItem,
 } from "@/lib/services/billingService";
 import {
@@ -267,16 +268,25 @@ function BillingPage() {
   const handleDischargeDateChange = (val: string) => {
     setDischargeDate(val);
     if (!selectedBill) return;
-    const updated = {
-      ...selectedBill,
-      dischargeDate: val || undefined,
-    };
-    setSelectedBill(updated);
-    setState((s) => ({
-      ...s,
-      bills: s.bills.map((b) => (b.id === selectedBill.id ? updated : b)),
-    }));
-    toast.success(val ? `Patient discharge date set to ${val}` : "Discharge date cleared");
+    let updated: Bill | undefined;
+    let failed = false;
+    setState((s) => {
+      const result = setBillDischargeDate(s, selectedBill.id, val || undefined);
+      if (result.error) {
+        toast.error(result.error);
+        failed = true;
+        return s;
+      }
+      updated = result.state.bills.find((b) => b.id === selectedBill.id);
+      return result.state;
+    });
+    if (failed) return;
+    if (updated) setSelectedBill(updated);
+    toast.success(
+      val
+        ? `Discharge set to ${val}. Room & Board auto-computed from admission stay.`
+        : "Discharge date cleared"
+    );
   };
 
   const handleCancelDischarge = () => {
@@ -284,15 +294,14 @@ function BillingPage() {
     const check = canCancelBillDischarge(state, selectedBill);
     if (!check.allowed) return toast.error(check.reason || "Cannot cancel discharge");
     setDischargeDate("");
-    const updated = {
-      ...selectedBill,
-      dischargeDate: undefined,
-    };
-    setSelectedBill(updated);
-    setState((s) => ({
-      ...s,
-      bills: s.bills.map((b) => (b.id === selectedBill.id ? updated : b)),
-    }));
+    let updated: Bill | undefined;
+    setState((s) => {
+      const result = setBillDischargeDate(s, selectedBill.id, undefined);
+      if (result.error) return s;
+      updated = result.state.bills.find((b) => b.id === selectedBill.id);
+      return result.state;
+    });
+    if (updated) setSelectedBill(updated);
     toast.success("Discharge cancelled");
   };
 

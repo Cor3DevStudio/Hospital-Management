@@ -1,5 +1,6 @@
 ﻿import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -302,8 +303,8 @@ export type BillItem = {
   effectiveDate?: string;
   priceItemId?: string;
   medicineId?: string;
-  /** Auto Room & Board charge source. */
-  source?: "manual" | "room-board-auto";
+  /** Auto-generated charge source markers. */
+  source?: "manual" | "room-board-auto" | "case-rate-pf-auto";
   /** Admission that generated an auto Room & Board line. */
   admissionId?: string;
 };
@@ -676,16 +677,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(authService.AUTH_EXPIRED_EVENT, onAuthExpired);
   }, []);
 
-  const setState = (updater: (s: State) => State) => {
+  const setState = useCallback((updater: (s: State) => State) => {
     _setState((prev) => {
       const next = updater(prev);
       saveDebounced(next);
       scheduleAutoSync(next);
       return next;
     });
-  };
+  }, []);
 
-  const setStateWithoutSync = (updater: (s: State) => State) => {
+  const setStateWithoutSync = useCallback((updater: (s: State) => State) => {
     pauseAutoSync();
     _setState((prev) => {
       const next = updater(prev);
@@ -693,7 +694,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return next;
     });
     resumeAutoSync();
-  };
+  }, []);
 
   const login = async (username: string, password: string) => {
     const result = await authService.login({ username, password });

@@ -1,5 +1,7 @@
 import type { HospitalSoaModel, SoaAmountRow } from "@/components/billing/buildHospitalSoaModel";
 import { formatSoaMoney } from "@/components/billing/buildHospitalSoaModel";
+import type { SOAPrintOptions } from "@/components/billing/soaPrintOptions";
+import { DEFAULT_SOA_PRINT_OPTIONS } from "@/components/billing/soaPrintOptions";
 
 function UnderlineField({ label, value }: { label: string; value: string }) {
   return (
@@ -63,7 +65,16 @@ function DiscountCheckboxes({
   );
 }
 
-export function HospitalSoaDocument({ model }: { model: HospitalSoaModel }) {
+export function HospitalSoaDocument({
+  model,
+  printOptions = DEFAULT_SOA_PRINT_OPTIONS,
+}: {
+  model: HospitalSoaModel;
+  printOptions?: SOAPrintOptions;
+}) {
+  const showSummary = printOptions.viewMode !== "details";
+  const showDetails = printOptions.viewMode !== "summary";
+
   return (
     <article className="hospital-soa-page">
       <header className="hospital-soa-header">
@@ -112,6 +123,8 @@ export function HospitalSoaDocument({ model }: { model: HospitalSoaModel }) {
       </section>
 
       <section className="hospital-soa-fees">
+        {showSummary ? (
+          <>
         <h2 className="hospital-soa-fees__title">SUMMARY OF FEES</h2>
         <table className="hospital-soa-table">
           <thead>
@@ -194,9 +207,45 @@ export function HospitalSoaDocument({ model }: { model: HospitalSoaModel }) {
             </tr>
           </tbody>
         </table>
+          </>
+        ) : null}
       </section>
 
-      {model.phicCoverage ? (
+      {showDetails && model.itemizedLines.length > 0 ? (
+        <section className="hospital-soa-fees">
+          <h2 className="hospital-soa-fees__title">DETAILED HOSPITAL CHARGES</h2>
+          <table className="hospital-soa-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th className="hospital-soa-table__particulars">Particulars</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.itemizedLines.map((line, index) => (
+                <tr key={`${line.itemName}-${index}`}>
+                  <td>{line.serviceDate}</td>
+                  <td className="hospital-soa-table__particulars">{line.itemName}</td>
+                  <td>{line.quantity}</td>
+                  <MoneyCell value={line.price} />
+                  <MoneyCell value={line.amount} />
+                </tr>
+              ))}
+              <tr className="hospital-soa-table__total">
+                <td colSpan={4} className="hospital-soa-table__particulars">
+                  TOTAL
+                </td>
+                <MoneyCell value={model.total.actual} />
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      ) : null}
+
+      {showSummary && model.phicCoverage ? (
         <section className="hospital-soa-phic-summary" aria-label="PhilHealth coverage summary">
           <h2 className="hospital-soa-phic-summary__title">PhilHealth Coverage Summary</h2>
           <table className="hospital-soa-phic-summary__table">

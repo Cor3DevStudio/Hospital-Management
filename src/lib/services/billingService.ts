@@ -1,6 +1,14 @@
 import { getCaseRateByCode } from "@/lib/caseRateService";
 import { getPriceAsOf } from "@/lib/priceService";
-import { getLatestAdmission } from "@/lib/services/admissionService";
+import {
+  dischargePatient,
+  getLatestAdmission,
+  updateAdmission,
+} from "@/lib/services/admissionService";
+import {
+  applyRoomBoardCharges,
+  removeRoomBoardCharges,
+} from "@/lib/services/roomBoardService";
 import {
   resolveChargeCategory,
   type BillChargeCategory,
@@ -18,7 +26,7 @@ export type BillLineItem = {
   medicineId?: string;
   /** Date charged (YYYY-MM-DD). */
   effectiveDate?: string;
-  source?: "manual" | "room-board-auto";
+  source?: "manual" | "room-board-auto" | "case-rate-pf-auto";
   admissionId?: string;
 };
 
@@ -188,6 +196,57 @@ export function updateBill(state: AppState, bill: Bill): AppState {
   };
 }
 
+/**
+ * Set or clear bill discharge date. For in-patients, syncs admission discharge and
+ * auto-posts Room & Board (days × daily rate from Settings) on the target bill.
+ */
+export function setBillDischargeDate(
+  state: AppState,
+  billId: string,
+  dischargeDate?: string
+): { state: AppState; error?: string } {
+  const bill = state.bills.find((b) => b.id === billId);
+  if (!bill) return { state };
+
+  if (!dischargeDate) {
+    const check = canCancelBillDischarge(state, bill);
+    if (!check.allowed) return { state, error: check.reason };
+    let next = updateBill(state, { ...bill, dischargeDate: undefined });
+    const admission = getLatestAdmission(next, bill.patientId);
+    if (admission) {
+      next = removeRoomBoardCharges(next, admission.id);
+    }
+    return { state: next };
+  }
+
+  let next = updateBill(state, { ...bill, dischargeDate });
+
+  if (bill.patientType !== "In-Patient") {
+    return { state: next };
+  }
+
+  const admission = getLatestAdmission(next, bill.patientId);
+  if (!admission) {
+    return { state: next };
+  }
+
+  if (admission.status === "Admitted" && !admission.dischargeDate) {
+    next = dischargePatient(next, admission.id, dischargeDate);
+  } else {
+    next = updateAdmission(next, {
+      ...admission,
+      status: "Discharged",
+      dischargeDate,
+      roomStays: (admission.roomStays ?? []).map((stay, index, arr) =>
+        index === arr.length - 1 ? { ...stay, endDate: dischargeDate } : stay
+      ),
+    });
+  }
+
+  next = applyRoomBoardCharges(next, admission.id, billId);
+  return { state: next };
+}
+
 export function applyCaseRateToBill(
   state: AppState,
   billId: string,
@@ -196,15 +255,41 @@ export function applyCaseRateToBill(
 ): AppState {
   const bill = state.bills.find((b) => b.id === billId);
   if (!bill) return state;
+  const caseRate =
+    caseRateCode === "none" || !caseRateCode
+      ? undefined
+      : getCaseRateByCode(state, caseRateCode, bill.date);
   const deduction =
     caseRateCode === "none" || !caseRateCode
       ? 0
-      : amount ?? getCaseRateByCode(state, caseRateCode, bill.date)?.amount ?? 0;
+      : amount ?? caseRate?.amount ?? 0;
+  const pfFromCaseRate =
+    caseRate?.professionalFeeAmount && caseRate.professionalFeeAmount > 0
+      ? caseRate.professionalFeeAmount
+      : caseRate?.amount && caseRate.amount > 0
+        ? Math.round(caseRate.amount * ((caseRate.professionalFeePct ?? 30) / 100) * 100) / 100
+        : 0;
+  const hasManualPf = bill.items.some(
+    (item) => item.category === "PF" && item.source !== "case-rate-pf-auto"
+  );
+  const nextItems = bill.items.filter((item) => item.source !== "case-rate-pf-auto");
+  if (caseRate && pfFromCaseRate > 0 && !hasManualPf) {
+    nextItems.push({
+      description: `PhilHealth PF - ${caseRate.code}`,
+      category: "PF",
+      qty: 1,
+      unitPrice: pfFromCaseRate,
+      amount: pfFromCaseRate,
+      effectiveDate: bill.date,
+      source: "case-rate-pf-auto",
+    });
+  }
   const updated: Bill = {
     ...bill,
+    items: nextItems,
     caseRateCode: caseRateCode === "none" ? undefined : caseRateCode,
     philhealthDeduction: deduction,
-    status: deriveBillStatus({ ...bill, philhealthDeduction: deduction }),
+    status: deriveBillStatus({ ...bill, items: nextItems, philhealthDeduction: deduction }),
   };
   return updateBill(state, updated);
 }
