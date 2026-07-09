@@ -17,14 +17,77 @@ export function getStandardBillingSoaCss() {
     }
     .standard-billing-soa__title {
       text-align: center;
-      font-size: 11pt;
+      font-size: 12pt;
       font-weight: 700;
-      margin: 0 0 4px;
+      margin: 0;
+      letter-spacing: 0.04em;
+    }
+    .standard-billing-soa__title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 10px 0 8px;
+    }
+    .standard-billing-soa__title-meta {
+      text-align: right;
+      font-size: 8pt;
+      line-height: 1.4;
+    }
+    .standard-billing-soa__title-meta p {
+      margin: 0;
+    }
+    .standard-billing-soa__letterhead {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .standard-billing-soa__republic {
+      margin: 0;
+      font-size: 8pt;
+      font-style: italic;
+    }
+    .standard-billing-soa__patient-type {
+      margin: 0 0 8px;
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .standard-billing-soa__patient-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+      margin-bottom: 14px;
+      font-size: 9pt;
+    }
+    .standard-billing-soa__section {
+      margin-bottom: 12px;
+    }
+    .standard-billing-soa__group-row td {
+      font-weight: 700;
+      background: #f3f3f3;
+    }
+    .standard-billing-soa__case-rates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 16px;
+      margin-bottom: 6px;
+      font-size: 8pt;
+    }
+    .standard-billing-soa__case-rates p {
+      margin: 0;
+    }
+    .standard-billing-soa__table--details th,
+    .standard-billing-soa__table--details td {
+      font-size: 7.5pt;
+    }
+    .standard-billing-soa__table--phic th {
+      font-size: 7pt;
+      line-height: 1.2;
     }
     .standard-billing-soa__ref {
       text-align: right;
-      font-size: 9pt;
-      margin: 0 0 8px;
+      font-size: 8pt;
+      margin: 0;
     }
     .standard-billing-soa__hospital {
       text-align: center;
@@ -36,13 +99,6 @@ export function getStandardBillingSoaCss() {
     }
     .standard-billing-soa__hospital-address {
       margin: 2px 0 0;
-      font-size: 9pt;
-    }
-    .standard-billing-soa__patient {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 16px;
-      margin-bottom: 14px;
       font-size: 9pt;
     }
     .standard-billing-soa__field {

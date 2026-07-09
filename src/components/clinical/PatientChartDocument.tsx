@@ -2,189 +2,294 @@ import {
   formatChartDateLong,
   type PatientChartModel,
 } from "@/components/clinical/buildPatientChartModel";
+import { formatPatientName } from "@/lib/services/patientHistoryService";
+import { computeAge } from "@/lib/services/patientService";
 import type { ReactNode } from "react";
 
-function SectionBlock({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
+function ChartSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="patient-chart-section">
-      <h2 className="patient-chart-section__title">{title}</h2>
+    <section className="patient-chart-sheet__section">
+      <h2 className="patient-chart-sheet__section-title">{title}</h2>
       {children}
     </section>
   );
 }
 
+function FieldCell({ label, value, emphasize }: { label: string; value: string; emphasize?: boolean }) {
+  return (
+    <td>
+      <span className="patient-chart-sheet__label">{label}</span>
+      <span className={`patient-chart-sheet__value${emphasize ? " patient-chart-sheet__value--name" : ""}`}>
+        {value || "—"}
+      </span>
+    </td>
+  );
+}
+
 export function PatientChartDocument({ model }: { model: PatientChartModel }) {
   const { patient, hospital } = model;
+  const age = computeAge(patient.birthDate);
+  const address = [
+    patient.address.street,
+    patient.address.barangay,
+    patient.address.city,
+    patient.address.province,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <article className="patient-chart-page bg-white text-black">
-      <header className="patient-chart-header border-b border-slate-300 pb-3 text-center">
-        <p className="text-sm font-bold uppercase tracking-wide text-slate-900">
-          {hospital.name || "Hospital"}
-        </p>
-        {hospital.address ? <p className="mt-0.5 text-[10px] text-slate-600">{hospital.address}</p> : null}
-        {hospital.phone ? <p className="text-[10px] text-slate-600">Tel: {hospital.phone}</p> : null}
+    <article className="patient-chart-sheet patient-chart-page force-light">
+      <header className="patient-chart-sheet__header">
+        <div className="patient-chart-sheet__logo" aria-hidden />
+        <div className="patient-chart-sheet__header-text">
+          <p className="patient-chart-sheet__republic">Republic of the Philippines</p>
+          <p className="patient-chart-sheet__hospital">{hospital.name || "Hospital"}</p>
+          {hospital.address ? <p className="patient-chart-sheet__address">{hospital.address}</p> : null}
+          {hospital.phone ? (
+            <p className="patient-chart-sheet__address">
+              Tel: {hospital.phone}
+              {hospital.email ? ` · ${hospital.email}` : ""}
+            </p>
+          ) : null}
+          {hospital.philhealthAccreditation ? (
+            <p className="patient-chart-sheet__accreditation">
+              PhilHealth Accreditation No.: {hospital.philhealthAccreditation}
+            </p>
+          ) : null}
+        </div>
       </header>
 
-      <div className="mt-4 border-b-2 border-slate-800 pb-2 text-center">
-        <h1 className="text-base font-bold uppercase tracking-wide text-slate-900">
-          Patient Medical Chart
-        </h1>
-        <p className="mt-0.5 text-[11px] text-slate-600">
-          Official clinical summary and record printout · Generated {model.printedAt}
-        </p>
-      </div>
-
-      <SectionBlock title="Patient Demographics">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[11px]">
-          <p>
-            <span className="font-semibold">Name:</span> {model.patientName}
-          </p>
-          <p>
-            <span className="font-semibold">Patient ID:</span> {patient.id}
-          </p>
-          <p>
-            <span className="font-semibold">Age / Sex:</span>{" "}
-            {model.age == null ? "—" : `${model.age}y`} · {patient.gender}
-          </p>
-          <p>
-            <span className="font-semibold">Birth date:</span> {formatChartDateLong(patient.birthDate)}
-          </p>
-          <p>
-            <span className="font-semibold">Contact:</span> {patient.contactNumber || "—"}
-          </p>
-          <p>
-            <span className="font-semibold">PhilHealth PIN:</span>{" "}
-            {patient.philhealth?.memberNumber?.trim() || "—"}
+      <div className="patient-chart-sheet__title-row">
+        <div>
+          <h1 className="patient-chart-sheet__title">Patient Medical Chart</h1>
+          <p className="patient-chart-sheet__subtitle">
+            Official clinical summary and record printout
           </p>
         </div>
-      </SectionBlock>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <SectionBlock title="Clinical Summary">
-          <div className="space-y-1 text-[11px]">
-            <p>
-              <span className="font-semibold">Last OPD visit:</span> {model.lastOpdVisit}
-            </p>
-            <p>
-              <span className="font-semibold">Next appointment:</span> {model.nextAppointment}
-            </p>
-          </div>
-        </SectionBlock>
-
-        <SectionBlock title="Billing Snapshot">
-          <div className="space-y-1 text-[11px]">
-            <p>
-              <span className="font-semibold">Bills on record:</span> {model.billsOnRecord}
-            </p>
-            <p>
-              <span className="font-semibold">Outstanding:</span> {model.outstandingBills}
-            </p>
-            <p>
-              <span className="font-semibold">Latest bill status:</span> {model.latestBillStatus}
-            </p>
-          </div>
-        </SectionBlock>
+        <div className="patient-chart-sheet__meta">
+          <p>
+            <strong>Patient ID:</strong> {patient.id}
+          </p>
+          <p>
+            <strong>Generated:</strong> {model.printedAt}
+          </p>
+        </div>
       </div>
 
-      <SectionBlock title="OPD Visit History">
-        {model.opdVisits.length > 0 ? (
-          <div className="space-y-2">
-            {model.opdVisits.map((visit) => (
-              <div key={visit.id} className="rounded border border-slate-200 p-2 text-[11px]">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold">{formatChartDateLong(visit.date)}</p>
-                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {visit.discharged ? "Discharged" : visit.status || "Active"}
-                  </span>
-                </div>
-                <p className="mt-1 text-slate-600">Chief complaint: {visit.chiefComplaint}</p>
-                <p>
-                  <span className="font-semibold">Diagnosis:</span> {visit.diagnosis}
-                </p>
-                {visit.notes ? (
-                  <p>
-                    <span className="font-semibold">Notes:</span> {visit.notes}
-                  </p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[11px] text-slate-500">No OPD visits have been recorded for this patient.</p>
-        )}
-      </SectionBlock>
+      <ChartSection title="Patient Demographics">
+        <table className="patient-chart-sheet__table">
+          <tbody>
+            <tr>
+              <FieldCell label="Patient Name" value={formatPatientName(patient).toUpperCase()} emphasize />
+              <FieldCell label="Patient ID" value={patient.id} />
+            </tr>
+            <tr>
+              <FieldCell
+                label="Age / Sex"
+                value={`${age ?? "—"} / ${patient.gender}`}
+              />
+              <FieldCell label="Birth Date" value={formatChartDateLong(patient.birthDate)} />
+            </tr>
+            <tr>
+              <FieldCell label="Contact Number" value={patient.contactNumber} />
+              <FieldCell
+                label="PhilHealth PIN"
+                value={patient.philhealth?.memberNumber?.trim() || "—"}
+              />
+            </tr>
+            <tr>
+              <FieldCell label="Civil Status" value={patient.civilStatus} />
+              <FieldCell label="Email" value={patient.email || "—"} />
+            </tr>
+            <tr>
+              <td colSpan={2}>
+                <span className="patient-chart-sheet__label">Address</span>
+                <span className="patient-chart-sheet__value">{address || "—"}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </ChartSection>
 
-      <SectionBlock title="Current Prescriptions">
-        {model.prescriptions.length > 0 ? (
-          <div className="space-y-2">
-            {model.prescriptions.map((rx, index) => (
-              <div
-                key={`${rx.consultationDate}-${index}`}
-                className="rounded border border-slate-200 p-2 text-[11px]"
-              >
-                <p className="font-semibold">{rx.medicine}</p>
-                <p className="text-slate-600">
-                  {rx.dosage} · {rx.instructions}
-                </p>
-                <p className="text-[10px] text-slate-500">
-                  OPD visit: {formatChartDateLong(rx.consultationDate)} · {rx.diagnosis}
-                </p>
-              </div>
-            ))}
-          </div>
+      <div className="patient-chart-sheet__grid-2">
+        <ChartSection title="Clinical Summary">
+          <table className="patient-chart-sheet__table">
+            <tbody>
+              <tr>
+                <td>
+                  <span className="patient-chart-sheet__label">Last OPD Visit</span>
+                  <span className="patient-chart-sheet__value">{model.lastOpdVisit}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span className="patient-chart-sheet__label">Next Appointment</span>
+                  <span className="patient-chart-sheet__value">{model.nextAppointment}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ChartSection>
+
+        <ChartSection title="Billing Snapshot">
+          <table className="patient-chart-sheet__table">
+            <tbody>
+              <tr>
+                <td>
+                  <span className="patient-chart-sheet__label">Bills on Record</span>
+                  <span className="patient-chart-sheet__value">{String(model.billsOnRecord)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span className="patient-chart-sheet__label">Outstanding Balance</span>
+                  <span className="patient-chart-sheet__value">{String(model.outstandingBills)}</span>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span className="patient-chart-sheet__label">Latest Bill Status</span>
+                  <span className="patient-chart-sheet__value">{model.latestBillStatus}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ChartSection>
+      </div>
+
+      <ChartSection title="OPD Visit History">
+        {model.opdVisits.length > 0 ? (
+          <table className="patient-chart-sheet__table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Chief Complaint</th>
+                <th>Diagnosis</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.opdVisits.map((visit) => (
+                <tr key={visit.id}>
+                  <td>{formatChartDateLong(visit.date)}</td>
+                  <td>{visit.chiefComplaint || "—"}</td>
+                  <td>{visit.diagnosis || "—"}</td>
+                  <td>{visit.discharged ? "Discharged" : visit.status || "Active"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
-          <p className="text-[11px] text-slate-500">No prescriptions are on file for this patient.</p>
+          <p className="patient-chart-sheet__empty">
+            No OPD visits have been recorded for this patient.
+          </p>
         )}
-      </SectionBlock>
+      </ChartSection>
+
+      <ChartSection title="Current Prescriptions">
+        {model.prescriptions.length > 0 ? (
+          <table className="patient-chart-sheet__table">
+            <thead>
+              <tr>
+                <th>Medicine</th>
+                <th>Dosage / Instructions</th>
+                <th>OPD Visit</th>
+                <th>Diagnosis</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.prescriptions.map((rx, index) => (
+                <tr key={`${rx.consultationDate}-${index}`}>
+                  <td>{rx.medicine}</td>
+                  <td>
+                    {rx.dosage}
+                    {rx.instructions ? ` · ${rx.instructions}` : ""}
+                  </td>
+                  <td>{formatChartDateLong(rx.consultationDate)}</td>
+                  <td>{rx.diagnosis || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="patient-chart-sheet__empty">
+            No prescriptions are on file for this patient.
+          </p>
+        )}
+      </ChartSection>
 
       {model.historySections.length > 0 ? (
-        <SectionBlock title="Clinical History">
-          <div className="space-y-3">
-            {model.historySections.map((section) => (
-              <div key={section.key}>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-700">
-                  {section.label}
-                </p>
-                <ul className="mt-1 space-y-1 text-[11px]">
-                  {section.items.slice(0, 4).map((item) => (
-                    <li key={item.id} className="border-b border-slate-100 pb-1">
-                      <span className="font-medium">{formatChartDateLong(item.date)}</span>
-                      {" — "}
-                      {item.title}
-                      {item.detail ? ` · ${item.detail}` : ""}
-                      {item.status ? ` (${item.status})` : ""}
-                    </li>
+        <ChartSection title="Clinical History">
+          {model.historySections.map((section) => (
+            <div key={section.key}>
+              <p className="patient-chart-sheet__history-label">{section.label}</p>
+              <table className="patient-chart-sheet__table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Details</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {section.items.slice(0, 6).map((item) => (
+                    <tr key={item.id}>
+                      <td>{formatChartDateLong(item.date)}</td>
+                      <td>
+                        {item.title}
+                        {item.detail ? ` · ${item.detail}` : ""}
+                      </td>
+                      <td>{item.status || "—"}</td>
+                    </tr>
                   ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </SectionBlock>
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </ChartSection>
       ) : null}
 
       {model.attachments.length > 0 ? (
-        <SectionBlock title="Attached Documents">
-          <ul className="space-y-1 text-[11px]">
-            {model.attachments.map((attachment) => (
-              <li key={attachment.id}>
-                {attachment.filename} · {(attachment.size / 1024).toFixed(1)} KB ·{" "}
-                {new Date(attachment.createdAt).toLocaleString()}
-              </li>
-            ))}
-          </ul>
-        </SectionBlock>
+        <ChartSection title="Attached Documents">
+          <table className="patient-chart-sheet__table">
+            <thead>
+              <tr>
+                <th>Filename</th>
+                <th>Size</th>
+                <th>Uploaded</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.attachments.map((attachment) => (
+                <tr key={attachment.id}>
+                  <td>{attachment.filename}</td>
+                  <td>{(attachment.size / 1024).toFixed(1)} KB</td>
+                  <td>{new Date(attachment.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </ChartSection>
       ) : null}
 
-      <footer className="mt-6 border-t border-slate-300 pt-2 text-center text-[9px] text-slate-400">
-        Confidential patient record — {hospital.name}
+      <footer className="patient-chart-sheet__footer">
+        <div>
+          <p>Prepared by:</p>
+          <div className="patient-chart-sheet__sig-line" />
+          <p className="patient-chart-sheet__sig-label">Attending Physician / Medical Records</p>
+          <p className="patient-chart-sheet__sig-label">(Signature over printed name)</p>
+        </div>
+        <div>
+          <p>Verified by:</p>
+          <div className="patient-chart-sheet__sig-line" />
+          <p className="patient-chart-sheet__sig-label">Medical Records Officer</p>
+          <p className="patient-chart-sheet__sig-label">Date: ________________________</p>
+        </div>
       </footer>
+      <p className="patient-chart-sheet__confidential">
+        CONFIDENTIAL PATIENT RECORD — {hospital.name || "Hospital"}
+      </p>
     </article>
   );
 }

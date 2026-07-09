@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Send, FilterX, Printer, Plus, Save, Trash2, Paperclip, FileDown, FileCode } from "lucide-react";
 import { toast } from "sonner";
 import { MAX_ATTACHMENT_SIZE_LABEL, validateAttachmentFile } from "@/lib/attachmentValidation";
@@ -26,6 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
+import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
 import {
   createEClaim,
   deleteEClaim,
@@ -119,6 +120,27 @@ function EClaimsPage() {
     }
     return Array.from(codes).sort((a, b) => a.localeCompare(b));
   }, [state.eClaims]);
+
+  const [caseRateLabels, setCaseRateLabels] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const entries = await Promise.all(
+        caseRateFilterOptions.map(async (code) => {
+          const rate = await fetchCaseRateByCode(code);
+          const label = rate?.description
+            ? `${rate.description} - ${rate.code}`
+            : code;
+          return [code, label] as const;
+        })
+      );
+      if (!cancelled) setCaseRateLabels(Object.fromEntries(entries));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [caseRateFilterOptions]);
 
   const ageDays = (d: string) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
@@ -397,7 +419,7 @@ function EClaimsPage() {
                     <SelectItem value="All">All case rates</SelectItem>
                     {caseRateFilterOptions.map((code) => (
                       <SelectItem key={code} value={code}>
-                        {code}
+                        {caseRateLabels[code] ?? code}
                       </SelectItem>
                     ))}
                   </SelectContent>

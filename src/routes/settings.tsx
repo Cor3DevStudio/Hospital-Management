@@ -41,6 +41,7 @@ function SettingsPage() {
   const { setDarkMode, isDark } = useStore();
   const [hospital, setHospital] = useState(state.hospital);
   const [newUser, setNewUser] = useState<User>({ id: "", username: "", fullName: "", role: "Receptionist", active: true });
+  const [newUserPhilhealthAccreditation, setNewUserPhilhealthAccreditation] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [pageAccessUser, setPageAccessUser] = useState<User | null>(null);
   const [pageAccessSaving, setPageAccessSaving] = useState(false);

@@ -1,21 +1,20 @@
+import { getPatientChartSheetCss } from "@/components/clinical/patientChartStyles";
+
 /** Print CSS for patient medical chart (#patient-chart-print-area). */
 export function getPatientChartPrintCss(): string {
   return `
+    ${getPatientChartSheetCss()}
     #patient-chart-print-area {
       display: none;
     }
     @media print {
-      body * {
-        visibility: hidden !important;
-      }
-      #patient-chart-print-area,
-      #patient-chart-print-area * {
-        visibility: visible !important;
-      }
-      .no-print,
-      .no-print * {
+      body > #root > *,
+      body > #root > div:not(#patient-chart-print-area),
+      header,
+      aside,
+      .h-\\[calc\\(100vh-3rem\\)\\],
+      .no-print {
         display: none !important;
-        visibility: hidden !important;
       }
       html, body {
         height: auto !important;
@@ -30,17 +29,19 @@ export function getPatientChartPrintCss(): string {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
-        max-width: none !important;
+        width: 210mm !important;
+        max-width: 210mm !important;
         background: white !important;
         color: black !important;
-        padding: 10mm 12mm !important;
+        padding: 0 !important;
         margin: 0 !important;
         pointer-events: auto !important;
       }
       #patient-chart-print-area .patient-chart-page {
         break-after: page;
         page-break-after: always;
+        box-shadow: none !important;
+        border: none !important;
       }
       #patient-chart-print-area .patient-chart-page:last-child {
         break-after: auto;
@@ -48,14 +49,25 @@ export function getPatientChartPrintCss(): string {
       }
       @page {
         size: A4 portrait;
-        margin: 10mm;
+        margin: 0;
       }
     }
   `;
 }
 
+function runPatientChartPrint(): void {
+  const previousTitle = document.title;
+  document.title = "Patient Medical Chart";
+  const restoreTitle = () => {
+    document.title = previousTitle;
+    window.removeEventListener("afterprint", restoreTitle);
+  };
+  window.addEventListener("afterprint", restoreTitle);
+  window.print();
+}
+
 export function triggerPatientChartPrint(): void {
-  setTimeout(() => window.print(), 200);
+  setTimeout(runPatientChartPrint, 200);
 }
 
 export function triggerPatientChartSavePdf(): void {

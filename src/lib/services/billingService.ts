@@ -5,6 +5,7 @@ import {
   getLatestAdmission,
   updateAdmission,
 } from "@/lib/services/admissionService";
+import { resolveClaimAdmission } from "@/lib/services/eclaimService";
 import {
   applyRoomBoardCharges,
   removeRoomBoardCharges,
@@ -14,7 +15,7 @@ import {
   type BillChargeCategory,
 } from "@/lib/services/billChargeCategories";
 import { deductMedicineStock, restoreMedicineStock } from "@/lib/services/inventoryService";
-import { todayISO, type AppState, type Bill, type BillItem, type CashierTransaction } from "@/lib/store";
+import { todayISO, type AppState, type Bill, type BillItem, type CaseRate, type CashierTransaction } from "@/lib/store";
 
 export type BillLineItem = {
   description: string;
@@ -251,14 +252,15 @@ export function applyCaseRateToBill(
   state: AppState,
   billId: string,
   caseRateCode: string,
-  amount?: number
+  amount?: number,
+  caseRateOverride?: CaseRate | null
 ): AppState {
   const bill = state.bills.find((b) => b.id === billId);
   if (!bill) return state;
   const caseRate =
     caseRateCode === "none" || !caseRateCode
       ? undefined
-      : getCaseRateByCode(state, caseRateCode, bill.date);
+      : caseRateOverride ?? getCaseRateByCode(state, caseRateCode, bill.date);
   const deduction =
     caseRateCode === "none" || !caseRateCode
       ? 0
@@ -274,8 +276,15 @@ export function applyCaseRateToBill(
   );
   const nextItems = bill.items.filter((item) => item.source !== "case-rate-pf-auto");
   if (caseRate && pfFromCaseRate > 0 && !hasManualPf) {
+    const admission = resolveClaimAdmission(
+      state,
+      { patientId: bill.patientId, admissionDate: bill.date },
+      bill
+    );
+    const pfDescription =
+      admission?.attendingDoctor?.trim() || `PhilHealth PF - ${caseRate.code}`;
     nextItems.push({
-      description: `PhilHealth PF - ${caseRate.code}`,
+      description: pfDescription,
       category: "PF",
       qty: 1,
       unitPrice: pfFromCaseRate,

@@ -151,6 +151,20 @@ function BillingPage() {
         if (rate) {
           setCaseRateAmount(rate.amount);
           setSelectedCaseRate(rate);
+          let updated: Bill | undefined;
+          setState((s) => {
+            const current = s.bills.find((b) => b.id === bill.id);
+            if (!current) return s;
+            const hasAutoPf = current.items.some((item) => item.source === "case-rate-pf-auto");
+            const hasManualPf = current.items.some(
+              (item) => item.category === "PF" && item.source !== "case-rate-pf-auto"
+            );
+            if (hasAutoPf || hasManualPf) return s;
+            const next = applyCaseRateToBill(s, bill.id, bill.caseRateCode!, rate.amount, rate);
+            updated = next.bills.find((b) => b.id === bill.id);
+            return next;
+          });
+          if (updated) setSelectedBill(updated);
         } else {
           setSelectedCaseRate(null);
         }
@@ -256,7 +270,7 @@ function BillingPage() {
     if (!selectedBill) return;
     let updated: Bill | undefined;
     setState((s) => {
-      let next = applyCaseRateToBill(s, selectedBill.id, val, amount);
+      let next = applyCaseRateToBill(s, selectedBill.id, val, amount, rate);
       updated = next.bills.find((b) => b.id === selectedBill.id);
       if (updated) next = syncEClaimFromBill(next, updated);
       return next;
@@ -312,7 +326,7 @@ function BillingPage() {
     let updated: Bill | undefined;
     let failed = false;
     setState((s) => {
-      let next = applyCaseRateToBill(s, selectedBill.id, caseRateCode, caseRateAmount);
+      let next = applyCaseRateToBill(s, selectedBill.id, caseRateCode, caseRateAmount, selectedCaseRate);
       if (payVal > 0) {
         const result = processBillPayment(next, {
           billId: selectedBill.id,

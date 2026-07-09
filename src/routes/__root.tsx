@@ -189,7 +189,7 @@ function AuthenticatedLayout() {
           dashboardBehind && "w-full"
         )}
       >
-        <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-card/80 px-3 backdrop-blur">
+        <header className="no-print sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-card/80 px-3 backdrop-blur">
           <span className="text-sm font-medium text-muted-foreground">Administrator Console</span>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />

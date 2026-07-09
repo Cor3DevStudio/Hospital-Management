@@ -171,4 +171,75 @@ assert.equal(appendectomy.phicCoverage!.caseRateCode, "44960");
 assert.equal(appendectomy.phicCoverage!.hciBenefit, 28080);
 assert.equal(appendectomy.phicCoverage!.pfBenefit, 18720);
 
+// Case-rate PF fallback uses attending physician from admission
+const pfFallbackBill: Bill = {
+  id: "bill-pf",
+  patientId: "p3",
+  date: "2026-07-07",
+  patientType: "In-Patient",
+  items: [
+    { description: "Paracetamol", amount: 200, category: "Medicine" },
+    { description: "Operating Room Fee", amount: 8000, category: "Other", priceItemId: "misc-or" },
+  ],
+  philhealthDeduction: 14774.5,
+  amountPaid: 0,
+  caseRateCode: "M00.98",
+};
+
+const pfFallbackState = {
+  ...emptyState,
+  priceHistories: [],
+  admissions: [
+    {
+      id: "adm-pf",
+      patientId: "p3",
+      admissionDate: "2026-07-07",
+      dischargeDate: "2026-07-07",
+      status: "Discharged",
+      roomWard: "Ward",
+      roomTypeId: "rb-ward",
+      attendingDoctor: "Dr. Maria Santos",
+    },
+  ],
+  prices: [
+    { id: "rb-ward", code: "RB-WARD", description: "Ward", category: "Room Rate", caseRate: 800, effectiveDate: "2026-01-01" },
+    { id: "misc-or", code: "MISC-OR", description: "Operating Room Fee", category: "Miscellaneous", caseRate: 8000, effectiveDate: "2026-01-01" },
+  ],
+  users: [
+    {
+      id: "doc-1",
+      username: "msantos",
+      fullName: "Dr. Maria Santos",
+      role: "Doctor",
+      active: true,
+      philhealthAccreditation: "1234567890",
+    },
+  ],
+} as AppState;
+
+const pfFallback = buildHospitalSoaModel({
+  bill: pfFallbackBill,
+  state: pfFallbackState,
+  patient: { id: "p3", firstName: "Jose", lastName: "Rizal", birthDate: "2008-01-01", gender: "Male", civilStatus: "Single", contactNumber: "", address: {} },
+  hospital: { name: "Hospital", address: "Manila", phone: "" },
+  caseRate: {
+    id: "M00.98",
+    code: "M00.98",
+    description: "PYOGENIC ARTHRITIS, UNSPECIFIED",
+    amount: 14774.5,
+    category: "Medical",
+    healthFacilityFee: 9100,
+    professionalFeeAmount: 5674.5,
+    hospitalSharePct: 70,
+    professionalFeePct: 30,
+  },
+});
+
+assert.equal(pfFallback.hciRows.find((r) => r.label === "Room and Board")?.actual, 800);
+assert.equal(pfFallback.professionalFees.length, 1);
+assert.equal(pfFallback.professionalFees[0]?.name, "Dr. Maria Santos");
+assert.equal(pfFallback.professionalFees[0]?.accreditation, "1234567890");
+assert.equal(pfFallback.professionalFees[0]?.row.actual, 5674.5);
+assert.equal(pfFallback.pfSubtotal.actual, 5674.5);
+
 console.log("buildHospitalSoaModel.test.ts: all assertions passed");

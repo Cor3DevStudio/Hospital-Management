@@ -10,7 +10,7 @@ import {
 } from "./billingService";
 import { processBillPayment } from "./cashierService";
 import { truncateSoaField } from "../../components/billing/buildSoaValues";
-import type { AppState, Bill } from "../store";
+import type { AppState, Bill, CaseRate } from "../store";
 
 function baseState(): AppState {
   return {
@@ -190,6 +190,28 @@ function run() {
   const autoPf = caseRateBill?.items.find((i) => i.source === "case-rate-pf-auto");
   assert(autoPf, "Should add auto PF line from case rate");
   assert.equal(autoPf?.amount, 18720);
+
+  // API case rate override — catalog lives in MariaDB, not local state.caseRates
+  const apiRateState = {
+    ...baseState(),
+    caseRates: [],
+    bills: [sampleBill({ id: "BIL-API", items: [{ description: "Lab", amount: 500, category: "Lab" }] })],
+  } as unknown as AppState;
+  const apiRate: CaseRate = {
+    id: "api-9633",
+    code: "9633",
+    description: "Sample surgical case",
+    amount: 10915,
+    category: "Surgical",
+    professionalFeeAmount: 3274.5,
+    healthFacilityFee: 7640.5,
+  };
+  const withApiRate = applyCaseRateToBill(apiRateState, "BIL-API", "9633", 10915, apiRate);
+  const apiBill = withApiRate.bills.find((b) => b.id === "BIL-API");
+  assert.equal(apiBill?.philhealthDeduction, 10915);
+  const apiPf = apiBill?.items.find((i) => i.source === "case-rate-pf-auto");
+  assert(apiPf, "Should add auto PF line from API case rate override");
+  assert.equal(apiPf?.amount, 3274.5);
 
   // truncateSoaField
   assert.equal(truncateSoaField("Short name", 20), "Short name");

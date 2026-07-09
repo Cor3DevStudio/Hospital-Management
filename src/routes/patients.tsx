@@ -479,11 +479,11 @@ function PatientsPage() {
       >
         {chartModel ? <PatientChartDocument model={chartModel} /> : null}
       </ClinicalPrintPreviewModal>
+    </div>
 
       <div id="patient-chart-print-area" className="force-light">
         {chartModel ? <PatientChartDocument model={chartModel} /> : null}
       </div>
-    </div>
     </>
   );
 }

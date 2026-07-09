@@ -1,4 +1,5 @@
 import { buildBillMap, buildPatientMap } from "@/lib/stateIndexes";
+import { getCaseRateByCode } from "@/lib/caseRateService";
 import { uid, type Admission, type AppState, type Bill, type EClaim, type EClaimStatus, type Patient } from "@/lib/store";
 
 export type EClaimFilter = {
@@ -30,7 +31,7 @@ export function resolveClaimAdmission(
   claim: Pick<EClaim, "patientId" | "admissionDate">,
   bill?: Bill
 ): Admission | undefined {
-  const patientAdmissions = state.admissions.filter((a) => a.patientId === claim.patientId);
+  const patientAdmissions = (state.admissions ?? []).filter((a) => a.patientId === claim.patientId);
 
   if (bill) {
     const linkedId = admissionIdFromBill(bill);
@@ -168,13 +169,13 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
 
   const searchBlobForPatient = (patientId: string): string => {
     const admission = admissionByPatient.get(patientId);
-    const consultations = state.consultations
+    const consultations = (state.consultations ?? [])
       .filter((item) => item.patientId === patientId)
       .map((item) => `${item.chiefComplaint} ${item.diagnosis} ${item.notes}`);
-    const opd = state.opdRecords
+    const opd = (state.opdRecords ?? [])
       .filter((item) => item.patientId === patientId)
       .map((item) => `${item.reasonForVisit ?? ""} ${item.diagnosis ?? ""} ${item.notes ?? ""}`);
-    const er = state.erVisits
+    const er = (state.erRecords ?? [])
       .filter((item) => item.patientId === patientId)
       .map((item) => `${item.chiefComplaint ?? ""} ${item.notes ?? ""}`);
     return [
@@ -218,9 +219,13 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
           ? `${patient.firstName} ${patient.lastName}`.toLowerCase()
           : "";
         const diagnosisBlob = searchBlobForPatient(claim.patientId);
+        const caseRateDescription = claim.caseRateCode
+          ? getCaseRateByCode(state, claim.caseRateCode)?.description ?? ""
+          : "";
         const claimBlob = [
           claim.id,
           claim.caseRateCode ?? "",
+          caseRateDescription,
           claim.notes ?? "",
           bill?.notes ?? "",
           bill?.caseRateCode ?? "",

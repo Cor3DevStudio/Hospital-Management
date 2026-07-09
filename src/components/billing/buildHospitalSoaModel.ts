@@ -6,6 +6,8 @@ import {
 
   formatDateTime12,
 
+  formatPrintedAt,
+
   getAgeYears,
 
   getFullName,
@@ -21,6 +23,10 @@ import {
   type BillChargeCategory,
 
 } from "@/lib/services/billChargeCategories";
+
+import { resolveClaimAdmission } from "@/lib/services/eclaimService";
+
+import { computeRoomBoardCharges } from "@/lib/services/roomBoardService";
 
 import {
 
@@ -114,7 +120,7 @@ export type HospitalSoaModel = {
 
   hciSubtotal: SoaAmountRow;
 
-  professionalFees: { name: string; row: SoaAmountRow }[];
+  professionalFees: { name: string; accreditation?: string; row: SoaAmountRow }[];
 
   pfSubtotal: SoaAmountRow;
 
@@ -133,6 +139,15 @@ export type HospitalSoaModel = {
   ageYears: string;
   ageMonths: string;
   ageDays: string;
+
+  attendingPhysician: string;
+  wardRoom: string;
+  accountNumber: string;
+  phicMembership: string;
+  patientType: string;
+  hospitalCity: string;
+  printedAt: string;
+  secondCaseDescription: string;
 
 };
 
@@ -204,6 +219,55 @@ function normalizeItems(bill: Bill, state: AppState): NormalizedItem[] {
 
   });
 
+}
+
+function augmentItemsWithAdmissionRoom(
+  bill: Bill,
+  state: AppState,
+  items: NormalizedItem[],
+  admission?: ReturnType<typeof resolveClaimAdmission>
+): NormalizedItem[] {
+  if (!admission) return items;
+  if (items.some((item) => item.category === "Room" && item.amount > 0)) return items;
+  if (!admission.roomTypeId && !admission.roomWard && !(admission.roomStays?.length ?? 0)) {
+    return items;
+  }
+
+  const dischargeDate =
+    admission.dischargeDate || bill.dischargeDate || bill.date || admission.admissionDate;
+  const roomAdmission =
+    admission.dischargeDate != null
+      ? admission
+      : { ...admission, dischargeDate };
+
+  const roomLines = computeRoomBoardCharges(state, roomAdmission);
+  if (roomLines.length === 0) return items;
+
+  return [
+    ...items,
+    ...roomLines.map((line) => ({
+      description: line.description,
+      category: "Room" as BillChargeCategory,
+      qty: line.qty && line.qty > 0 ? line.qty : 1,
+      unitPrice:
+        line.unitPrice != null && line.unitPrice > 0
+          ? line.unitPrice
+          : (line.amount || 0) / (line.qty && line.qty > 0 ? line.qty : 1),
+      amount: line.amount,
+      priceItemId: line.priceItemId,
+    })),
+  ];
+}
+
+function resolvePhysicianAccreditation(state: AppState, physicianName: string): string {
+  const normalized = physicianName.trim().toLowerCase();
+  if (!normalized) return "";
+  const doctor = (state.users ?? []).find(
+    (user) =>
+      user.role === "Doctor" &&
+      user.fullName.trim().toLowerCase() === normalized
+  );
+  return doctor?.philhealthAccreditation?.trim() ?? "";
 }
 
 
@@ -369,6 +433,12 @@ function getAgeParts(birthDate?: string): { years: string; months: string; days:
   };
 }
 
+function cityFromAddress(address?: string): string {
+  if (!address) return "";
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts[parts.length - 1] || parts[0] || "";
+}
+
 function amountRow(
 
   label: string,
@@ -429,7 +499,18 @@ export function buildHospitalSoaModel(input: {
 
   const { bill, patient, hospital, state } = input;
 
-  const items = normalizeItems(bill, state);
+  const admission = resolveClaimAdmission(
+    state,
+    { patientId: bill.patientId, admissionDate: bill.date },
+    bill
+  );
+
+  const items = augmentItemsWithAdmissionRoom(
+    bill,
+    state,
+    normalizeItems(bill, state),
+    admission
+  );
 
   const subtotal = items.reduce((s, i) => s + i.amount, 0);
 
@@ -441,10 +522,6 @@ export function buildHospitalSoaModel(input: {
 
   const age = getAgeYears(patient?.birthDate);
   const ageParts = getAgeParts(patient?.birthDate);
-
-  const admission = (state.admissions ?? [])
-    .filter((a) => a.patientId === bill.patientId)
-    .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))[0];
 
   const itemizedLines: SoaItemizedLine[] = items.map((item) => ({
     serviceDate: bill.items.find((bi) => bi.description === item.description)?.effectiveDate ?? bill.date,
@@ -520,7 +597,10 @@ export function buildHospitalSoaModel(input: {
           ? Math.round(input.caseRate.amount * ((input.caseRate.professionalFeePct ?? 30) / 100) * 100) / 100
           : 0;
     if (fallbackPf > 0) {
-      pfRowsBase.push(amountRow(`PhilHealth PF - ${input.caseRate.code}`, fallbackPf));
+      const physicianName =
+        admission?.attendingDoctor?.trim() ||
+        `Professional Fee — ${input.caseRate.code}`;
+      pfRowsBase.push(amountRow(physicianName, fallbackPf));
     }
   }
 
@@ -554,13 +634,13 @@ export function buildHospitalSoaModel(input: {
 
 
 
-  const professionalFees = [...pfByName.entries()].map(([name], index) => ({
-
-    name,
-
-    row: allocation.pfRows[index] ?? amountRow(name, 0),
-
-  }));
+  const professionalFees = allocation.pfRows
+    .filter((row) => row.actual > 0)
+    .map((row) => ({
+      name: row.label,
+      accreditation: resolvePhysicianAccreditation(state, row.label),
+      row,
+    }));
 
 
 
@@ -703,6 +783,18 @@ export function buildHospitalSoaModel(input: {
     ageYears: ageParts.years,
     ageMonths: ageParts.months,
     ageDays: ageParts.days,
+
+    attendingPhysician: admission?.attendingDoctor?.trim() ?? "",
+    wardRoom: admission?.roomWard?.trim() ?? "",
+    accountNumber: bill.id || `${refYear}-${refSeq}`,
+    phicMembership:
+      patient?.philhealth?.memberNumber?.trim() ||
+      patient?.philhealth?.memberType?.trim() ||
+      "",
+    patientType: bill.patientType || "",
+    hospitalCity: cityFromAddress(hospital.address),
+    printedAt: formatPrintedAt(),
+    secondCaseDescription: "",
 
   };
 

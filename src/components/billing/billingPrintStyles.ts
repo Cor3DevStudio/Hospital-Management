@@ -15,13 +15,19 @@ export function getBillingPrintCss() {
       margin: 0 auto !important;
     }
     @media print {
-      body > #root > *,
-      body > #root > div:not(#print-area):not(#cashier-print-area),
-      header,
-      aside,
-      .h-\\[calc\\(100vh-3rem\\)\\],
-      .no-print {
+      body * {
+        visibility: hidden !important;
+      }
+      #print-area,
+      #print-area *,
+      #cashier-print-area,
+      #cashier-print-area * {
+        visibility: visible !important;
+      }
+      .no-print,
+      .no-print * {
         display: none !important;
+        visibility: hidden !important;
       }
       body, html {
         height: auto !important;
@@ -34,20 +40,20 @@ export function getBillingPrintCss() {
       #print-area,
       #cashier-print-area {
         display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 210mm !important;
+        max-width: 210mm !important;
         background: white !important;
         padding: 0 !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+        pointer-events: auto !important;
       }
-      #print-area {
-        display: block !important;
-      }
-      #cashier-print-area {
-        display: block !important;
+      #print-area *,
+      #cashier-print-area * {
+        display: revert !important;
       }
       .hospital-soa-sheet,
       .standard-billing-soa {

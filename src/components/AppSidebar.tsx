@@ -167,7 +167,7 @@ export function AppSidebar() {
   return (
     <div
       className={cn(
-        "shrink-0 overflow-hidden bg-sidebar transition-[width,box-shadow] duration-300 ease-in-out will-change-[width]",
+        "no-print shrink-0 overflow-hidden bg-sidebar transition-[width,box-shadow] duration-300 ease-in-out will-change-[width]",
         // Only overlay when fully expanded on hover; icon rail stays in-flow (connected).
         overlayExpanded && "fixed inset-y-0 left-0 z-30 shadow-xl"
       )}

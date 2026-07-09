@@ -368,6 +368,8 @@ export type User = {
   fullName: string;
   role: "Administrator" | "Doctor" | "Receptionist" | "Cashier";
   active: boolean;
+  /** PhilHealth physician accreditation number (PAN) for SOA professional fees. */
+  philhealthAccreditation?: string;
   /** Allowed app page paths. Administrators always have full access. */
   pageAccess?: string[];
   password?: string;

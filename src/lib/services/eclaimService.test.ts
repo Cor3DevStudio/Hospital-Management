@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveClaimAdmission, resolveClaimDates } from "./eclaimService";
+import { filterEClaims, resolveClaimAdmission, resolveClaimDates } from "./eclaimService";
 import type { Admission, AppState, Bill, EClaim } from "@/lib/store";
 
 const admission: Admission = {
@@ -52,5 +52,43 @@ describe("resolveClaimDates", () => {
       dischargeDate: "2026-07-05",
       roomWard: "Ward 3-A",
     });
+  });
+});
+
+describe("filterEClaims", () => {
+  const searchState = {
+    patients: [{ id: "P1", firstName: "Jose", lastName: "Rizal" }],
+    admissions: [],
+    consultations: [],
+    opdRecords: [],
+    erRecords: [
+      {
+        id: "ER-1",
+        patientId: "P1",
+        triageLevel: "Yellow",
+        arrivalDate: "2026-07-07",
+        arrivalTime: "10:00",
+        chiefComplaint: "chest pain",
+        attendingDoctor: "Dr. Cruz",
+        status: "Released",
+      },
+    ],
+    bills: [],
+    eClaims: [claim],
+    caseRates: [{ id: "CR-1", code: "90935", description: "Dialysis", amount: 2500, category: "Medical" }],
+  } as unknown as AppState;
+
+  it("searches clinical history without throwing", () => {
+    expect(() => filterEClaims(searchState, { query: "chest" })).not.toThrow();
+    expect(filterEClaims(searchState, { query: "chest" })).toHaveLength(1);
+  });
+
+  it("matches case rate descriptions in search", () => {
+    const dialysisClaim = { ...claim, caseRateCode: "90935" };
+    const withDialysis = {
+      ...searchState,
+      eClaims: [dialysisClaim],
+    } as AppState;
+    expect(filterEClaims(withDialysis, { query: "dialysis" })).toHaveLength(1);
   });
 });
