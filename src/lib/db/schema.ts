@@ -92,7 +92,7 @@ export const appClinicalState = mysqlTable("app_clinical_state", {
 export const philhealthRecords = mysqlTable("philhealth_records", {
   id: int("id").primaryKey().autoincrement(),
   caseCode: varchar("case_code", { length: 20 }).notNull().unique(),
-  caseDescription: varchar("case_description", { length: 255 }).notNull(),
+  caseDescription: text("case_description").notNull(),
   caseType: varchar("case_type", { length: 20 }).notNull(),
   caseRate: decimal("case_rate", { precision: 12, scale: 2 }).notNull(),
   healthFacilityFee: decimal("health_facility_fee", { precision: 12, scale: 2 })

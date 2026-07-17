@@ -70,7 +70,7 @@ USE \`medical_center\`;
 CREATE TABLE IF NOT EXISTS \`philhealth_records\` (
   \`id\`                      INT(11)       NOT NULL AUTO_INCREMENT,
   \`case_code\`               VARCHAR(20)   NOT NULL,
-  \`case_description\`        VARCHAR(255)  NOT NULL,
+  \`case_description\`        TEXT          NOT NULL,
   \`case_type\`               VARCHAR(20)   NOT NULL,
   \`case_rate\`               DECIMAL(12,2) NOT NULL,
   \`health_facility_fee\`     DECIMAL(12,2) NOT NULL DEFAULT 0,

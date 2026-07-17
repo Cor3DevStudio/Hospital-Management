@@ -51,10 +51,7 @@ export function getBillingPrintCss() {
         box-sizing: border-box !important;
         pointer-events: auto !important;
       }
-      #print-area *,
-      #cashier-print-area * {
-        display: revert !important;
-      }
+
       .hospital-soa-sheet,
       .standard-billing-soa {
         width: 210mm !important;
