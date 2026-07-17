@@ -23,13 +23,19 @@ export function getStandardBillingSoaCss() {
       letter-spacing: 0.04em;
     }
     .standard-billing-soa__title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
+      position: relative;
       margin: 10px 0 8px;
+      text-align: center;
+      min-height: 38px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .standard-billing-soa__title-meta {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
       text-align: right;
       font-size: 8pt;
       line-height: 1.4;
@@ -109,6 +115,7 @@ export function getStandardBillingSoaCss() {
     }
     .standard-billing-soa__field-label {
       flex-shrink: 0;
+      width: 125px;
     }
     .standard-billing-soa__field-value {
       flex: 1;

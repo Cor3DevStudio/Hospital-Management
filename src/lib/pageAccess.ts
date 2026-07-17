@@ -130,6 +130,42 @@ export function pageAccessSummary(user: PageAccessUser | undefined): string {
   return `${n} of ${ALL_PAGE_PATHS.length} pages`;
 }
 
+/**
+ * Once closed/discharged, Admission, ER, and OPD records become read-only for everyone
+ * except Administrators — protects historical clinical/billing data from accidental edits.
+ * See client feedback item 5.
+ */
+export const RECORD_LOCK_EXEMPT_ROLE = "Administrator";
+
+export function isAdmissionLocked(
+  admission: { status?: string } | null | undefined,
+  role: string | undefined
+): boolean {
+  if (!admission) return false;
+  if (role === RECORD_LOCK_EXEMPT_ROLE) return false;
+  return admission.status === "Discharged";
+}
+
+/** ER visit is locked once its disposition is finalized (no longer active in the ER). */
+export function isERRecordLocked(
+  record: { status?: string } | null | undefined,
+  role: string | undefined
+): boolean {
+  if (!record) return false;
+  if (role === RECORD_LOCK_EXEMPT_ROLE) return false;
+  return record.status === "Released" || record.status === "Transferred" || record.status === "Admitted";
+}
+
+/** OPD consultation is locked once the patient has been seen/discharged. */
+export function isConsultationLocked(
+  consultation: { status?: string; discharged?: boolean } | null | undefined,
+  role: string | undefined
+): boolean {
+  if (!consultation) return false;
+  if (role === RECORD_LOCK_EXEMPT_ROLE) return false;
+  return consultation.status === "Seen" || Boolean(consultation.discharged);
+}
+
 export function parsePageAccessJson(value: unknown): string[] {
   if (value == null) return [...ALL_PAGE_PATHS];
   if (Array.isArray(value)) return normalizePageAccess(value.map(String));

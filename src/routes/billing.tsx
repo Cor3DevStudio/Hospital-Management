@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader, StatChip } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
 import { CaseRatePicker } from "@/components/CaseRatePicker";
+import { DoctorSearchPicker } from "@/components/billing/DoctorSearchPicker";
+import { getActiveDoctors } from "@/lib/services/userService";
 import { useStore, uid, todayISO, type Bill, type CaseRate } from "@/lib/store";
 import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
 import {
@@ -73,6 +75,12 @@ function BillingPage() {
   const [inputQty, setInputQty] = useState(1);
   const [selectedPriceItemId, setSelectedPriceItemId] = useState<string>("none");
   const [selectedMedicineId, setSelectedMedicineId] = useState<string>("none");
+
+  // Doctor / Professional Fee entry (search doctor's name, manual amount, position)
+  const [doctorName, setDoctorName] = useState("");
+  const [doctorAmount, setDoctorAmount] = useState("");
+  const [doctorRole, setDoctorRole] = useState<"Surgeon" | "Anesthesiologist">("Surgeon");
+  const doctors = useMemo(() => getActiveDoctors(state.users), [state.users]);
 
   // Selected Bill for Payment & PhilHealth details
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
@@ -189,6 +197,28 @@ function BillingPage() {
       },
     ]);
     toast.success("Consultation Fee added to draft");
+  };
+
+  const addDoctorFee = () => {
+    if (disableChargeEntry) return toast.error(chargeEntryDisabledReason);
+    if (!doctorName.trim()) return toast.error("Search and select a doctor's name");
+    const amount = parseFloat(doctorAmount) || 0;
+    if (amount <= 0) return toast.error("Enter the doctor's professional fee amount");
+    setDraftItems([
+      ...draftItems,
+      {
+        description: doctorName.trim(),
+        category: "PF",
+        unitPrice: amount,
+        qty: 1,
+        amount,
+        effectiveDate: billingAsOfDate,
+        doctorRole,
+      },
+    ]);
+    setDoctorName("");
+    setDoctorAmount("");
+    toast.success(`${doctorRole} fee added to draft`);
   };
 
   const handleAddItem = () => {
@@ -546,6 +576,35 @@ function BillingPage() {
                   <Button variant="outline" size="sm" className="h-8 text-xs text-blue-600 border-blue-200 hover:bg-blue-50" onClick={addConsultation}>Add Consultation Fee</Button>
                   <Button variant="outline" size="sm" className="h-8 text-xs text-blue-600 border-blue-200 hover:bg-blue-50" onClick={handleAddItem}>Add Item</Button>
                 </div>
+
+                <div className="space-y-2 rounded-md border p-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Add Doctor / Professional Fee
+                  </p>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Search Doctor's Name</Label>
+                    <DoctorSearchPicker doctors={doctors} value={doctorName} onSelect={setDoctorName} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Amount</Label>
+                      <Input type="number" value={doctorAmount} onChange={(e) => setDoctorAmount(e.target.value)} placeholder="0.00" className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Position</Label>
+                      <Select value={doctorRole} onValueChange={(v) => setDoctorRole(v as "Surgeon" | "Anesthesiologist")}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Surgeon">Surgeon</SelectItem>
+                          <SelectItem value="Anesthesiologist">Anesthesiologist</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="h-8 w-full text-xs text-blue-600 border-blue-200 hover:bg-blue-50" onClick={addDoctorFee}>
+                    Add Doctor Fee
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -562,7 +621,7 @@ function BillingPage() {
                       <div>
                         <p className="font-semibold text-slate-800">{item.description}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                          {item.category || "Other"} · {item.effectiveDate || billingAsOfDate} · Qty {item.qty} × ₱{item.unitPrice.toFixed(2)}
+                          {item.category || "Other"}{item.doctorRole ? ` (${item.doctorRole})` : ""} · {item.effectiveDate || billingAsOfDate} · Qty {item.qty} × ₱{item.unitPrice.toFixed(2)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5">

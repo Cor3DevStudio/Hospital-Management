@@ -61,6 +61,42 @@ export function EditableLineField({
   );
 }
 
+export function EditableTextAreaField({
+  label,
+  value,
+  editable,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  editable?: boolean;
+  onChange?: (value: string) => void;
+}) {
+  if (!editable || !onChange) {
+    return (
+      <div className="cf-line-field cf-line-field--tall" style={{ height: "auto" }}>
+        <div className="cf-line-field__value" style={{ whiteSpace: "pre-wrap", minHeight: "60px", height: "auto", display: "block" }}>
+          {value}
+        </div>
+        <div className="cf-line-field__label">{label}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="cf-line-field cf-line-field--editable cf-line-field--tall" style={{ height: "auto" }}>
+      <textarea
+        className="cf-line-field__value cf-line-field__input w-full p-1"
+        style={{ minHeight: "60px", height: "auto", display: "block", whiteSpace: "pre-wrap", border: "1px solid #e2e8f0", background: "#f8fafc" }}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+      />
+      <div className="cf-line-field__label">{label}</div>
+    </div>
+  );
+}
+
 export function Check({ label, checked }: { label: string; checked: boolean }) {
   return (
     <label className="cf-check">

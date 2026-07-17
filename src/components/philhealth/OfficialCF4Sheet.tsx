@@ -7,6 +7,7 @@ import {
   DigitBoxes,
   EditableCheck,
   EditableLineField,
+  EditableTextAreaField,
   Label,
   LineField,
   PartBar,
@@ -147,6 +148,11 @@ export function OfficialCF4Sheet({
               <LineField label="Temp" value="" />
             </div>
           </div>
+        </div>
+
+        <div className="mt-2">
+          <Label>IV. Course in the Ward (attach additional sheets if necessary)</Label>
+          <EditableTextAreaField label="Course in the Ward" value={d.courseInWard} {...field("courseInWard")} />
         </div>
 
         <PartBar>CERTIFICATION</PartBar>

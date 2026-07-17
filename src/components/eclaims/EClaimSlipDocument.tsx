@@ -1,5 +1,5 @@
 import { computeBillBalance, computeBillNetTotal } from "@/lib/services/billingService";
-import { resolveClaimDates } from "@/lib/services/eclaimService";
+import { getClaimDeadlineFromDates, resolveClaimDates } from "@/lib/services/eclaimService";
 import type { Admission, Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
 
 export type EClaimSlipDocumentProps = {
@@ -24,15 +24,26 @@ function statusStyle(status: EClaim["claimStatus"]): { bg: string; fg: string; b
   return { bg: "#fffbeb", fg: "#92400e", border: "#fcd34d" };
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
     <div className="min-w-0">
       <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-0.5 border-b border-slate-200 pb-1 text-[12px] font-medium text-slate-900">
+      <p
+        className="mt-0.5 border-b border-slate-200 pb-1 text-[12px] font-medium text-slate-900"
+        style={valueColor ? { color: valueColor } : undefined}
+      >
         {value || "—"}
       </p>
     </div>
   );
+}
+
+/** Filing-deadline urgency only matters while a claim is still Pending — once submitted the clock stops. */
+function deadlineTone(daysRemaining: number, claimStatus: EClaim["claimStatus"]): string | undefined {
+  if (claimStatus !== "Pending") return undefined;
+  if (daysRemaining < 0) return "#991b1b";
+  if (daysRemaining <= 15) return "#92400e";
+  return "#166534";
 }
 
 export function EClaimSlipDocument({
@@ -47,6 +58,12 @@ export function EClaimSlipDocument({
   const tone = statusStyle(claim.claimStatus);
   const philhealthNo = patient?.philhealth?.memberNumber?.trim() || "—";
   const dates = resolveClaimDates({ admissions }, claim, bill);
+  const deadline = getClaimDeadlineFromDates(dates);
+  const daysRemainingLabel = deadline
+    ? deadline.daysRemaining < 0
+      ? `${Math.abs(deadline.daysRemaining)} day(s) overdue`
+      : `${deadline.daysRemaining} day(s) remaining`
+    : "—";
 
   return (
     <div className="eclaims-doc eclaims-page border border-slate-200 bg-white p-6 text-black shadow-sm print:border-0 print:p-0 print:shadow-none">
@@ -102,7 +119,13 @@ export function EClaimSlipDocument({
           <Field label="Claim ID" value={claim.id} />
           <Field label="Linked Bill" value={claim.billId ?? "—"} />
           <Field label="Admission Date" value={dates.admissionDate} />
-          <Field label="Discharged Date" value={dates.dischargeDate} />
+          <Field label="Discharge Date" value={dates.dischargeDate} />
+          <Field label="PhilHealth Filing Deadline" value={deadline?.deadlineDate || "—"} />
+          <Field
+            label="Days Remaining"
+            value={daysRemainingLabel}
+            valueColor={deadline ? deadlineTone(deadline.daysRemaining, claim.claimStatus) : undefined}
+          />
           <Field label="Room / Ward" value={dates.roomWard || "—"} />
           <Field label="Case Rate Code" value={claim.caseRateCode || "—"} />
           <Field

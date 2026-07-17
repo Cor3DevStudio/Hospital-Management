@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { filterEClaims, resolveClaimAdmission, resolveClaimDates } from "./eclaimService";
+import {
+  filterEClaims,
+  getClaimDeadlineFromDates,
+  getClaimFilingDeadline,
+  resolveClaimAdmission,
+  resolveClaimDates,
+} from "./eclaimService";
 import type { Admission, AppState, Bill, EClaim } from "@/lib/store";
+
+function daysFromToday(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
 
 const admission: Admission = {
   id: "ADM-1",
@@ -90,5 +102,40 @@ describe("filterEClaims", () => {
       eClaims: [dialysisClaim],
     } as AppState;
     expect(filterEClaims(withDialysis, { query: "dialysis" })).toHaveLength(1);
+  });
+});
+
+describe("getClaimFilingDeadline", () => {
+  it("returns 60 days after the base date, with days remaining counted from today", () => {
+    const info = getClaimFilingDeadline(daysFromToday(-10));
+    expect(info?.deadlineDate).toBe(daysFromToday(50));
+    expect(info?.daysRemaining).toBe(50);
+    expect(info?.isOverdue).toBe(false);
+  });
+
+  it("flags overdue claims once the 60-day window has passed", () => {
+    const info = getClaimFilingDeadline(daysFromToday(-65));
+    expect(info?.daysRemaining).toBe(-5);
+    expect(info?.isOverdue).toBe(true);
+  });
+
+  it("returns undefined when there is no base date", () => {
+    expect(getClaimFilingDeadline(undefined)).toBeUndefined();
+    expect(getClaimFilingDeadline("")).toBeUndefined();
+  });
+});
+
+describe("getClaimDeadlineFromDates", () => {
+  it("prefers discharge date over admission date", () => {
+    const info = getClaimDeadlineFromDates({
+      admissionDate: daysFromToday(-70),
+      dischargeDate: daysFromToday(-10),
+    });
+    expect(info?.daysRemaining).toBe(50);
+  });
+
+  it("falls back to admission date when discharge date is empty (still admitted)", () => {
+    const info = getClaimDeadlineFromDates({ admissionDate: daysFromToday(-5), dischargeDate: "" });
+    expect(info?.daysRemaining).toBe(55);
   });
 });

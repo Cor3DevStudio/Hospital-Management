@@ -29,6 +29,8 @@ export type BillLineItem = {
   effectiveDate?: string;
   source?: "manual" | "room-board-auto" | "case-rate-pf-auto";
   admissionId?: string;
+  /** Position/role for a PF (professional fee) doctor line item. */
+  doctorRole?: "Surgeon" | "Anesthesiologist";
 };
 
 /** Normalize a charge into a full itemized BillItem (qty, unit price, category, date). */
@@ -52,6 +54,7 @@ export function normalizeBillLineItem(state: AppState, item: BillLineItem): Bill
     medicineId: item.medicineId,
     source: item.source,
     admissionId: item.admissionId,
+    doctorRole: item.doctorRole,
   };
 }
 

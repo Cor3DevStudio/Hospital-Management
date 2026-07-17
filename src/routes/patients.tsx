@@ -420,18 +420,28 @@ function PatientsPage() {
               {selectedPatient && chartModel && (
                 <PatientChartViewer
                   model={chartModel}
-                  onUploadAttachment={(file) => addAttachment("patient", selectedPatient.id, file)}
-                  onDeleteAttachment={deleteAttachment}
+                  onUploadAttachment={async (file) => {
+                    await addAttachment("patient", selectedPatient.id, file);
+                  }}
+                  onDeleteAttachment={async (id) => {
+                    await deleteAttachment(id);
+                  }}
                   onOpenAttachment={async (attachment) => {
                     const blob = await getAttachmentBlob(attachment.key);
-                    if (!blob) return toast.error("File not found");
+                    if (!blob) {
+                      toast.error("File not found");
+                      return;
+                    }
                     const url = URL.createObjectURL(blob);
                     window.open(url, "_blank");
                     setTimeout(() => URL.revokeObjectURL(url), 30_000);
                   }}
                   onDownloadAttachment={async (attachment) => {
                     const blob = await getAttachmentBlob(attachment.key);
-                    if (!blob) return toast.error("File not found");
+                    if (!blob) {
+                      toast.error("File not found");
+                      return;
+                    }
                     const url = URL.createObjectURL(blob);
                     const el = document.createElement("a");
                     el.href = url;

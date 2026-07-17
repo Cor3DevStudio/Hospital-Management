@@ -34,6 +34,8 @@ import {
 } from "@/lib/services/roomBoardService";
 import { getPriceAsOf } from "@/lib/priceService";
 import { getActiveDoctors } from "@/lib/services/userService";
+import { getSession } from "@/lib/auth/authService";
+import { isAdmissionLocked, resolveAccessUser } from "@/lib/pageAccess";
 import { AdmissionRecordDocument } from "@/components/clinical/AdmissionRecordDocument";
 import { buildPatientChartModel } from "@/components/clinical/buildPatientChartModel";
 import { PatientChartDocument } from "@/components/clinical/PatientChartDocument";
@@ -85,6 +87,12 @@ function AdmissionPage() {
   const doctors = getActiveDoctors(state.users);
   const roomRates = useMemo(() => getRoomRateItems(state), [state.prices, state.priceHistories]);
 
+  // Item 5 — once discharged, an admission record is read-only for everyone except
+  // Administrators (protects historical clinical/billing data from accidental edits).
+  const accessUser = resolveAccessUser(state, getSession()?.user);
+  const storedAdmission = editId ? state.admissions.find((a) => a.id === editId) : undefined;
+  const isLocked = isAdmissionLocked(storedAdmission, accessUser?.role);
+
   const reset = () => {
     setEditId(null);
     setForm(emptyAdmissionForm());
@@ -103,6 +111,7 @@ function AdmissionPage() {
   };
 
   const save = () => {
+    if (isLocked) return toast.error("This admission is discharged and read-only. Contact an Administrator to make changes.");
     if (!form.patientId || !form.roomTypeId || !form.admissionDate || !form.attendingDoctor) {
       return toast.error("Patient, room type, date, and doctor are required");
     }
@@ -123,6 +132,10 @@ function AdmissionPage() {
   };
 
   const remove = (id: string) => {
+    const target = state.admissions.find((a) => a.id === id);
+    if (isAdmissionLocked(target, accessUser?.role)) {
+      return toast.error("This admission is discharged and read-only. Contact an Administrator to make changes.");
+    }
     setState((s) => deleteAdmission(s, id));
     toast.success("Admission record deleted");
     if (editId === id) reset();
@@ -192,7 +205,12 @@ function AdmissionPage() {
             <CardTitle className="text-base">{editId ? "Edit Admission" : "New Admission"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-4 pt-2 border-t flex flex-col justify-between">
-            <div className="space-y-4">
+            {isLocked && (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                This record is discharged and read-only. Contact an Administrator to make changes.
+              </p>
+            )}
+            <fieldset disabled={isLocked} className="m-0 border-0 p-0 space-y-4 disabled:opacity-60">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Patient</Label>
                 <Select value={form.patientId} onValueChange={(value) => setForm({ ...form, patientId: value })}>
@@ -414,12 +432,12 @@ function AdmissionPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </fieldset>
             <div className="flex flex-wrap justify-end gap-2 border-t pt-3 mt-4 shrink-0">
-              {editId && form.status === "Admitted" && (
+              {editId && form.status === "Admitted" && !isLocked && (
                 <Button variant="outline" size="sm" onClick={handleDischarge}>Discharge</Button>
               )}
-              {editId && form.status === "Discharged" && (
+              {editId && form.status === "Discharged" && !isLocked && (
                 <Button variant="outline" size="sm" onClick={handleCancelDischarge}>Cancel Discharge</Button>
               )}
               {canPrintChart && (
@@ -433,7 +451,7 @@ function AdmissionPage() {
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
-              <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
+              <Button size="sm" onClick={save} disabled={isLocked}><Save className="h-3.5 w-3.5" /> Save</Button>
             </div>
           </CardContent>
           </Card>
@@ -471,7 +489,13 @@ function AdmissionPage() {
                         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setEditId(item.id); setForm(item); }}>
                           Edit
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => remove(item.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => remove(item.id)}
+                          disabled={isAdmissionLocked(item, accessUser?.role)}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>

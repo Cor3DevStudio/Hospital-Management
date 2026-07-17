@@ -1,5 +1,5 @@
 import type { Admission, Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
-import { resolveClaimDates } from "@/lib/services/eclaimService";
+import { getClaimDeadlineFromDates, getClaimAgeDays, resolveClaimDates } from "@/lib/services/eclaimService";
 
 export type EClaimsRegistryFilters = {
   startDate?: string;
@@ -17,7 +17,13 @@ export type EClaimsRegistryDocumentProps = {
   billMap: Map<string, Bill>;
   admissions: Admission[];
   filters: EClaimsRegistryFilters;
-  stats: { total: number; pendingCount: number; submittedCount: number };
+  stats: {
+    total: number;
+    pendingCount: number;
+    submittedCount: number;
+    nearDeadlineCount?: number;
+    overdueCount?: number;
+  };
   preparedBy?: string;
   showHeader?: boolean;
 };
@@ -54,6 +60,18 @@ function statusTone(status: EClaim["claimStatus"]): string {
   if (status === "Submitted") return "#1d4ed8";
   if (status === "Denied") return "#991b1b";
   return "#92400e";
+}
+
+/** Filing-deadline urgency only matters while a claim is still Pending — once submitted the clock stops. */
+function deadlineTone(daysRemaining: number, claimStatus: EClaim["claimStatus"]): string {
+  if (claimStatus !== "Pending") return "#64748b";
+  if (daysRemaining < 0) return "#991b1b";
+  if (daysRemaining <= 15) return "#92400e";
+  return "#166534";
+}
+
+function deadlineLabel(daysRemaining: number): string {
+  return daysRemaining < 0 ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d left`;
 }
 
 export function EClaimsRegistryDocument({
@@ -114,6 +132,16 @@ export function EClaimsRegistryDocument({
               <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-900">
                 Submitted+: <strong>{stats.submittedCount}</strong>
               </span>
+              {typeof stats.nearDeadlineCount === "number" && (
+                <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-900">
+                  Near Deadline (≤15d): <strong>{stats.nearDeadlineCount}</strong>
+                </span>
+              )}
+              {typeof stats.overdueCount === "number" && (
+                <span className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-red-900">
+                  Past Deadline: <strong>{stats.overdueCount}</strong>
+                </span>
+              )}
               <span className="ml-auto text-slate-500">
                 Page {pageIndex + 1} of {totalPages}
                 {page.length > 0 ? `  ·  Rows ${startNo}–${startNo + page.length - 1}` : ""}
@@ -128,7 +156,9 @@ export function EClaimsRegistryDocument({
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Patient</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Type</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Admission</th>
-                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Discharged</th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Discharge</th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold text-center">Age (Days)</th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">PH Filing Deadline</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Room/Ward</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">PhilHealth</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Case Rate</th>
@@ -141,6 +171,7 @@ export function EClaimsRegistryDocument({
                   const patient = patientMap.get(claim.patientId);
                   const bill = claim.billId ? billMap.get(claim.billId) : undefined;
                   const dates = resolveClaimDates({ admissions }, claim, bill);
+                  const deadline = getClaimDeadlineFromDates(dates);
                   const rowNo = startNo + i;
                   const zebra = i % 2 === 1;
                   return (
@@ -166,6 +197,21 @@ export function EClaimsRegistryDocument({
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1 whitespace-nowrap">
                         {dates.dischargeDate || "—"}
+                      </td>
+                      <td className="border border-slate-300 px-1.5 py-1 text-center font-semibold">
+                        {getClaimAgeDays(dates) ?? "—"}
+                      </td>
+                      <td className="border border-slate-300 px-1.5 py-1 whitespace-nowrap">
+                        {deadline ? (
+                          <>
+                            <div>{deadline.deadlineDate}</div>
+                            <div className="font-semibold" style={{ color: deadlineTone(deadline.daysRemaining, claim.claimStatus) }}>
+                              {deadlineLabel(deadline.daysRemaining)}
+                            </div>
+                          </>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="border border-slate-300 px-1.5 py-1">
                         {dates.roomWard || "—"}

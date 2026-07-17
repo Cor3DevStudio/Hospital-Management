@@ -59,6 +59,59 @@ export type ResolvedClaimDates = {
   roomWard?: string;
 };
 
+/** PhilHealth requires eClaims to be filed within 60 calendar days of discharge. */
+export const PHILHEALTH_FILING_WINDOW_DAYS = 60;
+
+export type ClaimDeadlineInfo = {
+  /** Date (YYYY-MM-DD) the claim must be filed with PhilHealth by. */
+  deadlineDate: string;
+  /** Calendar days left until the deadline; negative once past due. */
+  daysRemaining: number;
+  isOverdue: boolean;
+};
+
+/** Parses a plain "YYYY-MM-DD" date string as a UTC calendar day (no local-timezone drift). */
+function parseCalendarDateUTC(dateStr: string): number {
+  const [y, m, d] = dateStr.slice(0, 10).split("-").map(Number);
+  return Date.UTC(y || 0, (m || 1) - 1, d || 1);
+}
+
+/**
+ * PhilHealth filing deadline/days-remaining for a claim, counted from discharge date
+ * (falls back to admission date for claims without a discharge date yet, e.g. still admitted).
+ * Dates are treated as plain calendar days (UTC) to match how they're stored elsewhere
+ * in the app (e.g. `todayISO`), avoiding off-by-one drift across timezones.
+ */
+export function getClaimFilingDeadline(baseDate: string | undefined): ClaimDeadlineInfo | undefined {
+  if (!baseDate) return undefined;
+  const baseMs = parseCalendarDateUTC(baseDate);
+  if (Number.isNaN(baseMs)) return undefined;
+
+  const deadlineMs = baseMs + PHILHEALTH_FILING_WINDOW_DAYS * 86400000;
+  const todayMs = parseCalendarDateUTC(new Date().toISOString());
+  const daysRemaining = Math.round((deadlineMs - todayMs) / 86400000);
+
+  return {
+    deadlineDate: new Date(deadlineMs).toISOString().slice(0, 10),
+    daysRemaining,
+    isOverdue: daysRemaining < 0,
+  };
+}
+
+/** Convenience: resolve a claim's filing deadline from its resolved dates (discharge, else admission). */
+export function getClaimDeadlineFromDates(dates: ResolvedClaimDates): ClaimDeadlineInfo | undefined {
+  return getClaimFilingDeadline(dates.dischargeDate || dates.admissionDate);
+}
+
+/** Calculate days elapsed since admission or discharge. */
+export function getClaimAgeDays(dates: ResolvedClaimDates): number | undefined {
+  const baseDate = dates.dischargeDate || dates.admissionDate;
+  if (!baseDate) return undefined;
+  const baseMs = parseCalendarDateUTC(baseDate);
+  const todayMs = parseCalendarDateUTC(new Date().toISOString());
+  return Math.max(0, Math.round((todayMs - baseMs) / 86400000));
+}
+
 /** Display dates from the patient admission record, with bill/claim fallbacks. */
 export function resolveClaimDates(
   state: Pick<AppState, "admissions">,
@@ -239,9 +292,15 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-export function getEClaimStats(claims: EClaim[]) {
+export function getEClaimStats(
+  state: Pick<AppState, "admissions" | "bills">,
+  claims: EClaim[]
+) {
+  const billMap = buildBillMap(state.bills ?? []);
   let pendingCount = 0;
   let submittedCount = 0;
+  let nearDeadlineCount = 0;
+  let overdueCount = 0;
   for (const c of claims) {
     if (c.claimStatus === "Pending") pendingCount += 1;
     else if (
@@ -251,8 +310,16 @@ export function getEClaimStats(claims: EClaim[]) {
     ) {
       submittedCount += 1;
     }
+    // Filing-deadline risk only matters for claims that haven't been submitted yet.
+    if (c.claimStatus === "Pending") {
+      const bill = c.billId ? billMap.get(c.billId) : undefined;
+      const dates = resolveClaimDates(state, c, bill);
+      const deadline = getClaimDeadlineFromDates(dates);
+      if (deadline?.isOverdue) overdueCount += 1;
+      else if (deadline && deadline.daysRemaining <= 15) nearDeadlineCount += 1;
+    }
   }
-  return { total: claims.length, pendingCount, submittedCount };
+  return { total: claims.length, pendingCount, submittedCount, nearDeadlineCount, overdueCount };
 }
 
 export function getClaimAttachments(state: AppState, claimId: string) {

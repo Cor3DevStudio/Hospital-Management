@@ -28,6 +28,8 @@ import {
   updateConsultation,
 } from "@/lib/services/consultationService";
 import { getActiveDoctors } from "@/lib/services/userService";
+import { getSession } from "@/lib/auth/authService";
+import { isConsultationLocked, resolveAccessUser } from "@/lib/pageAccess";
 import { OPDVisitDocument } from "@/components/clinical/OPDVisitDocument";
 import { buildPatientChartModel } from "@/components/clinical/buildPatientChartModel";
 import { PatientChartDocument } from "@/components/clinical/PatientChartDocument";
@@ -98,6 +100,12 @@ function OPDPage() {
     [state.appointments, patientId]
   );
 
+  // Item 5 — once a consultation has been seen/discharged, it is read-only for everyone
+  // except Administrators (protects historical clinical/billing data from accidental edits).
+  const accessUser = resolveAccessUser(state, getSession()?.user);
+  const storedConsultation = editId ? state.consultations.find((c) => c.id === editId) : undefined;
+  const isLocked = isConsultationLocked(storedConsultation, accessUser?.role);
+
   const addRx = () =>
     setForm({ ...form, prescriptions: [...form.prescriptions, { medicine: "", dosage: "", instructions: "" }] });
   const updateRx = (i: number, key: "medicine" | "dosage" | "instructions", v: string) => {
@@ -114,6 +122,7 @@ function OPDPage() {
   };
 
   const save = () => {
+    if (isLocked) return toast.error("This OPD visit has been seen and is read-only. Contact an Administrator to make changes.");
     if (!form.patientId) return toast.error("Select a patient");
     if (!form.chiefComplaint) return toast.error("Chief complaint required");
 
@@ -127,6 +136,7 @@ function OPDPage() {
 
   const remove = () => {
     if (!editId) return;
+    if (isLocked) return toast.error("This OPD visit has been seen and is read-only. Contact an Administrator to make changes.");
     if (!confirm("Delete this OPD visit record?")) return;
     setState((s) => deleteConsultation(s, editId));
     toast.success("OPD visit deleted");
@@ -297,7 +307,12 @@ function OPDPage() {
             <CardTitle className="text-base">{editId ? "Edit OPD Visit" : "New OPD Visit"}</CardTitle>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col justify-between space-y-4 overflow-y-auto border-t p-4 pt-3">
-            <div className="space-y-4">
+            {isLocked && (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                This OPD visit has been seen and is read-only. Contact an Administrator to make changes.
+              </p>
+            )}
+            <fieldset disabled={isLocked} className="m-0 border-0 p-0 space-y-4 disabled:opacity-60">
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Date</Label>
@@ -389,7 +404,7 @@ function OPDPage() {
                   {form.prescriptions.length === 0 && <p className="text-xs text-muted-foreground">No prescriptions added.</p>}
                 </div>
               </div>
-            </div>
+            </fieldset>
 
             <div className="mt-4 flex shrink-0 flex-wrap justify-end gap-2 border-t pt-3">
               {canPrintChart && (
@@ -402,17 +417,17 @@ function OPDPage() {
                   <Printer className="h-3.5 w-3.5" /> Print
                 </Button>
               )}
-              {editId && form.status !== "Seen" && (
+              {editId && form.status !== "Seen" && !isLocked && (
                 <Button variant="secondary" size="sm" onClick={() => discharge(form)}>
                   <LogOut className="h-3.5 w-3.5" /> Mark Seen
                 </Button>
               )}
               {editId && (
-                <Button variant="destructive" size="sm" onClick={remove}>
+                <Button variant="destructive" size="sm" onClick={remove} disabled={isLocked}>
                   <Trash2 className="h-3.5 w-3.5" /> Delete
                 </Button>
               )}
-              <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save OPD Visit</Button>
+              <Button size="sm" onClick={save} disabled={isLocked}><Save className="h-3.5 w-3.5" /> Save OPD Visit</Button>
             </div>
           </CardContent>
         </Card>

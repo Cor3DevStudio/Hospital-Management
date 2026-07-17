@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useCallback,
   useContext,
@@ -307,6 +307,8 @@ export type BillItem = {
   source?: "manual" | "room-board-auto" | "case-rate-pf-auto";
   /** Admission that generated an auto Room & Board line. */
   admissionId?: string;
+  /** Position/role for a PF (professional fee) doctor line item. */
+  doctorRole?: "Surgeon" | "Anesthesiologist";
 };
 
 export type Bill = {
@@ -429,6 +431,9 @@ export type Attachment = {
   createdAt: string;
   refType: "patient" | "admission" | "bill" | "eclaim";
   refId: string; // id of patient/admission/bill
+  docType?: string;
+  isLocal?: boolean;
+  isCloud?: boolean;
 };
 
 const todayISO = (offsetDays = 0) => {
@@ -761,6 +766,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       throw new Error(validation.message);
     }
 
+    const lowerName = file.name.toLowerCase();
+    let detectedDocType = "Other";
+    if (lowerName.includes("esoa") || lowerName.includes("soa") || lowerName.includes("statement")) {
+      detectedDocType = "ESOA";
+    } else if (lowerName.includes("cf4") || lowerName.includes("claim form 4")) {
+      detectedDocType = "CF4";
+    } else if (lowerName.includes("cf3") || lowerName.includes("claim form 3")) {
+      detectedDocType = "CF3";
+    } else if (lowerName.includes("cf5") || lowerName.includes("claim form 5")) {
+      detectedDocType = "CF5";
+    } else if (lowerName.includes("csf") || lowerName.includes("signature form")) {
+      detectedDocType = "CSF";
+    } else if (lowerName.includes("mdr") || lowerName.includes("member data")) {
+      detectedDocType = "MDR";
+    } else if (lowerName.includes("summary") || lowerName.includes("clinical")) {
+      detectedDocType = "Clinical Summary";
+    }
+
     const key = uid();
     await fileStore.saveFile(key, file, { filename: file.name, mime: file.type, size: file.size });
     const meta: Attachment = {
@@ -772,6 +795,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
       refType,
       refId,
+      docType: detectedDocType,
+      isLocal: true,
+      isCloud: false,
     };
     setState((s) => ({ ...s, attachments: [...(s.attachments || []), meta] }));
     persistStoreNow();

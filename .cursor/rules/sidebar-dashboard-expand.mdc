@@ -16,9 +16,30 @@ This behavior is intentional and must be retained. Do **not** delete or “simpl
 
 ## Implementation locations
 
-- `src/components/ui/sidebar.tsx` — `contentExpanded`, `sidebarHovered`, `setSidebarHovered`, `toggleSidebar`
-- `src/components/AppSidebar.tsx` — toggle UI; `iconOnly = contentExpanded && !sidebarHovered`; `overlayExpanded = contentExpanded && sidebarHovered`; mouse enter/leave; fixed overlay only when `overlayExpanded`
-- `src/routes/__root.tsx` — `AuthenticatedLayout` sets main content `w-full` only when `contentExpanded && sidebarHovered` (dashboard behind)
+- `src/components/ui/sidebar.tsx` — `contentExpanded`, `sidebarHovered`, `setSidebarHovered`, `toggleSidebar`, `overlayActive`
+- `src/components/AppSidebar.tsx` — toggle UI; `iconOnly = contentExpanded && !sidebarHovered`; fixed overlay only when `overlayActive`; mouse enter/leave
+- `src/routes/__root.tsx` — `AuthenticatedLayout` sets main content `w-full` only when `overlayActive` (dashboard behind)
+
+## Sync fix: `overlayActive` (do not remove)
+
+The sidebar's fixed-vs-in-flow position and the main content's `w-full`/normal width must
+flip at the exact same instant, and only once the collapse *width* transition has actually
+finished — otherwise the sidebar snaps back in-flow (at its still-expanded width) while main
+content's width transition is still animating against it, causing overlap/bleed for a frame.
+
+`overlayActive` in `sidebar.tsx` is the single source of truth both `AppSidebar.tsx` and
+`__root.tsx` read from:
+- Entering hover (`contentExpanded && sidebarHovered` → true): `overlayActive` flips true
+  immediately (via `useLayoutEffect`, before paint) — sidebar becomes a fixed overlay and
+  main goes `w-full` in the same frame, before the sidebar's width starts growing.
+- Leaving hover: `overlayActive` stays true (sidebar stays a fixed overlay, main stays
+  `w-full`) for `SIDEBAR_OVERLAY_COLLAPSE_MS` (>= the width transition duration) so the
+  icon-rail shrink finishes fully out-of-flow, then both flip back together with nothing
+  left to animate.
+
+Do not read `contentExpanded && sidebarHovered` directly for the fixed-position/`w-full`
+decision in either file — use `overlayActive`. (`iconOnly` in `AppSidebar.tsx` should keep
+using the raw `contentExpanded && !sidebarHovered` — that one is meant to react instantly.)
 
 ## When editing sidebar or layout
 

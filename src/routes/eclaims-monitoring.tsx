@@ -32,6 +32,8 @@ import {
   deleteEClaim,
   filterEClaims,
   getClaimAttachments,
+  getClaimDeadlineFromDates,
+  getClaimAgeDays,
   getEClaimStats,
   getPatientPhilhealthStatus,
   resolveClaimAdmission,
@@ -52,7 +54,7 @@ import {
   downloadBlob,
   getMergeableAttachments,
 } from "@/lib/services/eclaimDocumentService";
-import { useStore, todayISO, type EClaim, type EClaimStatus } from "@/lib/store";
+import { useStore, todayISO, type EClaim, type EClaimStatus, type Attachment } from "@/lib/store";
 
 type PrintMode = "registry" | "slip";
 
@@ -72,8 +74,18 @@ const emptyClaim = (): Omit<EClaim, "id" | "createdAt" | "updatedAt"> => ({
   notes: "",
 });
 
+const DOC_TYPES = ["ESOA", "CF3", "CF4", "CF5", "CSF", "MDR", "Clinical Summary", "Other"];
+
 function EClaimsPage() {
   const { state, setState, addAttachment, deleteAttachment, getAttachmentBlob } = useStore();
+  const updateAttachmentField = (id: string, field: keyof Attachment, value: any) => {
+    setState((prev) => ({
+      ...prev,
+      attachments: (prev.attachments || []).map((a) =>
+        a.id === id ? { ...a, [field]: value } : a
+      ),
+    }));
+  };
   const [typeFilter, setTypeFilter] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -111,7 +123,7 @@ function EClaimsPage() {
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const billMap = useMemo(() => buildBillMap(state.bills), [state.bills]);
 
-  const stats = useMemo(() => getEClaimStats(filteredClaims), [filteredClaims]);
+  const stats = useMemo(() => getEClaimStats(state, filteredClaims), [state, filteredClaims]);
   const caseRateFilterOptions = useMemo(() => {
     const codes = new Set<string>();
     for (const claim of state.eClaims ?? []) {
@@ -141,8 +153,6 @@ function EClaimsPage() {
       cancelled = true;
     };
   }, [caseRateFilterOptions]);
-
-  const ageDays = (d: string) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
   const latestAdmissionForPatient = (patientId: string) =>
     state.admissions
@@ -369,6 +379,18 @@ function EClaimsPage() {
     return "bg-warning/20 text-warning-foreground border-warning/30";
   };
 
+  /** Filing-deadline urgency only matters while a claim is still Pending — once submitted the clock stops. */
+  const daysRemainingBadgeClass = (daysRemaining: number, claimStatus: EClaimStatus) => {
+    if (claimStatus !== "Pending") return "bg-muted text-muted-foreground border-border";
+    if (daysRemaining < 0) return "bg-destructive/15 text-destructive border-destructive/20";
+    if (daysRemaining <= 5) return "bg-destructive/10 text-destructive border-destructive/20";
+    if (daysRemaining <= 15) return "bg-warning/20 text-warning-foreground border-warning/30";
+    return "bg-success/15 text-success border-success/20";
+  };
+
+  const daysRemainingLabel = (daysRemaining: number) =>
+    daysRemaining < 0 ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d left`;
+
   return (
     <>
       <style>{getEclaimsPrintCss()}</style>
@@ -382,6 +404,8 @@ function EClaimsPage() {
           <StatChip label="Total Claims" value={stats.total} />
           <StatChip label="Pending" value={stats.pendingCount} tone="warning" />
           <StatChip label="Submitted+" value={stats.submittedCount} tone="success" />
+          <StatChip label="Near Deadline (≤15d)" value={stats.nearDeadlineCount} tone="warning" />
+          <StatChip label="Past Deadline" value={stats.overdueCount} tone="destructive" />
           <Button size="sm" variant="outline" onClick={openCreate}><Plus className="h-4 w-4" /> New eClaim</Button>
           <Button size="sm" variant="outline" onClick={importFromBills}>Import from Bills</Button>
         </div>
@@ -471,7 +495,10 @@ function EClaimsPage() {
                   <TableHead>Patient</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Admission Date</TableHead>
-                  <TableHead>Discharged Date</TableHead>
+                  <TableHead>Discharge Date</TableHead>
+                  <TableHead className="text-center">Age (Days)</TableHead>
+                  <TableHead>PhilHealth Deadline</TableHead>
+                  <TableHead>Days Remaining</TableHead>
                   <TableHead>Room/Ward</TableHead>
                   <TableHead>PhilHealth</TableHead>
                   <TableHead>Case Rate</TableHead>
@@ -483,14 +510,14 @@ function EClaimsPage() {
               <TableBody>
                 {filteredClaims.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="py-8 text-center text-sm text-muted-foreground">No records yet</TableCell>
+                    <TableCell colSpan={13} className="py-8 text-center text-sm text-muted-foreground">No records yet</TableCell>
                   </TableRow>
                 ) : (
                   claimList.pageItems.map((claim) => {
                     const p = patientMap.get(claim.patientId);
                     const bill = claim.billId ? billMap.get(claim.billId) : undefined;
                     const dates = resolveClaimDates(state, claim, bill);
-                    const age = dates.dischargeDate ? ageDays(dates.dischargeDate) : ageDays(dates.admissionDate);
+                    const deadline = getClaimDeadlineFromDates(dates);
                     const attachments = getClaimAttachments(state, claim.id);
                     return (
                       <TableRow key={claim.id}>
@@ -498,14 +525,25 @@ function EClaimsPage() {
                         <TableCell><Badge variant="outline">{bill?.patientType ?? "—"}</Badge></TableCell>
                         <TableCell>{dates.admissionDate || "—"}</TableCell>
                         <TableCell>{dates.dischargeDate || "—"}</TableCell>
+                        <TableCell className="font-semibold text-center">{getClaimAgeDays(dates) ?? "—"}</TableCell>
+                        <TableCell>{deadline?.deadlineDate || "—"}</TableCell>
+                        <TableCell>
+                          {deadline ? (
+                            <Badge
+                              variant="outline"
+                              className={daysRemainingBadgeClass(deadline.daysRemaining, claim.claimStatus)}
+                            >
+                              {daysRemainingLabel(deadline.daysRemaining)}
+                            </Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
                         <TableCell>{dates.roomWard || "—"}</TableCell>
                         <TableCell><Badge variant="outline">{claim.philhealthStatus}</Badge></TableCell>
                         <TableCell className="font-mono text-xs">{claim.caseRateCode || "—"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={statusBadgeClass(claim.claimStatus)}>{claim.claimStatus}</Badge>
-                          {claim.claimStatus === "Pending" && age > 50 && (
-                            <span className="ml-1 text-[10px] text-amber-600">{60 - age}d left</span>
-                          )}
                         </TableCell>
                         <TableCell>
                           <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setAttachClaimId(claim.id)}>
@@ -635,7 +673,7 @@ function EClaimsPage() {
         </Dialog>
 
         <Dialog open={!!attachClaimId} onOpenChange={(o) => !o && setAttachClaimId(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-3xl">
             <DialogHeader><DialogTitle>Attached Documents</DialogTitle></DialogHeader>
             {attachClaimId && (
               <div className="space-y-3">
@@ -677,22 +715,91 @@ function EClaimsPage() {
                     </Button>
                   ))}
                 </div>
-                <ul className="text-sm space-y-2">
-                  {getClaimAttachments(state, attachClaimId).map((a) => (
-                    <li key={a.id} className="flex justify-between items-center gap-2 border rounded p-2">
-                      <span className="truncate text-sm">{a.filename}</span>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => void handleDownloadAttachment(a.id)}>
-                          <FileDown className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => void deleteAttachment(a.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </li>
-                  ))}
-                  {getClaimAttachments(state, attachClaimId).length === 0 && (
-                    <li className="text-muted-foreground text-center py-4">No documents attached</li>
-                  )}
-                </ul>
+                
+                <div className="border rounded-md overflow-hidden mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[180px]">Doc Type</TableHead>
+                        <TableHead>File Name</TableHead>
+                        <TableHead className="text-center w-[70px]">Local</TableHead>
+                        <TableHead className="text-center w-[70px]">Cloud</TableHead>
+                        <TableHead className="text-right w-[100px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getClaimAttachments(state, attachClaimId).map((a) => (
+                        <TableRow key={a.id}>
+                          <TableCell className="p-2">
+                            <Select
+                              value={a.docType || "Other"}
+                              onValueChange={(val) => updateAttachmentField(a.id, "docType", val)}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DOC_TYPES.map((type) => (
+                                  <SelectItem key={type} value={type} className="text-xs">
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="p-2 text-xs truncate max-w-[200px]" title={a.filename}>
+                            {a.filename}
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={!!a.isLocal}
+                              onChange={(e) => updateAttachmentField(a.id, "isLocal", e.target.checked)}
+                              className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={!!a.isCloud}
+                              onChange={(e) => updateAttachmentField(a.id, "isCloud", e.target.checked)}
+                              className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </TableCell>
+                          <TableCell className="p-2 text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                title="Download"
+                                onClick={() => void handleDownloadAttachment(a.id)}
+                              >
+                                <FileDown className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                                title="Delete"
+                                onClick={() => void deleteAttachment(a.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {getClaimAttachments(state, attachClaimId).length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-muted-foreground text-center py-6 text-xs">
+                            No documents attached yet.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </DialogContent>

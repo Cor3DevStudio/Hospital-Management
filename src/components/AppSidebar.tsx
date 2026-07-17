@@ -78,7 +78,8 @@ const labelMotion = (iconOnly: boolean) =>
   );
 
 export function AppSidebar() {
-  const { contentExpanded, sidebarHovered, setSidebarHovered, toggleSidebar } = useSidebar();
+  const { contentExpanded, sidebarHovered, setSidebarHovered, toggleSidebar, overlayActive } =
+    useSidebar();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { logout, state: store } = useStore();
 
@@ -86,7 +87,10 @@ export function AppSidebar() {
   // Expand mode + not hovered: icon rail in-flow (dashboard connected).
   // Expand mode + hovered: full sidebar overlays (dashboard behind).
   const iconOnly = contentExpanded && !sidebarHovered;
-  const overlayExpanded = contentExpanded && sidebarHovered;
+  // `overlayActive` (not the raw hover flag) drives the fixed/in-flow switch — it stays
+  // true until the width-collapse transition finishes, so this never snaps back in-flow
+  // (revealing/overlapping main content) before the sidebar has visually finished shrinking.
+  const overlayExpanded = overlayActive;
   const sidebarWidth = iconOnly ? "var(--sidebar-width-icon)" : "var(--sidebar-width)";
 
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");

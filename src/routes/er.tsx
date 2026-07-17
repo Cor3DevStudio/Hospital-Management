@@ -23,6 +23,8 @@ import {
   updateERRecord,
 } from "@/lib/services/erService";
 import { getActiveDoctors } from "@/lib/services/userService";
+import { getSession } from "@/lib/auth/authService";
+import { isERRecordLocked, resolveAccessUser } from "@/lib/pageAccess";
 import { ERRecordDocument } from "@/components/clinical/ERRecordDocument";
 import { buildPatientChartModel } from "@/components/clinical/buildPatientChartModel";
 import { PatientChartDocument } from "@/components/clinical/PatientChartDocument";
@@ -65,6 +67,12 @@ function ERPage() {
   const erList = usePaginatedList(state.erRecords, 50);
   const doctors = getActiveDoctors(state.users);
 
+  // Item 5 — once the disposition is finalized, an ER visit is read-only for everyone
+  // except Administrators (protects historical clinical/billing data from accidental edits).
+  const accessUser = resolveAccessUser(state, getSession()?.user);
+  const storedERRecord = editId ? state.erRecords.find((r) => r.id === editId) : undefined;
+  const isLocked = isERRecordLocked(storedERRecord, accessUser?.role);
+
   const reset = () => {
     setEditId(null);
     setForm(emptyERRecord());
@@ -72,6 +80,7 @@ function ERPage() {
   };
 
   const save = () => {
+    if (isLocked) return toast.error("This ER visit is closed and read-only. Contact an Administrator to make changes.");
     if (!form.patientId || !form.arrivalDate || !form.arrivalTime || !form.attendingDoctor) {
       return toast.error("Patient, arrival details, and doctor are required");
     }
@@ -85,6 +94,10 @@ function ERPage() {
   };
 
   const remove = (id: string) => {
+    const target = state.erRecords.find((r) => r.id === id);
+    if (isERRecordLocked(target, accessUser?.role)) {
+      return toast.error("This ER visit is closed and read-only. Contact an Administrator to make changes.");
+    }
     setState((s) => deleteERRecord(s, id));
     toast.success("ER record deleted");
     if (editId === id) reset();
@@ -135,7 +148,15 @@ function ERPage() {
                       <TableCell className="text-xs">{item.disposition || item.status}</TableCell>
                       <TableCell className="text-right pr-4">
                         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setEditId(item.id); setForm(item); }}>Edit</Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => remove(item.id)}
+                          disabled={isERRecordLocked(item, accessUser?.role)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -151,6 +172,12 @@ function ERPage() {
             <CardTitle className="text-base">{editId ? "Edit ER Visit" : "Log ER Visit"}</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-4 p-4 pt-2 border-t">
+            {isLocked && (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                This ER visit is closed and read-only. Contact an Administrator to make changes.
+              </p>
+            )}
+            <fieldset disabled={isLocked} className="m-0 border-0 p-0 space-y-4 disabled:opacity-60">
             <PatientSearchWithHistory
               patients={state.patients}
               selectedPatientId={form.patientId}
@@ -211,6 +238,7 @@ function ERPage() {
               </div>
             )}
             {form.admissionId && <p className="text-xs text-muted-foreground">Linked admission: {form.admissionId}</p>}
+            </fieldset>
             <div className="flex justify-end gap-2 border-t pt-3">
               {canPrintChart && (
                 <Button variant="outline" size="sm" onClick={() => setShowChartPreview(true)}>
@@ -223,7 +251,7 @@ function ERPage() {
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
-              <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
+              <Button size="sm" onClick={save} disabled={isLocked}><Save className="h-3.5 w-3.5" /> Save</Button>
             </div>
           </CardContent>
         </Card>

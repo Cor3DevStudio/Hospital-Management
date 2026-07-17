@@ -21,6 +21,7 @@ REM --------------------------------------------------------------------------
 echo [1/4] Terminating existing dev server connections...
 
 call :KillPort 5173
+call :KillPort 5174
 call :KillPort 3000
 call :KillPort 4173
 
@@ -96,8 +97,8 @@ REM    TanStack Start runs UI + /api routes in one process (npm run dev)
 REM --------------------------------------------------------------------------
 echo [4/4] Starting frontend + API server...
 echo.
-echo   App URL:    http://localhost:5173
-echo   DB health:  http://localhost:5173/api/health/db
+echo   App URL:    http://localhost:5174
+echo   DB health:  http://localhost:5174/api/health/db
 echo   Press Ctrl+C to stop.
 echo.
 echo ============================================================

@@ -34,6 +34,8 @@ export type Cf2FormData = {
   amountPaid: string;
   attendingDoctor: string;
   roomWard: string;
+  consentAccessRecords: boolean;
+  consentReviewedSoa: boolean;
 };
 
 function upper(value?: string): string {
@@ -95,5 +97,7 @@ export function buildCf2FormData(input: {
     amountPaid: money2(bill.amountPaid || 0),
     attendingDoctor: upper(admission?.attendingDoctor),
     roomWard: upper(admission?.roomWard),
+    consentAccessRecords: false,
+    consentReviewedSoa: false,
   };
 }

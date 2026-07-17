@@ -242,4 +242,32 @@ assert.equal(pfFallback.professionalFees[0]?.accreditation, "1234567890");
 assert.equal(pfFallback.professionalFees[0]?.row.actual, 5674.5);
 assert.equal(pfFallback.pfSubtotal.actual, 5674.5);
 
+// "Room and Board" must always be included and be the first Particulars entry —
+// even with zero room charge, and even when the room line is not first in bill.items.
+assert.equal(pfFallback.itemizedLines[0]?.itemName.startsWith("ROOM"), true);
+
+const noRoomBill: Bill = {
+  id: "bill-no-room",
+  patientId: "p4",
+  date: "2026-07-08",
+  patientType: "Out-Patient",
+  items: [
+    { description: "Paracetamol", amount: 200, category: "Medicine" },
+    { description: "CBC", amount: 500, category: "Lab" },
+  ],
+  philhealthDeduction: 0,
+  amountPaid: 0,
+};
+
+const noRoomModel = buildHospitalSoaModel({
+  bill: noRoomBill,
+  state: emptyState,
+  patient: { id: "p4", firstName: "Ana", lastName: "Reyes", birthDate: "1990-01-01", gender: "Female", civilStatus: "Single", contactNumber: "", address: {} },
+  hospital: { name: "Hospital", address: "Manila", phone: "" },
+});
+
+assert.equal(noRoomModel.hciRows[0]?.label, "Room and Board");
+assert.equal(noRoomModel.hciRows[0]?.actual, 0);
+assert.equal(noRoomModel.itemizedLines[0]?.itemName, "Paracetamol");
+
 console.log("buildHospitalSoaModel.test.ts: all assertions passed");

@@ -22,6 +22,7 @@ export type Cf4FormData = {
   dischargeDate: string;
   historyIllness: string;
   pastMedicalHistory: string;
+  courseInWard: string;
   physicianName: string;
 };
 
@@ -66,6 +67,7 @@ export function buildCf4FormData(input: {
     dischargeDate: formatDate(admission?.dischargeDate ?? bill.dischargeDate ?? bill.date),
     historyIllness: diagnosis,
     pastMedicalHistory: "",
+    courseInWard: diagnosis,
     physicianName: upper(admission?.attendingDoctor) || getFullName(patient),
   };
 }
@@ -109,6 +111,7 @@ export function buildCf4XmlPayload(input: {
     <DateDischarged>${escapeXml(d.dischargeDate)}</DateDischarged>
     <HistoryOfPresentIllness>${escapeXml(d.historyIllness)}</HistoryOfPresentIllness>
     <PastMedicalHistory>${escapeXml(d.pastMedicalHistory)}</PastMedicalHistory>
+    <CourseInWard>${escapeXml(d.courseInWard)}</CourseInWard>
     <AttendingPhysician>${escapeXml(d.physicianName)}</AttendingPhysician>
   </ClinicalSummary>
 </ClaimForm4>

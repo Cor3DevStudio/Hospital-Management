@@ -36,6 +36,10 @@ export function OfficialCF2Sheet({
   onFieldChange,
 }: OfficialCF2SheetProps) {
   const d = mergeCf2FormData(buildCf2FormData({ bill, patient, hospital, admission }), overrides);
+  const hasConsent = d.consentAccessRecords && d.consentReviewedSoa;
+  const totalChargesVal = hasConsent ? d.totalCharges : "0.00";
+  const benefitVal = hasConsent ? d.philhealthBenefit : "0.00";
+  const amountPaidVal = hasConsent ? d.amountPaid : "0.00";
   const pinChars = d.patientPin.padEnd(12, " ").slice(0, 12).split("").map((c) => (c === " " ? "" : c));
   const field = (key: keyof Cf2FormData) => ({
     editable,
@@ -172,9 +176,9 @@ export function OfficialCF2Sheet({
         <div className="mt-2">
           <Label>9. PhilHealth Benefits / Charges:</Label>
           <div className="cf-grid cf-grid--3">
-            <EditableLineField label="Total HCI Charges (₱)" value={d.totalCharges} {...field("totalCharges")} />
-            <EditableLineField label="PhilHealth Benefit (₱)" value={d.philhealthBenefit} {...field("philhealthBenefit")} />
-            <EditableLineField label="Amount Paid (₱)" value={d.amountPaid} {...field("amountPaid")} />
+            <EditableLineField label="Total HCI Charges (₱)" value={totalChargesVal} {...field("totalCharges")} />
+            <EditableLineField label="PhilHealth Benefit (₱)" value={benefitVal} {...field("philhealthBenefit")} />
+            <EditableLineField label="Amount Paid (₱)" value={amountPaidVal} {...field("amountPaid")} />
           </div>
         </div>
 
@@ -187,6 +191,18 @@ export function OfficialCF2Sheet({
           PART III - CERTIFICATION OF CONSUMPTION OF BENEFITS AND CONSENT TO ACCESS PATIENT
           RECORD/S
         </PartBar>
+        <div className="mt-2 space-y-1.5 border p-2.5 rounded bg-slate-50/50">
+          <EditableCheck
+            label="I certify that I am a PhilHealth member / authorized representative and consent to access patient record/s"
+            checked={!!d.consentAccessRecords}
+            {...check("consentAccessRecords")}
+          />
+          <EditableCheck
+            label="I have reviewed the Statement of Account (SOA) / bill and certify its correctness"
+            checked={!!d.consentReviewedSoa}
+            {...check("consentReviewedSoa")}
+          />
+        </div>
         <p className="cf-attest">
           I certify that the PhilHealth benefits for this confinement were applied to the hospital
           charges and professional fees, and I consent to PhilHealth&apos;s access to the patient

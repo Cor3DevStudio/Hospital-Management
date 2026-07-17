@@ -133,7 +133,9 @@ export function StandardBillingSoaDocument({
                     </td>
                   </tr>
                   {model.hciRows
-                    .filter((row) => row.actual > 0)
+                    // "Room and Board" must always be listed under Particulars (as the first
+                    // item) even when there is no room charge — only drop other zero rows.
+                    .filter((row) => row.actual > 0 || row.label === "Room and Board")
                     .map((row) => (
                       <tr key={row.label}>
                         <td className="particulars">

@@ -24,6 +24,8 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+/** Must be >= the sidebar/main width-collapse transition duration (see AppSidebar's duration-300). */
+const SIDEBAR_OVERLAY_COLLAPSE_MS = 320;
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -38,6 +40,13 @@ type SidebarContextProps = {
   /** Cursor is over the sidebar (used only while contentExpanded). */
   sidebarHovered: boolean;
   setSidebarHovered: (hovered: boolean) => void;
+  /**
+   * Whether the sidebar should render as a fixed overlay (and the main content as
+   * full-width "behind" it). Mirrors `contentExpanded && sidebarHovered`, but on the
+   * way out it stays true until the collapse width transition finishes, so the
+   * sidebar and main content never desync mid-animation (no snap/bleed).
+   */
+  overlayActive: boolean;
 };
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
@@ -75,6 +84,28 @@ const SidebarProvider = React.forwardRef<
     const [openMobile, setOpenMobile] = React.useState(false);
     const [contentExpanded, setContentExpanded] = React.useState(false);
     const [sidebarHovered, setSidebarHovered] = React.useState(false);
+
+    // Sequences the sidebar's fixed-overlay position with its own width transition so
+    // it never snaps back in-flow (and the main content never snaps to w-full/back)
+    // before the collapse animation has actually finished. See sidebar-dashboard-expand.mdc.
+    const [overlayActive, setOverlayActive] = React.useState(false);
+    const overlayCollapseTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    React.useLayoutEffect(() => {
+      const shouldOverlay = contentExpanded && sidebarHovered;
+      if (shouldOverlay) {
+        setOverlayActive(true);
+      } else {
+        overlayCollapseTimer.current = setTimeout(() => {
+          setOverlayActive(false);
+        }, SIDEBAR_OVERLAY_COLLAPSE_MS);
+      }
+      return () => {
+        if (overlayCollapseTimer.current) {
+          clearTimeout(overlayCollapseTimer.current);
+          overlayCollapseTimer.current = null;
+        }
+      };
+    }, [contentExpanded, sidebarHovered]);
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -145,6 +176,7 @@ const SidebarProvider = React.forwardRef<
         contentExpanded,
         sidebarHovered,
         setSidebarHovered,
+        overlayActive,
       }),
       [
         state,
@@ -156,6 +188,7 @@ const SidebarProvider = React.forwardRef<
         toggleSidebar,
         contentExpanded,
         sidebarHovered,
+        overlayActive,
       ],
     );
 

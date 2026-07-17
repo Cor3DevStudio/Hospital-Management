@@ -169,6 +169,8 @@ type NormalizedItem = {
 
   medicineId?: string;
 
+  doctorRole?: string;
+
 };
 
 
@@ -214,6 +216,8 @@ function normalizeItems(bill: Bill, state: AppState): NormalizedItem[] {
       priceItemId: it.priceItemId,
 
       medicineId: it.medicineId,
+
+      doctorRole: it.doctorRole,
 
     };
 
@@ -375,26 +379,31 @@ function sumBucket(items: NormalizedItem[], bucket: HciBucket, state: AppState):
 
 
 function roomDetail(items: NormalizedItem[]): string | undefined {
-  const room = items.find((i) => i.category === "Room");
-  if (!room) return undefined;
+  const rooms = items.filter((i) => i.category === "Room");
+  if (rooms.length === 0) return undefined;
 
-  const roomFormat = room.description.match(/ROOM\s*-\s*.+\((\d+)\s*day\/s\)\s*\(([\d,]+(?:\.\d+)?)\)/i);
-  if (roomFormat) {
-    return `${roomFormat[1]}.00 Day(s) @ ${roomFormat[2].replace(/,/g, "")}`;
-  }
+  return rooms
+    .map((room) => {
+      const roomFormat = room.description.match(/ROOM\s*-\s*.+\((\d+)\s*day\/s\)\s*\(([\d,]+(?:\.\d+)?)\)/i);
+      if (roomFormat) {
+        return `${roomFormat[1]}.00 Day(s) @ ${roomFormat[2].replace(/,/g, "")}`;
+      }
 
-  const daysMatch = room.description.match(/(\d+)\s*day/i);
-  const rateMatch = room.description.match(/@\s*₱?([\d,]+(?:\.\d+)?)/i) ?? room.description.match(/\(([\d,]+(?:\.\d+)?)\)\s*$/);
+      const daysMatch = room.description.match(/(\d+)\s*day/i);
+      const rateMatch = room.description.match(/@\s*₱?([\d,]+(?:\.\d+)?)/i) ?? room.description.match(/\(([\d,]+(?:\.\d+)?)\)\s*$/);
 
-  if (daysMatch && rateMatch) {
-    return `${daysMatch[1]}.00 Day(s) @ ${rateMatch[1].replace(/,/g, "")}`;
-  }
+      if (daysMatch && rateMatch) {
+        return `${daysMatch[1]}.00 Day(s) @ ${rateMatch[1].replace(/,/g, "")}`;
+      }
 
-  if (room.qty > 0 && room.unitPrice > 0) {
-    return `${room.qty.toFixed(2)} Day(s) @ ${money2(room.unitPrice).replace(/,/g, "")}`;
-  }
+      if (room.qty > 0 && room.unitPrice > 0) {
+        return `${room.qty.toFixed(2)} Day(s) @ ${room.unitPrice.toFixed(2)}`;
+      }
 
-  return undefined;
+      return "";
+    })
+    .filter(Boolean)
+    .join(" + ") || undefined;
 }
 
 
@@ -523,14 +532,18 @@ export function buildHospitalSoaModel(input: {
   const age = getAgeYears(patient?.birthDate);
   const ageParts = getAgeParts(patient?.birthDate);
 
-  const itemizedLines: SoaItemizedLine[] = items.map((item) => ({
-    serviceDate: bill.items.find((bi) => bi.description === item.description)?.effectiveDate ?? bill.date,
-    itemName: item.description,
-    unit: resolveItemUnit(state, item),
-    price: item.unitPrice,
-    quantity: item.qty,
-    amount: item.amount,
-  }));
+  // "Room and Board" must always be the first Particulars entry in the itemized
+  // details table — sort Room charges to the front, keep everything else in entry order.
+  const itemizedLines: SoaItemizedLine[] = [...items]
+    .sort((a, b) => (a.category === "Room" ? 0 : 1) - (b.category === "Room" ? 0 : 1))
+    .map((item) => ({
+      serviceDate: bill.items.find((bi) => bi.description === item.description)?.effectiveDate ?? bill.date,
+      itemName: item.description,
+      unit: resolveItemUnit(state, item),
+      price: item.unitPrice,
+      quantity: item.qty,
+      amount: item.amount,
+    }));
 
 
 
@@ -576,19 +589,25 @@ export function buildHospitalSoaModel(input: {
 
   const pfItems = items.filter((i) => i.category === "PF");
 
-  const pfByName = new Map<string, number>();
+  const pfGrouped = new Map<string, { name: string; role?: string; amount: number }>();
 
   for (const item of pfItems) {
-
     const name = item.description.trim() || "Professional Fee";
+    const role = item.doctorRole || "";
+    const key = `${name}|${role}`;
 
-    pfByName.set(name, (pfByName.get(name) ?? 0) + item.amount);
-
+    const existing = pfGrouped.get(key);
+    if (existing) {
+      existing.amount += item.amount;
+    } else {
+      pfGrouped.set(key, { name, role: role || undefined, amount: item.amount });
+    }
   }
 
-
-
-  const pfRowsBase = [...pfByName.entries()].map(([name, actual]) => amountRow(name, actual));
+  const pfRowsBase = [...pfGrouped.values()].map((entry) => {
+    const rowLabel = entry.role ? `${entry.name} — ${entry.role}` : entry.name;
+    return amountRow(rowLabel, entry.amount);
+  });
   if (pfRowsBase.length === 0 && input.caseRate) {
     const fallbackPf =
       input.caseRate.professionalFeeAmount && input.caseRate.professionalFeeAmount > 0
@@ -636,11 +655,15 @@ export function buildHospitalSoaModel(input: {
 
   const professionalFees = allocation.pfRows
     .filter((row) => row.actual > 0)
-    .map((row) => ({
-      name: row.label,
-      accreditation: resolvePhysicianAccreditation(state, row.label),
-      row,
-    }));
+    .map((row) => {
+      const nameParts = row.label.split(" — ");
+      const docName = nameParts[0] || row.label;
+      return {
+        name: row.label,
+        accreditation: resolvePhysicianAccreditation(state, docName),
+        row,
+      };
+    });
 
 
 

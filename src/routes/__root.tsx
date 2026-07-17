@@ -155,8 +155,10 @@ function AppShell() {
 function AuthenticatedLayout() {
   // KEEP: main-dashboard expand. Do not remove — see .cursor/rules/sidebar-dashboard-expand.mdc
   // Behind only while expand-mode sidebar is fully open (hovered); icon rail stays connected.
-  const { contentExpanded, sidebarHovered } = useSidebar();
-  const dashboardBehind = contentExpanded && sidebarHovered;
+  // Uses `overlayActive` (not the raw hover flag) so the main content switches back to
+  // its in-flow width at the exact same instant the sidebar switches back in-flow —
+  // never mid-collapse, which is what caused the sync/overlap glitch.
+  const { overlayActive: dashboardBehind } = useSidebar();
   const { state } = useStore();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const sessionUser = getSession()?.user;
@@ -185,7 +187,7 @@ function AuthenticatedLayout() {
       <AppSidebar />
       <div
         className={cn(
-          "flex min-h-0 min-w-0 flex-1 flex-col transition-[width,margin] duration-300 ease-in-out",
+          "flex min-h-0 min-w-0 flex-1 flex-col",
           dashboardBehind && "w-full"
         )}
       >
