@@ -44,7 +44,8 @@ export function filterInventory(medicines: Medicine[], filter: InventoryFilter):
     .filter((m) => {
       if (!filter.showArchived && m.archived) return false;
       if (filter.showArchived && !m.archived) return false;
-      if (filter.category && filter.category !== "All" && m.category !== filter.category) return false;
+      if (filter.category && filter.category !== "All" && m.category !== filter.category)
+        return false;
       if (!q) return true;
       return m.name.toLowerCase().includes(q) || m.category.toLowerCase().includes(q);
     })
@@ -56,7 +57,7 @@ function appendMedicinePriceHistory(
   itemId: string,
   amount: number,
   effectiveDate: string,
-  note: string
+  note: string,
 ): AppState["priceHistories"] {
   return [
     ...state.priceHistories,
@@ -74,7 +75,12 @@ function appendMedicinePriceHistory(
 
 export function resolveMedicineUnitPrice(state: AppState, form: Medicine, asOf?: string): number {
   if (form.priceItemId) {
-    const fromPriceList = getPriceAsOf(state, "priceItem", form.priceItemId, asOf ?? form.priceEffectiveDate ?? todayISO());
+    const fromPriceList = getPriceAsOf(
+      state,
+      "priceItem",
+      form.priceItemId,
+      asOf ?? form.priceEffectiveDate ?? todayISO(),
+    );
     if (fromPriceList !== undefined) return fromPriceList;
   }
   return form.unitPrice;
@@ -96,7 +102,13 @@ export function createMedicine(state: AppState, form: Omit<Medicine, "id">): App
   return {
     ...state,
     medicines: [...state.medicines, medicine],
-    priceHistories: appendMedicinePriceHistory(state, itemId, unitPrice, effectiveDate, "Initial medicine price"),
+    priceHistories: appendMedicinePriceHistory(
+      state,
+      itemId,
+      unitPrice,
+      effectiveDate,
+      "Initial medicine price",
+    ),
   };
 }
 
@@ -117,7 +129,13 @@ export function updateMedicine(state: AppState, form: Medicine): AppState {
     ...state,
     medicines: state.medicines.map((m) => (m.id === form.id ? medicine : m)),
     priceHistories: shouldCreateHistory
-      ? appendMedicinePriceHistory(state, form.id, unitPrice, effectiveDate, "Updated medicine price")
+      ? appendMedicinePriceHistory(
+          state,
+          form.id,
+          unitPrice,
+          effectiveDate,
+          "Updated medicine price",
+        )
       : state.priceHistories,
   };
 }
@@ -140,7 +158,9 @@ export function deleteMedicine(state: AppState, medicineId: string): AppState {
   return {
     ...state,
     medicines: state.medicines.filter((m) => m.id !== medicineId),
-    priceHistories: state.priceHistories.filter((h) => !(h.itemType === "medicine" && h.itemId === medicineId)),
+    priceHistories: state.priceHistories.filter(
+      (h) => !(h.itemType === "medicine" && h.itemId === medicineId),
+    ),
   };
 }
 
@@ -148,12 +168,16 @@ export function adjustMedicineStock(state: AppState, medicineId: string, delta: 
   return {
     ...state,
     medicines: state.medicines.map((m) =>
-      m.id === medicineId ? { ...m, stock: Math.max(0, m.stock + delta) } : m
+      m.id === medicineId ? { ...m, stock: Math.max(0, m.stock + delta) } : m,
     ),
   };
 }
 
-export function deductMedicineStock(state: AppState, medicineId: string, qty: number): AppState | null {
+export function deductMedicineStock(
+  state: AppState,
+  medicineId: string,
+  qty: number,
+): AppState | null {
   const medicine = state.medicines.find((m) => m.id === medicineId);
   if (!medicine || medicine.stock < qty) return null;
   return adjustMedicineStock(state, medicineId, -qty);

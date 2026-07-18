@@ -32,9 +32,7 @@ export function ReportPreviewModal({
         <div className="flex items-center justify-between border-b border-border p-4">
           <div>
             <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-            {subtitle ? (
-              <p className="text-[11px] text-muted-foreground">{subtitle}</p>
-            ) : null}
+            {subtitle ? <p className="text-[11px] text-muted-foreground">{subtitle}</p> : null}
           </div>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
             ✕
@@ -58,11 +56,7 @@ export function ReportPreviewModal({
             <FileDown className="mr-1 h-4 w-4" />
             Generate PDF
           </Button>
-          <Button
-            size="sm"
-            className="bg-blue-600 text-white hover:bg-blue-700"
-            onClick={onPrint}
-          >
+          <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700" onClick={onPrint}>
             <Printer className="mr-1 h-4 w-4" />
             Print
           </Button>

@@ -52,12 +52,9 @@ function buildCf3() {
   // Signature line on page 1/2
   html = html.replace(
     'left:0pt">___________________________________________________</span>',
-    'left:0pt">__PHYSICIAN_NAME__</span>'
+    'left:0pt">__PHYSICIAN_NAME__</span>',
   );
-  html = html.replace(
-    "Age of Menarche __________",
-    "Age of Menarche __AGE_MENARCHE__"
-  );
+  html = html.replace("Age of Menarche __________", "Age of Menarche __AGE_MENARCHE__");
 
   // Inject Part I overlays before Page1 closes (before Page2 opens)
   const page1Overlays = PAGE1_OVERLAYS.map(overlayHtml).join("\n");
@@ -67,17 +64,14 @@ function buildCf3() {
     console.warn("Page2 marker not found");
   } else {
     // Find the opening of the Page2 container div, then insert overlays just before Page1's closing </div>
-    const page2DivStart = html.lastIndexOf("<div style=\"position:relative;", page2Idx);
+    const page2DivStart = html.lastIndexOf('<div style="position:relative;', page2Idx);
     const insertAt = html.lastIndexOf("</div>", page2DivStart);
-    html =
-      html.slice(0, insertAt) +
-      `\n${page1Overlays}\n\t` +
-      html.slice(insertAt);
+    html = html.slice(0, insertAt) + `\n${page1Overlays}\n\t` + html.slice(insertAt);
   }
 
   html = html.replace(
     /style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:612pt; height:1008pt;"/g,
-    'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:612pt; height:1008pt; box-sizing:content-box;"'
+    'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:612pt; height:1008pt; box-sizing:content-box;"',
   );
 
   fs.writeFileSync(path.join(formsDir, "CF3.html"), fs.readFileSync(srcPath, "utf8"));

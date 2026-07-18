@@ -9,7 +9,11 @@ type PatientHistoryPanelProps = {
   onViewAdmission: (admissionId: string) => void;
 };
 
-export function PatientHistoryPanel({ patient, admissions, onViewAdmission }: PatientHistoryPanelProps) {
+export function PatientHistoryPanel({
+  patient,
+  admissions,
+  onViewAdmission,
+}: PatientHistoryPanelProps) {
   const { state } = useStore();
   return (
     <PatientClinicalHistory

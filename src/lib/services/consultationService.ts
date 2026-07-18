@@ -17,7 +17,10 @@ function sortConsultationsByDate(consultations: Consultation[]): Consultation[] 
 }
 
 /** Map legacy OPD records into consultation rows for list/history views. */
-export function opdRecordToConsultation(record: OPDRecord, id = record.consultationId ?? `opd:${record.id}`): Consultation {
+export function opdRecordToConsultation(
+  record: OPDRecord,
+  id = record.consultationId ?? `opd:${record.id}`,
+): Consultation {
   return normalizeConsultation({
     id,
     patientId: record.patientId,
@@ -36,7 +39,7 @@ export function opdRecordToConsultation(record: OPDRecord, id = record.consultat
 /** Merge canonical consultations with unlinked legacy `opdRecords`. */
 export function mergeConsultationSources(
   consultations: Consultation[] | undefined,
-  opdRecords?: OPDRecord[]
+  opdRecords?: OPDRecord[],
 ): Consultation[] {
   const normalized = normalizeConsultations(consultations ?? []);
   const linkedIds = new Set(normalized.map((c) => c.id));
@@ -54,7 +57,10 @@ export function mergeConsultationSources(
   return sortConsultationsByDate(merged);
 }
 
-export function getAllConsultations(consultations: Consultation[], opdRecords?: OPDRecord[]): Consultation[] {
+export function getAllConsultations(
+  consultations: Consultation[],
+  opdRecords?: OPDRecord[],
+): Consultation[] {
   return mergeConsultationSources(consultations, opdRecords);
 }
 
@@ -66,17 +72,23 @@ export function getAllConsultationsFromState(state: AppState): Consultation[] {
 export function getConsultationsForPatient(
   consultations: Consultation[],
   patientId: string,
-  opdRecords?: OPDRecord[]
+  opdRecords?: OPDRecord[],
 ): Consultation[] {
   if (!patientId) return [];
   return getAllConsultations(consultations, opdRecords).filter((c) => c.patientId === patientId);
 }
 
-export function getTodayConsultations(consultations: Consultation[], today = todayISO()): Consultation[] {
+export function getTodayConsultations(
+  consultations: Consultation[],
+  today = todayISO(),
+): Consultation[] {
   return normalizeConsultations(consultations).filter((c) => c.date === today);
 }
 
-export function getMonthlyConsultations(consultations: Consultation[], monthPrefix: string): Consultation[] {
+export function getMonthlyConsultations(
+  consultations: Consultation[],
+  monthPrefix: string,
+): Consultation[] {
   return normalizeConsultations(consultations).filter((c) => c.date.startsWith(monthPrefix));
 }
 

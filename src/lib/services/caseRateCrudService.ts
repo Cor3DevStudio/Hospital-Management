@@ -27,7 +27,11 @@ export async function persistCaseRate(rate: CaseRate): Promise<CaseRate> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(rate),
   });
-  const result = (await response.json()) as { success?: boolean; caseRate?: CaseRate; message?: string };
+  const result = (await response.json()) as {
+    success?: boolean;
+    caseRate?: CaseRate;
+    message?: string;
+  };
   if (!response.ok || !result.caseRate) {
     throw new Error(result.message ?? "Failed to save case rate to database.");
   }
@@ -53,11 +57,18 @@ export function filterCaseRates(caseRates: CaseRate[], query: string): CaseRate[
       (c) =>
         c.code.toLowerCase().includes(q) ||
         c.description.toLowerCase().includes(q) ||
-        c.category.toLowerCase().includes(q)
+        c.category.toLowerCase().includes(q),
     )
     .sort((a, b) => a.code.localeCompare(b.code));
 }
 
 export function emptyCaseRate(): CaseRate {
-  return { id: "", code: "", description: "", amount: 0, category: "Medical", effectiveDate: todayISO() };
+  return {
+    id: "",
+    code: "",
+    description: "",
+    amount: 0,
+    category: "Medical",
+    effectiveDate: todayISO(),
+  };
 }

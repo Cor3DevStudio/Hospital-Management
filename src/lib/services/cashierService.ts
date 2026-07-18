@@ -1,8 +1,4 @@
-import {
-  computeBillBalance,
-  getPatientBills,
-  recordPayment,
-} from "@/lib/services/billingService";
+import { computeBillBalance, getPatientBills, recordPayment } from "@/lib/services/billingService";
 import { uid, todayISO, type AppState, type Bill, type CashierTransaction } from "@/lib/store";
 
 export function getPatientOpenBills(state: AppState, patientId: string): Bill[] {
@@ -26,7 +22,9 @@ export function getRevenueForDate(state: AppState, date: string): number {
 
 export function getRevenueForMonth(state: AppState, monthPrefix: string): number {
   return state.cashierTransactions
-    .filter((t) => t.status === "Paid" && t.transactionDate && t.transactionDate.startsWith(monthPrefix))
+    .filter(
+      (t) => t.status === "Paid" && t.transactionDate && t.transactionDate.startsWith(monthPrefix),
+    )
     .reduce((sum, t) => {
       const amount = typeof t.amount === "number" ? t.amount : parseFloat(t.amount as any) || 0;
       return sum + amount;
@@ -55,7 +53,7 @@ export function processBillPayment(
     transactionDate?: string;
     description?: string;
     billExtras?: Parameters<typeof recordPayment>[3];
-  }
+  },
 ): { state: AppState; transaction: CashierTransaction } | { error: string } {
   const bill = state.bills.find((b) => b.id === input.billId);
   if (!bill) return { error: "Bill not found" };
@@ -93,11 +91,14 @@ export function processBillPayment(
 
 export function createCashierTransaction(
   state: AppState,
-  form: Omit<CashierTransaction, "id">
+  form: Omit<CashierTransaction, "id">,
 ): AppState {
   return {
     ...state,
-    cashierTransactions: [...state.cashierTransactions, { ...form, id: `CSH-${uid().toUpperCase()}` }],
+    cashierTransactions: [
+      ...state.cashierTransactions,
+      { ...form, id: `CSH-${uid().toUpperCase()}` },
+    ],
   };
 }
 

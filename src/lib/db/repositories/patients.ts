@@ -74,10 +74,7 @@ export async function syncPatientsToDatabase(patientList: Patient[]): Promise<nu
 
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
-    await db
-      .insert(patients)
-      .values(batch)
-      .onDuplicateKeyUpdate({ set: upsertSet });
+    await db.insert(patients).values(batch).onDuplicateKeyUpdate({ set: upsertSet });
   }
 
   return patientList.length;

@@ -11,8 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
@@ -50,12 +63,12 @@ function LaboratoryPage() {
   const labOptions = useMemo(
     () =>
       getLabPriceItems(state).map((p) => ({
-          id: p.id,
-          label: p.description,
-          secondary: p.code ? `Code ${p.code}` : "Laboratory",
-          meta: p.caseRate > 0 ? `₱${p.caseRate.toLocaleString()}` : undefined,
-        })),
-    [state.prices, state.priceHistories]
+        id: p.id,
+        label: p.description,
+        secondary: p.code ? `Code ${p.code}` : "Laboratory",
+        meta: p.caseRate > 0 ? `₱${p.caseRate.toLocaleString()}` : undefined,
+      })),
+    [state.prices, state.priceHistories],
   );
 
   const unitPrice = useMemo(() => {
@@ -105,9 +118,7 @@ function LaboratoryPage() {
     if (errorMessage) return toast.error(errorMessage);
 
     toast.success(
-      createdBillId
-        ? `Lab order created — billed on ${createdBillId}`
-        : "Lab order created"
+      createdBillId ? `Lab order created — billed on ${createdBillId}` : "Lab order created",
     );
     reset();
   };
@@ -154,7 +165,10 @@ function LaboratoryPage() {
               <TableBody>
                 {state.laboratoryRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No records yet
                     </TableCell>
                   </TableRow>
@@ -208,7 +222,9 @@ function LaboratoryPage() {
 
         <Card className="flex flex-col h-full min-h-0">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-base">{editId ? "Edit Lab Order" : "New Lab Order"}</CardTitle>
+            <CardTitle className="text-base">
+              {editId ? "Edit Lab Order" : "New Lab Order"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-4 p-4 pt-2 border-t">
             <PatientSearchWithHistory

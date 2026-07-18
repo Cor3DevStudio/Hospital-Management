@@ -696,23 +696,19 @@ function EClaimsPage() {
                       if (claim.claimStatus === "Pending" && deadline) {
                         const days = deadline.daysRemaining;
                         if (days < 0) {
-                          rowBg =
-                            "bg-rose-500/5 dark:bg-rose-950/20 hover:bg-rose-500/8 dark:hover:bg-rose-950/25";
+                          rowBg = "row-glow-rose";
                           cellBorder =
                             "border-l-4 border-l-rose-500 pl-3 font-semibold text-rose-700 dark:text-rose-400";
                         } else if (days <= 5) {
-                          rowBg =
-                            "bg-orange-500/5 dark:bg-orange-950/20 hover:bg-orange-500/8 dark:hover:bg-orange-950/25";
+                          rowBg = "row-glow-orange";
                           cellBorder =
                             "border-l-4 border-l-orange-500 pl-3 font-semibold text-orange-600 dark:text-orange-400";
                         } else if (days <= 15) {
-                          rowBg =
-                            "bg-amber-500/5 dark:bg-amber-950/20 hover:bg-amber-500/8 dark:hover:bg-amber-950/25";
+                          rowBg = "row-glow-amber";
                           cellBorder =
                             "border-l-4 border-l-amber-500 pl-3 font-semibold text-amber-600 dark:text-amber-400";
                         } else {
-                          rowBg =
-                            "bg-emerald-500/[0.02] dark:bg-emerald-950/5 hover:bg-emerald-500/[0.05] dark:hover:bg-emerald-950/10";
+                          rowBg = "row-glow-emerald";
                           cellBorder =
                             "border-l-4 border-l-emerald-500 pl-3 text-emerald-700 dark:text-emerald-400";
                         }
@@ -736,11 +732,9 @@ function EClaimsPage() {
                           </TableCell>
                           <TableCell>{deadline?.deadlineDate || "—"}</TableCell>
                           <TableCell>
-                            {deadline ? (
-                              renderDaysRemainingBadge(deadline.daysRemaining, claim.claimStatus)
-                            ) : (
-                              "—"
-                            )}
+                            {deadline
+                              ? renderDaysRemainingBadge(deadline.daysRemaining, claim.claimStatus)
+                              : "—"}
                           </TableCell>
                           <TableCell>{dates.roomWard || "—"}</TableCell>
                           <TableCell>
@@ -749,9 +743,7 @@ function EClaimsPage() {
                           <TableCell className="font-mono text-xs">
                             {claim.caseRateCode || "—"}
                           </TableCell>
-                          <TableCell>
-                            {renderStatusBadge(claim.claimStatus)}
-                          </TableCell>
+                          <TableCell>{renderStatusBadge(claim.claimStatus)}</TableCell>
                           <TableCell>
                             <Button
                               size="sm"

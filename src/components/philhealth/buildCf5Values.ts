@@ -64,7 +64,10 @@ export function buildCf5XmlPayload(input: {
 }): string {
   const d = buildCf5FormData(input);
   const sdxXml = d.sdx
-    .map((code, i) => `    <SecondaryDiagnosis index="${i + 1}">${escapeXml(code)}</SecondaryDiagnosis>`)
+    .map(
+      (code, i) =>
+        `    <SecondaryDiagnosis index="${i + 1}">${escapeXml(code)}</SecondaryDiagnosis>`,
+    )
     .join("\n");
   const rvsXml = d.rvs
     .map((code, i) => `    <Procedure index="${i + 1}">${escapeXml(code)}</Procedure>`)

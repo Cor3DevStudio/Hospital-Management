@@ -27,7 +27,7 @@ function normalizePayload(payload: ClinicalPayload): ClinicalPayload {
 }
 
 export async function saveClinicalStateToDatabase(
-  payload: ClinicalPayload
+  payload: ClinicalPayload,
 ): Promise<ClinicalSyncResult> {
   const normalized = normalizePayload(payload);
 

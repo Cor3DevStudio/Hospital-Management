@@ -59,11 +59,15 @@ export function PatientChartViewer({
                     await onUploadAttachment(file);
                     uploaded += 1;
                   } catch (err) {
-                    toast.error(err instanceof Error ? err.message : `Failed to upload ${file.name}`);
+                    toast.error(
+                      err instanceof Error ? err.message : `Failed to upload ${file.name}`,
+                    );
                   }
                 }
                 if (uploaded > 0) {
-                  toast.success(uploaded === 1 ? "Attachment uploaded" : `${uploaded} attachments uploaded`);
+                  toast.success(
+                    uploaded === 1 ? "Attachment uploaded" : `${uploaded} attachments uploaded`,
+                  );
                 }
                 e.target.value = "";
               }}

@@ -49,22 +49,19 @@ function buildCf5() {
   // (image1.png was not included with the HTML; keep slot, use official logo)
   html = html.replace(
     '<img style="position:absolute; width:566.9pt; height:85pt" src="image1.png" />',
-    '<img style="position:absolute; left:8pt; top:12pt; width:auto; height:60pt; max-width:200pt" src="__CF5_HEADER_SRC__" />'
+    '<img style="position:absolute; left:8pt; top:12pt; width:auto; height:60pt; max-width:200pt" src="__CF5_HEADER_SRC__" />',
   );
 
   html = html.replace(
     'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:595.25pt; height:841.85pt;"',
-    'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:595.25pt; height:841.85pt; box-sizing:content-box;"'
+    'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:595.25pt; height:841.85pt; box-sizing:content-box;"',
   );
 
   const overlays = OVERLAYS.map(overlayHtml).join("\n");
   // Insert overlays inside page div (before its closing tag, then </body>)
   const pageClose = html.lastIndexOf("</div>");
   if (pageClose > 0) {
-    html =
-      html.slice(0, pageClose) +
-      `\n${overlays}\n\t` +
-      html.slice(pageClose);
+    html = html.slice(0, pageClose) + `\n${overlays}\n\t` + html.slice(pageClose);
   }
 
   fs.writeFileSync(path.join(formsDir, "CF5.html"), fs.readFileSync(srcPath, "utf8"));

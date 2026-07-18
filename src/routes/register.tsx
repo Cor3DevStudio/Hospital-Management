@@ -26,7 +26,9 @@ function RegisterPage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [role, setRole] = useState<"Administrator" | "Doctor" | "Receptionist" | "Cashier">("Doctor");
+  const [role, setRole] = useState<"Administrator" | "Doctor" | "Receptionist" | "Cashier">(
+    "Doctor",
+  );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -47,30 +49,23 @@ function RegisterPage() {
       toast.error("Passwords do not match");
       return;
     }
-    
+
     // Register user (MariaDB)
     if (await register(username, fullName, role, password)) {
       toast.success("Account registered successfully");
-      const accessUser = resolveAccessUser(
-        { ...state, authedUser: username },
-        getSession()?.user
-      );
+      const accessUser = resolveAccessUser({ ...state, authedUser: username }, getSession()?.user);
       navigate({ to: firstAllowedPage(accessUser) });
     } else {
       toast.error("Username already taken or database unavailable");
     }
   };
 
-  const bullets = [
-    "Secure & Encrypted",
-    "Fast & Reliable",
-    "PhilHealth Integrated",
-  ];
+  const bullets = ["Secure & Encrypted", "Fast & Reliable", "PhilHealth Integrated"];
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 bg-[#070f21] relative overflow-hidden font-sans">
       {/* Soft Grid Pattern Background */}
-      <div 
+      <div
         className="absolute inset-0 z-0 pointer-events-none opacity-20"
         style={{
           backgroundImage: `linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px), 
@@ -78,18 +73,18 @@ function RegisterPage() {
           backgroundSize: "40px 40px",
         }}
       />
-      
+
       {/* Subtle Glow Overlay */}
-      <div 
+      <div
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
-          background: "radial-gradient(circle at 10% 90%, rgba(37, 99, 235, 0.06), transparent 50%), radial-gradient(circle at 90% 10%, rgba(99, 102, 241, 0.04), transparent 50%)",
+          background:
+            "radial-gradient(circle at 10% 90%, rgba(37, 99, 235, 0.06), transparent 50%), radial-gradient(circle at 90% 10%, rgba(99, 102, 241, 0.04), transparent 50%)",
         }}
       />
 
       {/* Main Card */}
       <div className="w-full max-w-4xl rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 border border-slate-800 shadow-2xl shadow-black/80">
-        
         {/* Left Section - Hospital Branding */}
         <div className="hidden md:flex md:col-span-5 flex-col justify-between p-10 lg:p-12 text-white relative overflow-hidden bg-[#0a1226] border-r border-slate-800">
           <div className="relative z-10 flex flex-col">
@@ -126,14 +121,10 @@ function RegisterPage() {
 
           <div className="relative z-10 mt-12 flex flex-col gap-4">
             {/* Version Badge - Clean and minimalist */}
-            <div className="text-xs text-slate-500 font-medium">
-              v2.0
-            </div>
-            
+            <div className="text-xs text-slate-500 font-medium">v2.0</div>
+
             {/* Footer Copy */}
-            <p className="text-slate-500 text-xs font-normal">
-              &copy; 2026 Medical Center
-            </p>
+            <p className="text-slate-500 text-xs font-normal">&copy; 2026 Medical Center</p>
           </div>
         </div>
 
@@ -158,7 +149,10 @@ function RegisterPage() {
             <div className="space-y-4">
               {/* Full Name Input */}
               <div className="space-y-1.5">
-                <Label htmlFor="fullName" className="text-slate-400 text-xs font-semibold tracking-wide">
+                <Label
+                  htmlFor="fullName"
+                  className="text-slate-400 text-xs font-semibold tracking-wide"
+                >
                   Full Name
                 </Label>
                 <Input
@@ -173,7 +167,10 @@ function RegisterPage() {
 
               {/* Username Input */}
               <div className="space-y-1.5">
-                <Label htmlFor="username" className="text-slate-400 text-xs font-semibold tracking-wide">
+                <Label
+                  htmlFor="username"
+                  className="text-slate-400 text-xs font-semibold tracking-wide"
+                >
                   Username
                 </Label>
                 <Input
@@ -188,13 +185,8 @@ function RegisterPage() {
 
               {/* Role Select */}
               <div className="space-y-1.5">
-                <Label className="text-slate-400 text-xs font-semibold tracking-wide">
-                  Role
-                </Label>
-                <Select
-                  value={role}
-                  onValueChange={(val) => setRole(val as any)}
-                >
+                <Label className="text-slate-400 text-xs font-semibold tracking-wide">Role</Label>
+                <Select value={role} onValueChange={(val) => setRole(val as any)}>
                   <SelectTrigger className="w-full bg-slate-50 border-slate-200 h-10 px-3.5 rounded-lg text-slate-800 focus:ring-blue-500/10 shadow-none text-sm focus:outline-none cursor-pointer">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
@@ -209,7 +201,10 @@ function RegisterPage() {
 
               {/* Password Input */}
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-slate-400 text-xs font-semibold tracking-wide">
+                <Label
+                  htmlFor="password"
+                  className="text-slate-400 text-xs font-semibold tracking-wide"
+                >
                   Password
                 </Label>
                 <div className="flex gap-2">
@@ -234,7 +229,10 @@ function RegisterPage() {
 
               {/* Confirm Password Input */}
               <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword" className="text-slate-400 text-xs font-semibold tracking-wide">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="text-slate-400 text-xs font-semibold tracking-wide"
+                >
                   Confirm Password
                 </Label>
                 <Input

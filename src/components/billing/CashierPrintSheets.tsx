@@ -26,13 +26,17 @@ export function CashierReceiptSheet({
     : null;
 
   return (
-    <div className="cashier-receipt-sheet bg-white p-8 text-black" style={{ width: "210mm", maxWidth: "210mm" }}>
+    <div
+      className="cashier-receipt-sheet bg-white p-8 text-black"
+      style={{ width: "210mm", maxWidth: "210mm" }}
+    >
       <HospitalLetterhead hospital={hospital} />
       <h1 className="mt-6 text-center text-base font-bold uppercase tracking-wide">
         Official Receipt
       </h1>
       <p className="mt-1 text-center text-[11px] text-slate-600">
-        OR No. <span className="font-mono font-semibold text-slate-900">{transaction.receiptNumber}</span>
+        OR No.{" "}
+        <span className="font-mono font-semibold text-slate-900">{transaction.receiptNumber}</span>
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 text-[11px]">
@@ -72,7 +76,10 @@ export function CashierReceiptSheet({
           <tr>
             <td className="py-2 text-slate-600">Balance Remaining</td>
             <td className="py-2 text-right font-semibold">
-              ₱{(transaction.balanceRemaining ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ₱
+              {(transaction.balanceRemaining ?? 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
             </td>
           </tr>
         </tbody>
@@ -101,7 +108,10 @@ export function CashierPatientInfoSheet({
   preparedBy: string;
 }) {
   return (
-    <div className="cashier-patient-sheet bg-white p-8 text-black" style={{ width: "210mm", maxWidth: "210mm" }}>
+    <div
+      className="cashier-patient-sheet bg-white p-8 text-black"
+      style={{ width: "210mm", maxWidth: "210mm" }}
+    >
       <HospitalLetterhead hospital={hospital} />
       <h1 className="mt-6 text-center text-base font-bold uppercase tracking-wide">
         Patient Information

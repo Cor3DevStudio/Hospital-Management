@@ -10,7 +10,7 @@ export function escapeHtml(value: string): string {
 /** Replace `__TOKEN__` placeholders. Layout/markup is never altered. */
 export function fillFormTemplate(
   template: string,
-  values: Record<string, string | number | undefined | null>
+  values: Record<string, string | number | undefined | null>,
 ): string {
   let html = template;
   for (const [key, raw] of Object.entries(values)) {
@@ -116,5 +116,7 @@ export function formatAddress(addr?: {
   zip?: string;
 }): string {
   if (!addr) return "";
-  return [addr.street, addr.barangay, addr.city, addr.province, addr.zip].filter(Boolean).join(", ");
+  return [addr.street, addr.barangay, addr.city, addr.province, addr.zip]
+    .filter(Boolean)
+    .join(", ");
 }

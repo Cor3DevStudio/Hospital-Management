@@ -1,9 +1,5 @@
 import { strict as assert } from "assert";
-import {
-  createPatient,
-  emptyPatient,
-  isDuplicatePatient,
-} from "./patientService";
+import { createPatient, emptyPatient, isDuplicatePatient } from "./patientService";
 import type { AppState } from "../store";
 
 function baseState(): AppState {

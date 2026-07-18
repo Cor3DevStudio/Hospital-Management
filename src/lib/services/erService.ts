@@ -1,7 +1,4 @@
-import {
-  createAdmission,
-  emptyAdmission,
-} from "@/lib/services/admissionService";
+import { createAdmission, emptyAdmission } from "@/lib/services/admissionService";
 import { getRoomRateItems } from "@/lib/services/roomBoardService";
 import { uid, todayISO, type AppState, type ERRecord } from "@/lib/store";
 
@@ -23,7 +20,7 @@ export function deleteERRecord(state: AppState, recordId: string): AppState {
 export function createAdmissionFromER(
   state: AppState,
   erRecordId: string,
-  roomWard: string
+  roomWard: string,
 ): { state: AppState; admissionId: string } | { error: string } {
   const er = state.erRecords.find((r) => r.id === erRecordId);
   if (!er) return { error: "ER record not found" };

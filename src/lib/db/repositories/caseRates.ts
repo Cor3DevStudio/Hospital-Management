@@ -82,7 +82,7 @@ export type CaseRateSearchResult = {
 
 /** Paginated server-side search — never load the full catalog into memory. */
 export async function searchCaseRates(
-  params: CaseRateSearchParams = {}
+  params: CaseRateSearchParams = {},
 ): Promise<CaseRateSearchResult> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 50));
@@ -131,7 +131,7 @@ function interleaveCaseRates(medical: CaseRate[], surgical: CaseRate[]): CaseRat
 }
 
 async function queryCaseRates(
-  params: CaseRateSearchParams & { type?: string }
+  params: CaseRateSearchParams & { type?: string },
 ): Promise<CaseRateSearchResult> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 50));
@@ -140,9 +140,7 @@ async function queryCaseRates(
 
   const conditions = [eq(philhealthRecords.isActive, true)];
   if (params.type) {
-    conditions.push(
-      sql`LOWER(${philhealthRecords.caseType}) = ${params.type.toLowerCase()}`
-    );
+    conditions.push(sql`LOWER(${philhealthRecords.caseType}) = ${params.type.toLowerCase()}`);
   }
   const q = params.query?.trim();
   if (q) {
@@ -150,17 +148,14 @@ async function queryCaseRates(
     conditions.push(
       or(
         like(philhealthRecords.caseCode, pattern),
-        like(philhealthRecords.caseDescription, pattern)
-      )!
+        like(philhealthRecords.caseDescription, pattern),
+      )!,
     );
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [countRow] = await db
-    .select({ n: count() })
-    .from(philhealthRecords)
-    .where(where);
+  const [countRow] = await db.select({ n: count() }).from(philhealthRecords).where(where);
 
   const rows = await db
     .select()

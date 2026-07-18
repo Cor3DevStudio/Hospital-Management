@@ -9,7 +9,7 @@ import { type AppState, type Bill } from "@/lib/store";
 export function canPostCharges(
   state: AppState,
   _patientId: string,
-  billId?: string
+  billId?: string,
 ): { allowed: boolean; reason?: string } {
   if (billId) {
     const bill = state.bills.find((b) => b.id === billId);
@@ -29,17 +29,13 @@ function inferBillPatientType(state: AppState, patientId: string): Bill["patient
 export function getOrCreateOpenBill(
   state: AppState,
   patientId: string,
-  patientType?: Bill["patientType"]
+  patientType?: Bill["patientType"],
 ): { state: AppState; bill: Bill } {
   const open = state.bills.find(
-    (b) => b.patientId === patientId && b.status !== "Paid" && !b.dischargeDate
+    (b) => b.patientId === patientId && b.status !== "Paid" && !b.dischargeDate,
   );
   if (open) return { state, bill: open };
-  return createEmptyBill(
-    state,
-    patientId,
-    patientType ?? inferBillPatientType(state, patientId)
-  );
+  return createEmptyBill(state, patientId, patientType ?? inferBillPatientType(state, patientId));
 }
 
 export function postServiceCharge(
@@ -47,7 +43,7 @@ export function postServiceCharge(
   patientId: string,
   lineItem: BillLineItem,
   existingBillId?: string,
-  patientType?: Bill["patientType"]
+  patientType?: Bill["patientType"],
 ): { state: AppState; bill: Bill } | { error: string } {
   const check = canPostCharges(state, patientId, existingBillId);
   if (!check.allowed) return { error: check.reason ?? "Charges not allowed" };

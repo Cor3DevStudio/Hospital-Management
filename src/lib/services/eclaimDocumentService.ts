@@ -40,7 +40,11 @@ function isMergeableAttachment(attachment: Attachment): boolean {
   );
 }
 
-async function appendPdfBytes(target: PDFDocument, bytes: Uint8Array, filename: string): Promise<void> {
+async function appendPdfBytes(
+  target: PDFDocument,
+  bytes: Uint8Array,
+  filename: string,
+): Promise<void> {
   if (bytes.byteLength < 5 || new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-") {
     throw new Error(`"${filename}" is not a valid PDF file.`);
   }
@@ -53,7 +57,7 @@ async function appendPdfBytes(target: PDFDocument, bytes: Uint8Array, filename: 
 
   const copied = await target.copyPages(
     source,
-    Array.from({ length: pageCount }, (_, index) => index)
+    Array.from({ length: pageCount }, (_, index) => index),
   );
   for (const page of copied) {
     target.addPage(page);
@@ -64,7 +68,7 @@ async function appendImageBytes(
   target: PDFDocument,
   bytes: Uint8Array,
   filename: string,
-  mime: string
+  mime: string,
 ): Promise<void> {
   const image = isPngMime(mime, filename)
     ? await target.embedPng(bytes)
@@ -77,7 +81,9 @@ async function appendImageBytes(
 }
 
 /** Merge PDF and image attachments into a single PDF (order preserved). */
-export async function mergeDocumentsToPdf(inputs: MergeDocumentInput[]): Promise<MergeDocumentsResult> {
+export async function mergeDocumentsToPdf(
+  inputs: MergeDocumentInput[],
+): Promise<MergeDocumentsResult> {
   const skipped: MergeDocumentsResult["skipped"] = [];
   const merged = await PDFDocument.create();
   let mergedCount = 0;
@@ -114,7 +120,7 @@ export async function mergeDocumentsToPdf(inputs: MergeDocumentInput[]): Promise
     throw new Error(
       skipped.length > 0
         ? skipped.map((item) => `${item.filename}: ${item.reason}`).join(" ")
-        : "No mergeable documents were provided."
+        : "No mergeable documents were provided.",
     );
   }
 
@@ -128,7 +134,7 @@ export async function mergeDocumentsToPdf(inputs: MergeDocumentInput[]): Promise
 
 export async function loadAttachmentDocuments(
   attachments: Attachment[],
-  getBlob: (key: string) => Promise<Blob | null>
+  getBlob: (key: string) => Promise<Blob | null>,
 ): Promise<MergeDocumentInput[]> {
   const docs: MergeDocumentInput[] = [];
 
@@ -136,7 +142,7 @@ export async function loadAttachmentDocuments(
     const blob = await getBlob(attachment.key);
     if (!blob) {
       throw new Error(
-        `Could not load "${attachment.filename}". The file may be missing from local storage — re-upload it.`
+        `Could not load "${attachment.filename}". The file may be missing from local storage — re-upload it.`,
       );
     }
     docs.push({
@@ -173,11 +179,13 @@ export function downloadBlob(blob: Blob, filename: string): void {
 
 export async function buildEclaimMergedPdfPackage(
   attachments: Attachment[],
-  getBlob: (key: string) => Promise<Blob | null>
+  getBlob: (key: string) => Promise<Blob | null>,
 ): Promise<MergeDocumentsResult> {
   const mergeable = getMergeableAttachments(attachments);
   if (mergeable.length === 0) {
-    throw new Error("No PDF or image attachments to merge. Upload at least one PDF, JPEG, or PNG file.");
+    throw new Error(
+      "No PDF or image attachments to merge. Upload at least one PDF, JPEG, or PNG file.",
+    );
   }
 
   const documents = await loadAttachmentDocuments(mergeable, getBlob);

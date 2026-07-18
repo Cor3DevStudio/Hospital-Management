@@ -1,10 +1,7 @@
 import { strict as assert } from "assert";
 import { PDFDocument } from "pdf-lib";
 
-import {
-  buildEclaimMergedPdfPackage,
-  mergeDocumentsToPdf,
-} from "./eclaimDocumentService";
+import { buildEclaimMergedPdfPackage, mergeDocumentsToPdf } from "./eclaimDocumentService";
 import type { Attachment } from "@/lib/store";
 
 async function createSamplePdf(label: string): Promise<Blob> {
@@ -58,7 +55,10 @@ async function run() {
     },
   ];
 
-  const packaged = await buildEclaimMergedPdfPackage(attachments, async (key) => blobs.get(key) ?? null);
+  const packaged = await buildEclaimMergedPdfPackage(
+    attachments,
+    async (key) => blobs.get(key) ?? null,
+  );
   const packagedDoc = await PDFDocument.load(await packaged.blob.arrayBuffer());
   assert.equal(packagedDoc.getPageCount(), 2);
 

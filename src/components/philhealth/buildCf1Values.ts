@@ -63,10 +63,7 @@ function isDependent(patient?: Patient): boolean {
 }
 
 /** Patient/bill → CF-1 field values. */
-export function buildCf1FormData(input: {
-  bill: Bill;
-  patient?: Patient;
-}): Cf1FormData {
+export function buildCf1FormData(input: { bill: Bill; patient?: Patient }): Cf1FormData {
   const { patient } = input;
   const dependent = isDependent(patient);
 

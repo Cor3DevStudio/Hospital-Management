@@ -72,15 +72,16 @@ export type PageAccessUser = {
 
 /** Resolve the signed-in user for access checks (store record, then auth session). */
 export function resolveAccessUser(
-  state: { users: Array<{ username: string; role: string; pageAccess?: string[] | null }>; authedUser: string | null },
-  sessionUser?: { username: string; role: string; pageAccess?: string[] | null } | null
+  state: {
+    users: Array<{ username: string; role: string; pageAccess?: string[] | null }>;
+    authedUser: string | null;
+  },
+  sessionUser?: { username: string; role: string; pageAccess?: string[] | null } | null,
 ): PageAccessUser | undefined {
   const username = state.authedUser?.trim();
   if (!username) return undefined;
 
-  const fromStore = state.users.find(
-    (u) => u.username.toLowerCase() === username.toLowerCase()
-  );
+  const fromStore = state.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
   if (fromStore) {
     return { role: fromStore.role, pageAccess: fromStore.pageAccess };
   }
@@ -107,10 +108,7 @@ export function userHasFullPageAccess(user: PageAccessUser | undefined): boolean
   return access.length >= ALL_PAGE_PATHS.length;
 }
 
-export function userCanAccessPage(
-  user: PageAccessUser | undefined,
-  pathname: string
-): boolean {
+export function userCanAccessPage(user: PageAccessUser | undefined, pathname: string): boolean {
   if (!user) return false;
   if (user.role === "Administrator") return true;
   const access = normalizePageAccess(user.pageAccess);
@@ -139,7 +137,7 @@ export const RECORD_LOCK_EXEMPT_ROLE = "Administrator";
 
 export function isAdmissionLocked(
   admission: { status?: string } | null | undefined,
-  role: string | undefined
+  role: string | undefined,
 ): boolean {
   if (!admission) return false;
   if (role === RECORD_LOCK_EXEMPT_ROLE) return false;
@@ -149,17 +147,19 @@ export function isAdmissionLocked(
 /** ER visit is locked once its disposition is finalized (no longer active in the ER). */
 export function isERRecordLocked(
   record: { status?: string } | null | undefined,
-  role: string | undefined
+  role: string | undefined,
 ): boolean {
   if (!record) return false;
   if (role === RECORD_LOCK_EXEMPT_ROLE) return false;
-  return record.status === "Released" || record.status === "Transferred" || record.status === "Admitted";
+  return (
+    record.status === "Released" || record.status === "Transferred" || record.status === "Admitted"
+  );
 }
 
 /** OPD consultation is locked once the patient has been seen/discharged. */
 export function isConsultationLocked(
   consultation: { status?: string; discharged?: boolean } | null | undefined,
-  role: string | undefined
+  role: string | undefined,
 ): boolean {
   if (!consultation) return false;
   if (role === RECORD_LOCK_EXEMPT_ROLE) return false;

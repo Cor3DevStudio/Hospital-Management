@@ -50,9 +50,7 @@ export function buildCf3FormData(input: {
   const { bill, patient, hospital, admission } = input;
   const diagnosis = upper(bill.notes || admission?.notes || "");
   const admitDate = formatDate(admission?.admissionDate ?? bill.date);
-  const dischargeDate = formatDate(
-    admission?.dischargeDate ?? bill.dischargeDate ?? bill.date
-  );
+  const dischargeDate = formatDate(admission?.dischargeDate ?? bill.dischargeDate ?? bill.date);
   const status = admission?.status;
 
   return {

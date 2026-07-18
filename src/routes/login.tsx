@@ -19,11 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth/useAuth";
 import { getSession } from "@/lib/auth/authService";
-import {
-  isLoginFormValid,
-  validateLoginForm,
-  type LoginFieldErrors,
-} from "@/lib/auth/validation";
+import { isLoginFormValid, validateLoginForm, type LoginFieldErrors } from "@/lib/auth/validation";
 import { firstAllowedPage, resolveAccessUser } from "@/lib/pageAccess";
 import { useStore } from "@/lib/store";
 
@@ -34,13 +30,33 @@ export const Route = createFileRoute("/login")({
 
 const FLOATING_ICONS = [
   { Icon: HeartPulse, className: "top-[12%] left-[8%] text-rose-400/30", delay: "0s", size: 28 },
-  { Icon: Stethoscope, className: "top-[22%] right-[12%] text-sky-400/25", delay: "1.2s", size: 32 },
-  { Icon: Activity, className: "bottom-[28%] left-[14%] text-emerald-400/25", delay: "2.1s", size: 26 },
-  { Icon: ShieldCheck, className: "top-[55%] right-[8%] text-indigo-400/25", delay: "0.6s", size: 30 },
+  {
+    Icon: Stethoscope,
+    className: "top-[22%] right-[12%] text-sky-400/25",
+    delay: "1.2s",
+    size: 32,
+  },
+  {
+    Icon: Activity,
+    className: "bottom-[28%] left-[14%] text-emerald-400/25",
+    delay: "2.1s",
+    size: 26,
+  },
+  {
+    Icon: ShieldCheck,
+    className: "top-[55%] right-[8%] text-indigo-400/25",
+    delay: "0.6s",
+    size: 30,
+  },
   { Icon: Zap, className: "bottom-[14%] right-[22%] text-amber-400/20", delay: "1.8s", size: 24 },
   { Icon: HeartPulse, className: "top-[70%] left-[6%] text-rose-300/20", delay: "2.8s", size: 22 },
   { Icon: Activity, className: "top-[8%] right-[28%] text-cyan-400/20", delay: "0.9s", size: 20 },
-  { Icon: Stethoscope, className: "bottom-[40%] left-[4%] text-blue-300/20", delay: "3.2s", size: 24 },
+  {
+    Icon: Stethoscope,
+    className: "bottom-[40%] left-[4%] text-blue-300/20",
+    delay: "3.2s",
+    size: 24,
+  },
 ] as const;
 
 const FEATURES = [
@@ -83,9 +99,7 @@ function LoginPage() {
       toast.success(`Welcome back, ${result.user?.fullName ?? username}`);
       navigate({
         to: firstAllowedPage(
-          result.user
-            ? { role: result.user.role, pageAccess: result.user.pageAccess }
-            : undefined
+          result.user ? { role: result.user.role, pageAccess: result.user.pageAccess } : undefined,
         ),
       });
       return;
@@ -340,8 +354,8 @@ function LoginPage() {
               className="login-fade-up mt-4 text-sm leading-relaxed text-slate-400 max-w-xs"
               style={{ animationDelay: "220ms" }}
             >
-              Professional healthcare management for modern medical practices —
-              admissions, billing, PhilHealth, and more.
+              Professional healthcare management for modern medical practices — admissions, billing,
+              PhilHealth, and more.
             </p>
 
             <div className="mt-10 space-y-3">
@@ -399,10 +413,7 @@ function LoginPage() {
 
           <form onSubmit={onSubmit} className="flex flex-col" noValidate>
             <div className="space-y-5">
-              <div
-                className="login-fade-up space-y-1.5"
-                style={{ animationDelay: "180ms" }}
-              >
+              <div className="login-fade-up space-y-1.5" style={{ animationDelay: "180ms" }}>
                 <Label
                   htmlFor="username"
                   className="text-xs font-semibold tracking-wide text-slate-500"
@@ -438,10 +449,7 @@ function LoginPage() {
                 )}
               </div>
 
-              <div
-                className="login-fade-up space-y-1.5"
-                style={{ animationDelay: "280ms" }}
-              >
+              <div className="login-fade-up space-y-1.5" style={{ animationDelay: "280ms" }}>
                 <Label
                   htmlFor="password"
                   className="text-xs font-semibold tracking-wide text-slate-500"
@@ -475,11 +483,7 @@ function LoginPage() {
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-200/60 hover:text-slate-700"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {showFieldError("password") && (
@@ -507,10 +511,7 @@ function LoginPage() {
               </div>
             </div>
 
-            <div
-              className="login-fade-up mt-8"
-              style={{ animationDelay: "480ms" }}
-            >
+            <div className="login-fade-up mt-8" style={{ animationDelay: "480ms" }}>
               <div className="mb-4 flex items-center gap-3">
                 <div className="h-px flex-1 bg-slate-100" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300">

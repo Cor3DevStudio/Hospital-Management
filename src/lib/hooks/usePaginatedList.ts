@@ -4,7 +4,7 @@ const DEFAULT_PAGE_SIZE = 50;
 
 export function usePaginatedList<T>(
   items: T[],
-  pageSize = DEFAULT_PAGE_SIZE
+  pageSize = DEFAULT_PAGE_SIZE,
 ): {
   page: number;
   pageSize: number;
@@ -50,6 +50,6 @@ export function usePaginatedList<T>(
 export function useResetPageOnChange(resetPage: () => void, deps: unknown[]): void {
   useEffect(() => {
     resetPage();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }

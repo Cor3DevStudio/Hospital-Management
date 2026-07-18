@@ -37,7 +37,11 @@ export function OfficialCF4Sheet({
   onFieldChange,
 }: OfficialCF4SheetProps) {
   const d = mergeCf4FormData(buildCf4FormData({ bill, patient, hospital, admission }), overrides);
-  const pinChars = d.patientPin.padEnd(12, " ").slice(0, 12).split("").map((c) => (c === " " ? "" : c));
+  const pinChars = d.patientPin
+    .padEnd(12, " ")
+    .slice(0, 12)
+    .split("")
+    .map((c) => (c === " " ? "" : c));
   const accChars = d.hciAccreditation
     .replace(/\D/g, "")
     .padEnd(12, " ")
@@ -68,7 +72,11 @@ export function OfficialCF4Sheet({
           </div>
         </div>
         <div className="mt-2">
-          <EditableLineField label="3. Address of HCI" value={d.hciAddress} {...field("hciAddress")} />
+          <EditableLineField
+            label="3. Address of HCI"
+            value={d.hciAddress}
+            {...field("hciAddress")}
+          />
         </div>
 
         <PartBar>II. PATIENT&apos;S DATA</PartBar>
@@ -89,7 +97,12 @@ export function OfficialCF4Sheet({
         </div>
 
         <div className="cf-grid cf-grid--addr-sex mt-2">
-          <EditableLineField label="5. Chief Complaint" value={d.chiefComplaint} tall {...field("chiefComplaint")} />
+          <EditableLineField
+            label="5. Chief Complaint"
+            value={d.chiefComplaint}
+            tall
+            {...field("chiefComplaint")}
+          />
           <div>
             <EditableLineField label="3. Age" value={d.patientAge} {...field("patientAge")} />
             <div className="mt-2">
@@ -103,30 +116,66 @@ export function OfficialCF4Sheet({
         </div>
 
         <div className="cf-grid cf-grid--3 mt-2">
-          <EditableLineField label="6. Admitting Diagnosis" value={d.admitDiagnosis} tall {...field("admitDiagnosis")} />
-          <EditableLineField label="7. Discharge Diagnosis" value={d.dischDiagnosis} tall {...field("dischDiagnosis")} />
+          <EditableLineField
+            label="6. Admitting Diagnosis"
+            value={d.admitDiagnosis}
+            tall
+            {...field("admitDiagnosis")}
+          />
+          <EditableLineField
+            label="7. Discharge Diagnosis"
+            value={d.dischDiagnosis}
+            tall
+            {...field("dischDiagnosis")}
+          />
           <div>
-            <EditableLineField label="8.a. 1st Case Rate Code" value={d.caseRate1} {...field("caseRate1")} />
+            <EditableLineField
+              label="8.a. 1st Case Rate Code"
+              value={d.caseRate1}
+              {...field("caseRate1")}
+            />
             <div className="mt-2">
-              <EditableLineField label="8.b. 2nd Case Rate Code" value={d.caseRate2} {...field("caseRate2")} />
+              <EditableLineField
+                label="8.b. 2nd Case Rate Code"
+                value={d.caseRate2}
+                {...field("caseRate2")}
+              />
             </div>
           </div>
         </div>
 
         <div className="cf-grid cf-grid--2 mt-2">
-          <EditableLineField label="9.a. Date Admitted" value={d.admitDate} {...field("admitDate")} />
-          <EditableLineField label="10.a. Date Discharged" value={d.dischargeDate} {...field("dischargeDate")} />
+          <EditableLineField
+            label="9.a. Date Admitted"
+            value={d.admitDate}
+            {...field("admitDate")}
+          />
+          <EditableLineField
+            label="10.a. Date Discharged"
+            value={d.dischargeDate}
+            {...field("dischargeDate")}
+          />
         </div>
 
         <PartBar>III. REASON FOR ADMISSION</PartBar>
 
         <div className="mt-1">
           <Label>1. History of Present Illness</Label>
-          <EditableLineField label="History of Present Illness" value={d.historyIllness} tall {...field("historyIllness")} />
+          <EditableLineField
+            label="History of Present Illness"
+            value={d.historyIllness}
+            tall
+            {...field("historyIllness")}
+          />
         </div>
         <div className="mt-2">
           <Label>2.a. Pertinent Past Medical History</Label>
-          <EditableLineField label="Past Medical History" value={d.pastMedicalHistory} tall {...field("pastMedicalHistory")} />
+          <EditableLineField
+            label="Past Medical History"
+            value={d.pastMedicalHistory}
+            tall
+            {...field("pastMedicalHistory")}
+          />
         </div>
 
         <div className="mt-2">
@@ -152,7 +201,11 @@ export function OfficialCF4Sheet({
 
         <div className="mt-2">
           <Label>IV. Course in the Ward (attach additional sheets if necessary)</Label>
-          <EditableTextAreaField label="Course in the Ward" value={d.courseInWard} {...field("courseInWard")} />
+          <EditableTextAreaField
+            label="Course in the Ward"
+            value={d.courseInWard}
+            {...field("courseInWard")}
+          />
         </div>
 
         <PartBar>CERTIFICATION</PartBar>
@@ -167,7 +220,11 @@ export function OfficialCF4Sheet({
             tall
             {...field("physicianName")}
           />
-          <EditableLineField label="Date Signed" value={d.dischargeDate} {...field("dischargeDate")} />
+          <EditableLineField
+            label="Date Signed"
+            value={d.dischargeDate}
+            {...field("dischargeDate")}
+          />
         </div>
       </div>
     </div>

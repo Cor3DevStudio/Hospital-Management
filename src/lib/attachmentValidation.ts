@@ -3,15 +3,7 @@ import type { Attachment } from "@/lib/store";
 export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024;
 export const MAX_ATTACHMENT_SIZE_LABEL = "10MB";
 
-const ALLOWED_EXTENSIONS = new Set([
-  ".pdf",
-  ".xml",
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".gif",
-  ".webp",
-]);
+const ALLOWED_EXTENSIONS = new Set([".pdf", ".xml", ".jpg", ".jpeg", ".png", ".gif", ".webp"]);
 
 export function getFileSizeLabel(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -40,7 +32,10 @@ export type FileValidationResult = {
   message: string;
 };
 
-export function validateAttachmentFile(file: File, maxBytes = MAX_ATTACHMENT_SIZE_BYTES): FileValidationResult {
+export function validateAttachmentFile(
+  file: File,
+  maxBytes = MAX_ATTACHMENT_SIZE_BYTES,
+): FileValidationResult {
   if (!file) {
     return { valid: false, message: "No file was selected." };
   }
@@ -68,6 +63,6 @@ export function mergeAttachmentLists(local: Attachment[], remote: Attachment[]):
   for (const item of remote) map.set(item.id, item);
   for (const item of local) map.set(item.id, item);
   return Array.from(map.values()).sort(
-    (a, b) => a.createdAt.localeCompare(b.createdAt) || a.filename.localeCompare(b.filename)
+    (a, b) => a.createdAt.localeCompare(b.createdAt) || a.filename.localeCompare(b.filename),
   );
 }

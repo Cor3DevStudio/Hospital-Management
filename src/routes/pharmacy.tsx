@@ -10,16 +10,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
 import { isPatientDischarged } from "@/lib/services/admissionService";
-import {
-  deletePharmacyRecord,
-  dispenseMedicine,
-} from "@/lib/services/pharmacyService";
+import { deletePharmacyRecord, dispenseMedicine } from "@/lib/services/pharmacyService";
 import { getActiveDoctors } from "@/lib/services/userService";
 import { resolveLineItemPrice } from "@/lib/services/billingService";
 import { useStore } from "@/lib/store";
@@ -48,7 +58,7 @@ function PharmacyPage() {
           secondary: [m.unit, m.category || "Medicine"].filter(Boolean).join(" · "),
           meta: `stock ${m.stock}`,
         })),
-    [state.medicines]
+    [state.medicines],
   );
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const chargeBlocked = patientId ? isPatientDischarged(state, patientId) : false;
@@ -112,7 +122,10 @@ function PharmacyPage() {
               <TableBody>
                 {state.pharmacyRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No records yet
                     </TableCell>
                   </TableRow>
@@ -124,9 +137,7 @@ function PharmacyPage() {
                       </TableCell>
                       <TableCell className="text-xs">{item.medicine}</TableCell>
                       <TableCell className="text-xs">{item.quantity}</TableCell>
-                      <TableCell className="text-xs">
-                        ₱{(item.unitPrice ?? 0).toFixed(2)}
-                      </TableCell>
+                      <TableCell className="text-xs">₱{(item.unitPrice ?? 0).toFixed(2)}</TableCell>
                       <TableCell className="text-xs">{item.dispenseDate}</TableCell>
                       <TableCell className="text-xs">
                         ₱{(item.totalAmount ?? 0).toLocaleString()}
@@ -167,7 +178,9 @@ function PharmacyPage() {
               onSelect={setPatientId}
             />
             {chargeBlocked && (
-              <p className="text-xs text-destructive">Patient is discharged — dispensing blocked.</p>
+              <p className="text-xs text-destructive">
+                Patient is discharged — dispensing blocked.
+              </p>
             )}
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Medicine (Inventory)</Label>

@@ -1,267 +1,508 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Missing Features Upgrade Proposal — HMS</title>
-  <style>
-    @page { size: A4; margin: 18mm 16mm; }
-    * { box-sizing: border-box; }
-    body { font-family: "Segoe UI", Arial, sans-serif; color: #1e2430; font-size: 10.5pt; line-height: 1.45; margin: 0; }
-    .cover { page-break-after: always; padding-top: 24mm; }
-    .brand { color: #1b5e20; font-weight: 700; letter-spacing: 0.06em; font-size: 10pt; text-transform: uppercase; }
-    h1 { font-size: 26pt; margin: 8px 0 4px; color: #111827; }
-    h2 { font-size: 13pt; color: #1b5e20; margin: 0 0 8px; }
-    .subtitle { color: #6b7280; font-size: 13pt; margin-bottom: 24px; }
-    .rule { border-top: 2px solid #e5e7eb; margin: 20px 0; }
-    .intro p { margin: 0 0 8px; }
-    .meta { margin: 16px 0; font-size: 10pt; }
-    .notes { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 9.5pt; color: #475569; }
-    .notes li { margin: 4px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 9.5pt; }
-    th { background: #1b5e20; color: #fff; text-align: left; padding: 8px 10px; }
-    td { border-bottom: 1px solid #e5e7eb; padding: 8px 10px; vertical-align: top; }
-    tr:nth-child(even) td { background: #fafafa; }
-    .num { width: 28px; text-align: center; font-weight: 700; color: #1b5e20; }
-    .desc { color: #64748b; font-size: 9pt; }
-    .module { width: 22%; font-size: 8.5pt; color: #0c4a6e; }
-    .price { width: 16%; font-weight: 700; color: #1b5e20; white-space: nowrap; }
-    .note { font-size: 8.5pt; color: #64748b; }
-    .total-row td { background: #ecfdf5; font-weight: 700; border-top: 2px solid #1b5e20; }
-    .bundles { page-break-before: always; }
-    .terms { page-break-before: always; font-size: 9.5pt; }
-    .terms ul { padding-left: 18px; }
-    .sign { margin-top: 28px; }
-    .sign p { margin: 12px 0; }
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  </style>
-</head>
-<body>
-  <section class="cover">
-    <div class="brand">Upgrade Proposal</div>
-    <h1>Missing Features</h1>
-    <div class="subtitle">Hospital Management System — Fixed Price List</div>
-    <div class="rule"></div>
-    <div class="intro">
-      <p>This document lists <strong>standard HMS capabilities not present</strong> in your current system.</p>
-      <p>Your base HMS was delivered at <strong>PHP 21,000</strong>. All prices below are <strong>fixed</strong> — select only the modules you need.</p>
-    </div>
-    <div class="meta"><strong>Prepared for:</strong> Hospital Client &nbsp;·&nbsp; <strong>Date:</strong> July 2026</div>
-    <ul class="notes">
-      <li>All prices in Philippine Peso (PHP); third-party API/hosting fees not included unless agreed.</li>
-      <li><strong>Full catalog value:</strong> PHP 152,500 (all 24 features).</li>
-      <li><strong>Payment terms:</strong> 50% upon approval, 50% upon UAT sign-off.</li>
-    </ul>
-  </section>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Missing Features Upgrade Proposal — HMS</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 18mm 16mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: #1e2430;
+        font-size: 10.5pt;
+        line-height: 1.45;
+        margin: 0;
+      }
+      .cover {
+        page-break-after: always;
+        padding-top: 24mm;
+      }
+      .brand {
+        color: #1b5e20;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        font-size: 10pt;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 26pt;
+        margin: 8px 0 4px;
+        color: #111827;
+      }
+      h2 {
+        font-size: 13pt;
+        color: #1b5e20;
+        margin: 0 0 8px;
+      }
+      .subtitle {
+        color: #6b7280;
+        font-size: 13pt;
+        margin-bottom: 24px;
+      }
+      .rule {
+        border-top: 2px solid #e5e7eb;
+        margin: 20px 0;
+      }
+      .intro p {
+        margin: 0 0 8px;
+      }
+      .meta {
+        margin: 16px 0;
+        font-size: 10pt;
+      }
+      .notes {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-size: 9.5pt;
+        color: #475569;
+      }
+      .notes li {
+        margin: 4px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        font-size: 9.5pt;
+      }
+      th {
+        background: #1b5e20;
+        color: #fff;
+        text-align: left;
+        padding: 8px 10px;
+      }
+      td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 8px 10px;
+        vertical-align: top;
+      }
+      tr:nth-child(even) td {
+        background: #fafafa;
+      }
+      .num {
+        width: 28px;
+        text-align: center;
+        font-weight: 700;
+        color: #1b5e20;
+      }
+      .desc {
+        color: #64748b;
+        font-size: 9pt;
+      }
+      .module {
+        width: 22%;
+        font-size: 8.5pt;
+        color: #0c4a6e;
+      }
+      .price {
+        width: 16%;
+        font-weight: 700;
+        color: #1b5e20;
+        white-space: nowrap;
+      }
+      .note {
+        font-size: 8.5pt;
+        color: #64748b;
+      }
+      .total-row td {
+        background: #ecfdf5;
+        font-weight: 700;
+        border-top: 2px solid #1b5e20;
+      }
+      .bundles {
+        page-break-before: always;
+      }
+      .terms {
+        page-break-before: always;
+        font-size: 9.5pt;
+      }
+      .terms ul {
+        padding-left: 18px;
+      }
+      .sign {
+        margin-top: 28px;
+      }
+      .sign p {
+        margin: 12px 0;
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="cover">
+      <div class="brand">Upgrade Proposal</div>
+      <h1>Missing Features</h1>
+      <div class="subtitle">Hospital Management System — Fixed Price List</div>
+      <div class="rule"></div>
+      <div class="intro">
+        <p>
+          This document lists <strong>standard HMS capabilities not present</strong> in your current
+          system.
+        </p>
+        <p>
+          Your base HMS was delivered at <strong>PHP 21,000</strong>. All prices below are
+          <strong>fixed</strong> — select only the modules you need.
+        </p>
+      </div>
+      <div class="meta">
+        <strong>Prepared for:</strong> Hospital Client &nbsp;·&nbsp; <strong>Date:</strong> July
+        2026
+      </div>
+      <ul class="notes">
+        <li>
+          All prices in Philippine Peso (PHP); third-party API/hosting fees not included unless
+          agreed.
+        </li>
+        <li><strong>Full catalog value:</strong> PHP 152,500 (all 24 features).</li>
+        <li><strong>Payment terms:</strong> 50% upon approval, 50% upon UAT sign-off.</li>
+      </ul>
+    </section>
 
-  <section>
-    <h2>Feature Catalog — Fixed Price List</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Feature &amp; Description</th>
-          <th>Module</th>
-          <th>Fixed Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        
-      <tr>
-        <td class="num">1</td>
-        <td><strong>Nursing & Clinical Documentation</strong><br><span class="desc">Vitals charting, intake/output, nursing notes, and medication administration record (MAR).</span></td>
-        <td class="module">New: Nursing</td>
-        <td class="price">PHP 7,500</td>
-      </tr>
-      <tr>
-        <td class="num">2</td>
-        <td><strong>Real-Time Bed & Ward Management</strong><br><span class="desc">Visual bed map, occupancy census, bed assignment, and transfer workflow.</span></td>
-        <td class="module">Extends: Admission</td>
-        <td class="price">PHP 6,500</td>
-      </tr>
-      <tr>
-        <td class="num">3</td>
-        <td><strong>OPD / ER Queue Management Board</strong><br><span class="desc">Live queue display, token numbers, triage sorting, and now-serving screens.</span></td>
-        <td class="module">Extends: OPD, ER</td>
-        <td class="price">PHP 3,000</td>
-      </tr>
-      <tr>
-        <td class="num">4</td>
-        <td><strong>Doctor Schedule & Slot Management</strong><br><span class="desc">Recurring schedules, per-slot capacity, leave blocks, and booking conflict checks.</span></td>
-        <td class="module">Extends: Appointments</td>
-        <td class="price">PHP 4,000</td>
-      </tr>
-      <tr>
-        <td class="num">5</td>
-        <td><strong>Operating Room / Surgery Module</strong><br><span class="desc">OR scheduling, pre-op checklist, operative record, and implant tracking.</span></td>
-        <td class="module">New: OR / Surgery</td>
-        <td class="price">PHP 8,500</td>
-      </tr>
-      <tr>
-        <td class="num">6</td>
-        <td><strong>Dialysis Unit Workflow</strong><br><span class="desc">Session scheduling, machine assignment, treatment sheets, and recurring billing.</span></td>
-        <td class="module">New: Dialysis</td>
-        <td class="price">PHP 7,500</td>
-      </tr>
-      <tr>
-        <td class="num">7</td>
-        <td><strong>Procurement & Purchase Orders</strong><br><span class="desc">Vendor catalog, PO creation, goods receiving, and supplier invoice matching.</span></td>
-        <td class="module">Extends: Inventory</td>
-        <td class="price">PHP 6,500</td>
-      </tr>
-      <tr>
-        <td class="num">8</td>
-        <td><strong>HMO / Private Insurance Module</strong><br><span class="desc">LOA tracking, benefit limits, co-pay rules, and insurer receivables aging.</span></td>
-        <td class="module">New: Insurance</td>
-        <td class="price">PHP 7,500</td>
-      </tr>
-      <tr>
-        <td class="num">9</td>
-        <td><strong>ICD-10 / RVS Coding Library</strong><br><span class="desc">Searchable diagnosis and procedure code picker with validation for claim forms.</span></td>
-        <td class="module">Extends: PhilHealth, OPD</td>
-        <td class="price">PHP 3,500</td>
-      </tr>
-      <tr>
-        <td class="num">10</td>
-        <td><strong>Automated PhilHealth Eligibility Check</strong><br><span class="desc">Real-time PIN and membership verification before admission and billing.</span></td>
-        <td class="module">Extends: PhilHealth, Patients</td>
-        <td class="price">PHP 4,500</td>
-      </tr>
-      <tr>
-        <td class="num">11</td>
-        <td><strong>Patient Portal</strong><br><span class="desc">Online appointments, lab results, bill inquiry, and document download for patients.</span></td>
-        <td class="module">New: Patient Portal</td>
-        <td class="price">PHP 8,500</td>
-      </tr>
-      <tr>
-        <td class="num">12</td>
-        <td><strong>Telemedicine / Video Consult</strong><br><span class="desc">Virtual OPD visits with scheduling, e-prescription, and consent capture.</span></td>
-        <td class="module">Extends: OPD</td>
-        <td class="price">PHP 8,000</td>
-      </tr>
-      <tr>
-        <td class="num">13</td>
-        <td><strong>SMS / Email Notification Engine</strong><br><span class="desc">Appointment reminders, lab-ready alerts, payment receipts, and discharge instructions.</span></td>
-        <td class="module">New: Notifications</td>
-        <td class="price">PHP 3,000</td>
-      </tr>
-      <tr>
-        <td class="num">14</td>
-        <td><strong>Multi-Branch / Multi-Facility</strong><br><span class="desc">Central admin, per-branch data isolation, and consolidated reporting.</span></td>
-        <td class="module">New: Platform</td>
-        <td class="price">PHP 10,000</td>
-      </tr>
-      <tr>
-        <td class="num">15</td>
-        <td><strong>Analytics & BI Dashboard</strong><br><span class="desc">Drill-down KPIs, physician productivity, AR aging, and claims denial trends.</span></td>
-        <td class="module">New: Analytics</td>
-        <td class="price">PHP 6,500</td>
-      </tr>
-      <tr>
-        <td class="num">16</td>
-        <td><strong>Comprehensive Audit Log</strong><br><span class="desc">Immutable trail of PHI access, billing edits, inventory changes, and admin actions.</span></td>
-        <td class="module">New: Audit</td>
-        <td class="price">PHP 4,000</td>
-      </tr>
-      <tr>
-        <td class="num">17</td>
-        <td><strong>Field-Level RBAC</strong><br><span class="desc">Per-action permissions (create, edit, delete, print) beyond page-level access.</span></td>
-        <td class="module">Extends: Auth, Settings</td>
-        <td class="price">PHP 5,000</td>
-      </tr>
-      <tr>
-        <td class="num">18</td>
-        <td><strong>HL7 / FHIR Interoperability</strong><br><span class="desc">Standard APIs for ADT, orders, results, and documents with external systems.</span></td>
-        <td class="module">New: Integration Hub</td>
-        <td class="price">PHP 11,000</td>
-      </tr>
-      <tr>
-        <td class="num">19</td>
-        <td><strong>Digital Signature for Records</strong><br><span class="desc">E-signature capture on SOA, consents, discharge summaries, and claim forms.</span></td>
-        <td class="module">Extends: Billing, PhilHealth</td>
-        <td class="price">PHP 4,000</td>
-      </tr>
-      <tr>
-        <td class="num">20</td>
-        <td><strong>Automated Backup & Disaster Recovery</strong><br><span class="desc">Scheduled encrypted backups, off-site copy, and guided restore procedures.</span></td>
-        <td class="module">Extends: Settings</td>
-        <td class="price">PHP 3,500</td>
-      </tr>
-      <tr>
-        <td class="num">21</td>
-        <td><strong>HR & Staff Credentialing</strong><br><span class="desc">License expiry tracking, department assignment, and duty roster management.</span></td>
-        <td class="module">New: HR</td>
-        <td class="price">PHP 5,000</td>
-      </tr>
-      <tr>
-        <td class="num">22</td>
-        <td><strong>Consent & Forms Management</strong><br><span class="desc">Versioned consent templates, captured signatures, and encounter linkage.</span></td>
-        <td class="module">New: Document Management</td>
-        <td class="price">PHP 4,500</td>
-      </tr>
-      <tr>
-        <td class="num">23</td>
-        <td><strong>PACS / Medical Imaging Viewer</strong><br><span class="desc">Store and view DICOM studies linked to radiology orders.</span></td>
-        <td class="module">Extends: Radiology</td>
-        <td class="price">PHP 11,000</td>
-      </tr>
-      <tr>
-        <td class="num">24</td>
-        <td><strong>Structured Laboratory Information System (LIS)</strong><br><span class="desc">Specimen tracking, reference ranges, and instrument result import.</span></td>
-        <td class="module">Extends: Laboratory</td>
-        <td class="price">PHP 9,500</td>
-      </tr>
-        <tr class="total-row">
-          <td colspan="3">Full catalog (all 24 features)</td>
-          <td class="price">PHP 152,500</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+    <section>
+      <h2>Feature Catalog — Fixed Price List</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Feature &amp; Description</th>
+            <th>Module</th>
+            <th>Fixed Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">1</td>
+            <td>
+              <strong>Nursing & Clinical Documentation</strong><br /><span class="desc"
+                >Vitals charting, intake/output, nursing notes, and medication administration record
+                (MAR).</span
+              >
+            </td>
+            <td class="module">New: Nursing</td>
+            <td class="price">PHP 7,500</td>
+          </tr>
+          <tr>
+            <td class="num">2</td>
+            <td>
+              <strong>Real-Time Bed & Ward Management</strong><br /><span class="desc"
+                >Visual bed map, occupancy census, bed assignment, and transfer workflow.</span
+              >
+            </td>
+            <td class="module">Extends: Admission</td>
+            <td class="price">PHP 6,500</td>
+          </tr>
+          <tr>
+            <td class="num">3</td>
+            <td>
+              <strong>OPD / ER Queue Management Board</strong><br /><span class="desc"
+                >Live queue display, token numbers, triage sorting, and now-serving screens.</span
+              >
+            </td>
+            <td class="module">Extends: OPD, ER</td>
+            <td class="price">PHP 3,000</td>
+          </tr>
+          <tr>
+            <td class="num">4</td>
+            <td>
+              <strong>Doctor Schedule & Slot Management</strong><br /><span class="desc"
+                >Recurring schedules, per-slot capacity, leave blocks, and booking conflict
+                checks.</span
+              >
+            </td>
+            <td class="module">Extends: Appointments</td>
+            <td class="price">PHP 4,000</td>
+          </tr>
+          <tr>
+            <td class="num">5</td>
+            <td>
+              <strong>Operating Room / Surgery Module</strong><br /><span class="desc"
+                >OR scheduling, pre-op checklist, operative record, and implant tracking.</span
+              >
+            </td>
+            <td class="module">New: OR / Surgery</td>
+            <td class="price">PHP 8,500</td>
+          </tr>
+          <tr>
+            <td class="num">6</td>
+            <td>
+              <strong>Dialysis Unit Workflow</strong><br /><span class="desc"
+                >Session scheduling, machine assignment, treatment sheets, and recurring
+                billing.</span
+              >
+            </td>
+            <td class="module">New: Dialysis</td>
+            <td class="price">PHP 7,500</td>
+          </tr>
+          <tr>
+            <td class="num">7</td>
+            <td>
+              <strong>Procurement & Purchase Orders</strong><br /><span class="desc"
+                >Vendor catalog, PO creation, goods receiving, and supplier invoice matching.</span
+              >
+            </td>
+            <td class="module">Extends: Inventory</td>
+            <td class="price">PHP 6,500</td>
+          </tr>
+          <tr>
+            <td class="num">8</td>
+            <td>
+              <strong>HMO / Private Insurance Module</strong><br /><span class="desc"
+                >LOA tracking, benefit limits, co-pay rules, and insurer receivables aging.</span
+              >
+            </td>
+            <td class="module">New: Insurance</td>
+            <td class="price">PHP 7,500</td>
+          </tr>
+          <tr>
+            <td class="num">9</td>
+            <td>
+              <strong>ICD-10 / RVS Coding Library</strong><br /><span class="desc"
+                >Searchable diagnosis and procedure code picker with validation for claim
+                forms.</span
+              >
+            </td>
+            <td class="module">Extends: PhilHealth, OPD</td>
+            <td class="price">PHP 3,500</td>
+          </tr>
+          <tr>
+            <td class="num">10</td>
+            <td>
+              <strong>Automated PhilHealth Eligibility Check</strong><br /><span class="desc"
+                >Real-time PIN and membership verification before admission and billing.</span
+              >
+            </td>
+            <td class="module">Extends: PhilHealth, Patients</td>
+            <td class="price">PHP 4,500</td>
+          </tr>
+          <tr>
+            <td class="num">11</td>
+            <td>
+              <strong>Patient Portal</strong><br /><span class="desc"
+                >Online appointments, lab results, bill inquiry, and document download for
+                patients.</span
+              >
+            </td>
+            <td class="module">New: Patient Portal</td>
+            <td class="price">PHP 8,500</td>
+          </tr>
+          <tr>
+            <td class="num">12</td>
+            <td>
+              <strong>Telemedicine / Video Consult</strong><br /><span class="desc"
+                >Virtual OPD visits with scheduling, e-prescription, and consent capture.</span
+              >
+            </td>
+            <td class="module">Extends: OPD</td>
+            <td class="price">PHP 8,000</td>
+          </tr>
+          <tr>
+            <td class="num">13</td>
+            <td>
+              <strong>SMS / Email Notification Engine</strong><br /><span class="desc"
+                >Appointment reminders, lab-ready alerts, payment receipts, and discharge
+                instructions.</span
+              >
+            </td>
+            <td class="module">New: Notifications</td>
+            <td class="price">PHP 3,000</td>
+          </tr>
+          <tr>
+            <td class="num">14</td>
+            <td>
+              <strong>Multi-Branch / Multi-Facility</strong><br /><span class="desc"
+                >Central admin, per-branch data isolation, and consolidated reporting.</span
+              >
+            </td>
+            <td class="module">New: Platform</td>
+            <td class="price">PHP 10,000</td>
+          </tr>
+          <tr>
+            <td class="num">15</td>
+            <td>
+              <strong>Analytics & BI Dashboard</strong><br /><span class="desc"
+                >Drill-down KPIs, physician productivity, AR aging, and claims denial trends.</span
+              >
+            </td>
+            <td class="module">New: Analytics</td>
+            <td class="price">PHP 6,500</td>
+          </tr>
+          <tr>
+            <td class="num">16</td>
+            <td>
+              <strong>Comprehensive Audit Log</strong><br /><span class="desc"
+                >Immutable trail of PHI access, billing edits, inventory changes, and admin
+                actions.</span
+              >
+            </td>
+            <td class="module">New: Audit</td>
+            <td class="price">PHP 4,000</td>
+          </tr>
+          <tr>
+            <td class="num">17</td>
+            <td>
+              <strong>Field-Level RBAC</strong><br /><span class="desc"
+                >Per-action permissions (create, edit, delete, print) beyond page-level
+                access.</span
+              >
+            </td>
+            <td class="module">Extends: Auth, Settings</td>
+            <td class="price">PHP 5,000</td>
+          </tr>
+          <tr>
+            <td class="num">18</td>
+            <td>
+              <strong>HL7 / FHIR Interoperability</strong><br /><span class="desc"
+                >Standard APIs for ADT, orders, results, and documents with external systems.</span
+              >
+            </td>
+            <td class="module">New: Integration Hub</td>
+            <td class="price">PHP 11,000</td>
+          </tr>
+          <tr>
+            <td class="num">19</td>
+            <td>
+              <strong>Digital Signature for Records</strong><br /><span class="desc"
+                >E-signature capture on SOA, consents, discharge summaries, and claim forms.</span
+              >
+            </td>
+            <td class="module">Extends: Billing, PhilHealth</td>
+            <td class="price">PHP 4,000</td>
+          </tr>
+          <tr>
+            <td class="num">20</td>
+            <td>
+              <strong>Automated Backup & Disaster Recovery</strong><br /><span class="desc"
+                >Scheduled encrypted backups, off-site copy, and guided restore procedures.</span
+              >
+            </td>
+            <td class="module">Extends: Settings</td>
+            <td class="price">PHP 3,500</td>
+          </tr>
+          <tr>
+            <td class="num">21</td>
+            <td>
+              <strong>HR & Staff Credentialing</strong><br /><span class="desc"
+                >License expiry tracking, department assignment, and duty roster management.</span
+              >
+            </td>
+            <td class="module">New: HR</td>
+            <td class="price">PHP 5,000</td>
+          </tr>
+          <tr>
+            <td class="num">22</td>
+            <td>
+              <strong>Consent & Forms Management</strong><br /><span class="desc"
+                >Versioned consent templates, captured signatures, and encounter linkage.</span
+              >
+            </td>
+            <td class="module">New: Document Management</td>
+            <td class="price">PHP 4,500</td>
+          </tr>
+          <tr>
+            <td class="num">23</td>
+            <td>
+              <strong>PACS / Medical Imaging Viewer</strong><br /><span class="desc"
+                >Store and view DICOM studies linked to radiology orders.</span
+              >
+            </td>
+            <td class="module">Extends: Radiology</td>
+            <td class="price">PHP 11,000</td>
+          </tr>
+          <tr>
+            <td class="num">24</td>
+            <td>
+              <strong>Structured Laboratory Information System (LIS)</strong><br /><span
+                class="desc"
+                >Specimen tracking, reference ranges, and instrument result import.</span
+              >
+            </td>
+            <td class="module">Extends: Laboratory</td>
+            <td class="price">PHP 9,500</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="3">Full catalog (all 24 features)</td>
+            <td class="price">PHP 152,500</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-  <section class="bundles">
-    <h2>Recommended Fixed-Price Bundles</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Bundle</th>
-          <th>Fixed Price</th>
-          <th>Savings</th>
-        </tr>
-      </thead>
-      <tbody>
-      <tr>
-        <td><strong>Starter Pack</strong><br><span class="desc">Queue Board + SMS/Email + ICD-10 Library + Backup/DR + Audit Log</span></td>
-        <td class="price">PHP 15,000</td>
-        <td class="note">Save PHP 2,500 vs individual (PHP 17,500)</td>
-      </tr>
-      <tr>
-        <td><strong>Clinical Operations Pack</strong><br><span class="desc">Nursing Module + Bed Management + Doctor Schedule + Consent/Forms</span></td>
-        <td class="price">PHP 20,000</td>
-        <td class="note">Save PHP 2,500 vs individual (PHP 22,500)</td>
-      </tr>
-      <tr>
-        <td><strong>PhilHealth Plus Pack</strong><br><span class="desc">Eligibility Check + ICD-10 Library + Digital Signature + Analytics Dashboard</span></td>
-        <td class="price">PHP 17,500</td>
-        <td class="note">Save PHP 2,000 vs individual (PHP 19,500)</td>
-      </tr></tbody>
-    </table>
-  </section>
+    <section class="bundles">
+      <h2>Recommended Fixed-Price Bundles</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Bundle</th>
+            <th>Fixed Price</th>
+            <th>Savings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Starter Pack</strong><br /><span class="desc"
+                >Queue Board + SMS/Email + ICD-10 Library + Backup/DR + Audit Log</span
+              >
+            </td>
+            <td class="price">PHP 15,000</td>
+            <td class="note">Save PHP 2,500 vs individual (PHP 17,500)</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Clinical Operations Pack</strong><br /><span class="desc"
+                >Nursing Module + Bed Management + Doctor Schedule + Consent/Forms</span
+              >
+            </td>
+            <td class="price">PHP 20,000</td>
+            <td class="note">Save PHP 2,500 vs individual (PHP 22,500)</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>PhilHealth Plus Pack</strong><br /><span class="desc"
+                >Eligibility Check + ICD-10 Library + Digital Signature + Analytics Dashboard</span
+              >
+            </td>
+            <td class="price">PHP 17,500</td>
+            <td class="note">Save PHP 2,000 vs individual (PHP 19,500)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-  <section class="terms">
-    <h2>Terms &amp; Conditions (Summary)</h2>
-    <ul>
-      <li>Scope covers software development and integration into the existing HMS codebase.</li>
-      <li>Hardware, internet, SMS credits, payment gateway fees, and cloud hosting are client-provided unless agreed.</li>
-      <li>Timeline: simple modules ~1-2 weeks; major modules ~3-6 weeks each.</li>
-      <li>Quoted fixed prices are valid for 30 days from proposal date.</li>
-      <li>Warranty: 30-day defect fix per delivered feature after go-live.</li>
-    </ul>
-    <div class="sign">
-      <p><strong>Client Representative:</strong> _________________________________ &nbsp;&nbsp; Date: ______________</p>
-      <p><strong>Service Provider:</strong> _____________________________________ &nbsp;&nbsp; Date: ______________</p>
-    </div>
-  </section>
-</body>
+    <section class="terms">
+      <h2>Terms &amp; Conditions (Summary)</h2>
+      <ul>
+        <li>Scope covers software development and integration into the existing HMS codebase.</li>
+        <li>
+          Hardware, internet, SMS credits, payment gateway fees, and cloud hosting are
+          client-provided unless agreed.
+        </li>
+        <li>Timeline: simple modules ~1-2 weeks; major modules ~3-6 weeks each.</li>
+        <li>Quoted fixed prices are valid for 30 days from proposal date.</li>
+        <li>Warranty: 30-day defect fix per delivered feature after go-live.</li>
+      </ul>
+      <div class="sign">
+        <p>
+          <strong>Client Representative:</strong> _________________________________ &nbsp;&nbsp;
+          Date: ______________
+        </p>
+        <p>
+          <strong>Service Provider:</strong> _____________________________________ &nbsp;&nbsp;
+          Date: ______________
+        </p>
+      </div>
+    </section>
+  </body>
 </html>

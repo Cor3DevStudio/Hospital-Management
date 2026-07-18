@@ -20,11 +20,7 @@ import {
   getPatientAdmissionSummary,
 } from "@/lib/services/admissionService";
 import { formatPatientName } from "@/lib/services/patientHistoryService";
-import {
-  createPatient,
-  emptyPatient,
-  isDuplicatePatient,
-} from "@/lib/services/patientService";
+import { createPatient, emptyPatient, isDuplicatePatient } from "@/lib/services/patientService";
 import { useStore, type Patient } from "@/lib/store";
 
 export type PatientSearchModalProps = {
@@ -78,24 +74,20 @@ export function PatientSearchModal({
 
   const filtered = useMemo(
     () => filterPatients(patients, query, showArchived),
-    [patients, query, showArchived]
+    [patients, query, showArchived],
   );
 
   const admissionCountByPatient = useMemo(
     () => buildAdmissionCountByPatient(state),
-    [state.admissions]
+    [state.admissions],
   );
 
   const previewPatient =
-    patients.find((p) => p.id === previewId) ??
-    state.patients.find((p) => p.id === previewId);
+    patients.find((p) => p.id === previewId) ?? state.patients.find((p) => p.id === previewId);
 
   const previewSummary = useMemo(
-    () =>
-      previewId
-        ? getPatientAdmissionSummary(state, previewId, { excludeAdmissionId })
-        : null,
-    [state, previewId, excludeAdmissionId]
+    () => (previewId ? getPatientAdmissionSummary(state, previewId, { excludeAdmissionId }) : null),
+    [state, previewId, excludeAdmissionId],
   );
 
   const admissions = previewSummary?.admissions ?? [];
@@ -231,66 +223,81 @@ export function PatientSearchModal({
         </div>
 
         {mode === "search" && (
-        <div className="max-h-52 shrink-0 overflow-y-auto border-t bg-muted/30 px-4 py-3">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Previous Admission History
-          </p>
-          {!previewPatient ? (
-            <p className="text-xs text-muted-foreground">
-              Hover a result to preview admission history, then click to select.
+          <div className="max-h-52 shrink-0 overflow-y-auto border-t bg-muted/30 px-4 py-3">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Previous Admission History
             </p>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-semibold break-words">{formatPatientName(previewPatient)}</p>
-              {previewSummary && <ReAdmissionBanner summary={previewSummary} compact />}
-              {admissions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No previous admissions found — first-time admission.</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {admissions.slice(0, 5).map((admission) => (
-                    <li
-                      key={admission.id}
-                      className="flex items-start justify-between gap-2 rounded-md border bg-card px-2.5 py-2 text-xs"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          <span className="font-semibold whitespace-nowrap">{admission.admissionDate}</span>
-                          <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
-                            {admission.status}
-                          </Badge>
-                        </div>
-                        <p className="mt-0.5 break-words font-medium">{admission.roomWard || "—"}</p>
-                        {(admission.notes || admission.attendingDoctor) && (
-                          <p className="mt-0.5 line-clamp-1 text-muted-foreground">
-                            {admission.notes || admission.attendingDoctor}
+            {!previewPatient ? (
+              <p className="text-xs text-muted-foreground">
+                Hover a result to preview admission history, then click to select.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold break-words">
+                  {formatPatientName(previewPatient)}
+                </p>
+                {previewSummary && <ReAdmissionBanner summary={previewSummary} compact />}
+                {admissions.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No previous admissions found — first-time admission.
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {admissions.slice(0, 5).map((admission) => (
+                      <li
+                        key={admission.id}
+                        className="flex items-start justify-between gap-2 rounded-md border bg-card px-2.5 py-2 text-xs"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <span className="font-semibold whitespace-nowrap">
+                              {admission.admissionDate}
+                            </span>
+                            <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                              {admission.status}
+                            </Badge>
+                          </div>
+                          <p className="mt-0.5 break-words font-medium">
+                            {admission.roomWard || "—"}
                           </p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                  {admissions.length > 5 && (
-                    <p className="text-[11px] text-muted-foreground">
-                      +{admissions.length - 5} more admission{admissions.length - 5 === 1 ? "" : "s"}
-                    </p>
-                  )}
-                </ul>
-              )}
-              <Button
-                type="button"
-                size="sm"
-                className="mt-1 h-8 w-full text-xs"
-                onClick={() => handleSelect(previewPatient.id)}
-              >
-                Select {formatPatientName(previewPatient)}
-              </Button>
-            </div>
-          )}
-        </div>
+                          {(admission.notes || admission.attendingDoctor) && (
+                            <p className="mt-0.5 line-clamp-1 text-muted-foreground">
+                              {admission.notes || admission.attendingDoctor}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                    {admissions.length > 5 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        +{admissions.length - 5} more admission
+                        {admissions.length - 5 === 1 ? "" : "s"}
+                      </p>
+                    )}
+                  </ul>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-1 h-8 w-full text-xs"
+                  onClick={() => handleSelect(previewPatient.id)}
+                >
+                  Select {formatPatientName(previewPatient)}
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {mode === "search" && allowCreate && filtered.length > 0 && (
           <div className="shrink-0 border-t px-4 py-2">
-            <Button type="button" size="sm" variant="ghost" className="h-8 w-full text-xs" onClick={openCreateForm}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 w-full text-xs"
+              onClick={openCreateForm}
+            >
               <Plus className="h-3.5 w-3.5" /> Register New Patient
             </Button>
           </div>

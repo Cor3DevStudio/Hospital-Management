@@ -11,12 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  ALL_PAGE_PATHS,
-  APP_PAGES,
-  PAGE_GROUPS,
-  normalizePageAccess,
-} from "@/lib/pageAccess";
+import { ALL_PAGE_PATHS, APP_PAGES, PAGE_GROUPS, normalizePageAccess } from "@/lib/pageAccess";
 import type { User } from "@/lib/store";
 
 type PageAccessModalProps = {
@@ -39,18 +34,14 @@ export function PageAccessModal({
 
   useEffect(() => {
     if (!open || !user) return;
-    setSelected(
-      isAdmin ? [...ALL_PAGE_PATHS] : normalizePageAccess(user.pageAccess)
-    );
+    setSelected(isAdmin ? [...ALL_PAGE_PATHS] : normalizePageAccess(user.pageAccess));
   }, [open, user, isAdmin]);
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
   const toggle = (path: string) => {
     if (isAdmin) return;
-    setSelected((prev) =>
-      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
-    );
+    setSelected((prev) => (prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]));
   };
 
   const selectAll = () => setSelected([...ALL_PAGE_PATHS]);
@@ -83,11 +74,23 @@ export function PageAccessModal({
           </p>
           {!isAdmin && (
             <div className="flex gap-1">
-              <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={selectAll}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={selectAll}
+              >
                 <CheckSquare className="mr-1 h-3.5 w-3.5" />
                 All
               </Button>
-              <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearAll}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={clearAll}
+              >
                 <Square className="mr-1 h-3.5 w-3.5" />
                 None
               </Button>

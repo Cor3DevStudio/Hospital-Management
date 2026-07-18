@@ -1,7 +1,14 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ReAdmissionBanner } from "@/components/ReAdmissionBanner";
 import type { Admission, Patient } from "@/lib/store";
@@ -36,7 +43,7 @@ export function PatientClinicalHistory({
   const patientId = patient?.id ?? "";
   const sections = useMemo(
     () => (patientId ? getPatientClinicalHistory(state, patientId) : []),
-    [state, patientId]
+    [state, patientId],
   );
   const admissionItems =
     admissions?.map((a) => ({
@@ -45,7 +52,9 @@ export function PatientClinicalHistory({
       title: a.roomWard,
       detail: a.notes || a.attendingDoctor || "",
       status: a.status,
-    })) ?? sections.find((s) => s.key === "admissions")?.items ?? [];
+    })) ??
+    sections.find((s) => s.key === "admissions")?.items ??
+    [];
 
   if (!patient) {
     return (
@@ -68,7 +77,9 @@ export function PatientClinicalHistory({
         </CardHeader>
         <CardContent className="px-3 pb-3">
           <p className="mb-2 text-sm font-semibold break-words">{formatPatientName(patient)}</p>
-          {admissionSummary && <ReAdmissionBanner summary={admissionSummary} compact className="mb-3" />}
+          {admissionSummary && (
+            <ReAdmissionBanner summary={admissionSummary} compact className="mb-3" />
+          )}
           {listLayout ? (
             <AdmissionList items={admissionItems} onViewAdmission={onViewAdmission} />
           ) : (
@@ -109,7 +120,11 @@ function AdmissionList({
   onViewAdmission?: (id: string) => void;
 }) {
   if (items.length === 0) {
-    return <p className="py-2 text-center text-xs text-muted-foreground">No previous admissions found.</p>;
+    return (
+      <p className="py-2 text-center text-xs text-muted-foreground">
+        No previous admissions found.
+      </p>
+    );
   }
 
   return (
@@ -128,7 +143,9 @@ function AdmissionList({
               </div>
               <p className="mt-0.5 font-medium break-words">{item.title || "—"}</p>
               {item.detail && (
-                <p className="mt-0.5 text-muted-foreground line-clamp-2 break-words">{item.detail}</p>
+                <p className="mt-0.5 text-muted-foreground line-clamp-2 break-words">
+                  {item.detail}
+                </p>
               )}
             </div>
             {onViewAdmission && (
@@ -183,7 +200,12 @@ function AdmissionTable({
               <TableCell className="text-xs">{item.status}</TableCell>
               {onViewAdmission && (
                 <TableCell className="text-right">
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onViewAdmission(item.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => onViewAdmission(item.id)}
+                  >
                     View
                   </Button>
                 </TableCell>
@@ -208,7 +230,9 @@ function HistorySection({
       <CardHeader className="pb-2 pt-3 px-4">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           {section.label}
-          <Badge variant="outline" className="font-normal">{section.items.length}</Badge>
+          <Badge variant="outline" className="font-normal">
+            {section.items.length}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 border-t">
@@ -221,7 +245,9 @@ function HistorySection({
             <TableBody>
               {section.items.length === 0 ? (
                 <TableRow>
-                  <TableCell className="py-6 text-center text-xs text-muted-foreground">No records yet</TableCell>
+                  <TableCell className="py-6 text-center text-xs text-muted-foreground">
+                    No records yet
+                  </TableCell>
                 </TableRow>
               ) : (
                 section.items.map((item) => (
@@ -231,7 +257,9 @@ function HistorySection({
                     <TableCell className="text-xs text-muted-foreground">{item.detail}</TableCell>
                     {item.status && (
                       <TableCell className="text-xs w-24">
-                        <Badge variant="outline" className="text-[10px]">{item.status}</Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {item.status}
+                        </Badge>
                       </TableCell>
                     )}
                   </TableRow>

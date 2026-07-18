@@ -65,8 +65,7 @@ export function allocatePhilhealthToSoaRows(input: {
         ? Math.round(caseRate.amount * ((caseRate.professionalFeePct ?? 30) / 100) * 100) / 100
         : totalPhic * 0.3;
 
-  const hciBenefit =
-    totalPhic > 0 ? Math.min(hciCap, hciActual, totalPhic) : 0;
+  const hciBenefit = totalPhic > 0 ? Math.min(hciCap, hciActual, totalPhic) : 0;
   const pfBenefit =
     totalPhic > 0 ? Math.min(pfCap, pfActual, Math.max(0, totalPhic - hciBenefit)) : 0;
 
@@ -89,9 +88,7 @@ export function allocatePhilhealthToSoaRows(input: {
 function allocateHciPhilhealthRows(hciRows: SoaAmountRow[], hciBenefit: number): SoaAmountRow[] {
   const roomIndex = hciRows.findIndex((r) => /room/i.test(r.label));
   const roomPhic =
-    roomIndex >= 0 && hciBenefit > 0
-      ? Math.min(hciRows[roomIndex].actual, hciBenefit)
-      : 0;
+    roomIndex >= 0 && hciBenefit > 0 ? Math.min(hciRows[roomIndex].actual, hciBenefit) : 0;
 
   return hciRows.map((row, index) => {
     if (row.actual <= 0) {

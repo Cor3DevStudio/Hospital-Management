@@ -26,7 +26,15 @@ import { cn } from "@/lib/utils";
 export type ClaimFormId = "CF1" | "CF2" | "CF3" | "CF4" | "CF5" | "ESOA" | "CSF";
 
 /** Claim forms included in the printable suite. */
-export const PRINTABLE_CLAIM_FORM_IDS = ["CF1", "CF2", "CF3", "CF4", "CF5", "ESOA", "CSF"] as const satisfies readonly ClaimFormId[];
+export const PRINTABLE_CLAIM_FORM_IDS = [
+  "CF1",
+  "CF2",
+  "CF3",
+  "CF4",
+  "CF5",
+  "ESOA",
+  "CSF",
+] as const satisfies readonly ClaimFormId[];
 
 export const CLAIM_FORM_TABS: {
   id: ClaimFormId;
@@ -162,7 +170,7 @@ export function ClaimFormSuiteModal({
                   <span
                     className={cn(
                       "rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                      STATUS_BADGE[meta.statusTone]
+                      STATUS_BADGE[meta.statusTone],
                     )}
                   >
                     {meta.statusLabel}
@@ -246,13 +254,13 @@ export function ClaimFormSuiteModal({
                   "min-w-[120px] shrink-0 rounded-t-md border border-b-0 px-3 py-2 text-left transition-colors",
                   active
                     ? "border-border bg-white shadow-[inset_0_2px_0_0_#2563eb]"
-                    : "border-transparent bg-transparent text-muted-foreground hover:bg-white/60 hover:text-foreground"
+                    : "border-transparent bg-transparent text-muted-foreground hover:bg-white/60 hover:text-foreground",
                 )}
               >
                 <p
                   className={cn(
                     "text-[11px] font-semibold leading-tight",
-                    active ? "text-foreground" : ""
+                    active ? "text-foreground" : "",
                   )}
                 >
                   {tab.label}
@@ -320,7 +328,12 @@ export function ClaimFormSuiteModal({
 
         {/* Footer */}
         <div className="flex shrink-0 justify-end gap-2 border-t bg-muted/40 px-4 py-3">
-          <Button size="sm" variant="outline" className="h-9 text-xs" onClick={() => onOpenChange(false)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 text-xs"
+            onClick={() => onOpenChange(false)}
+          >
             Close Editor
           </Button>
           <Button

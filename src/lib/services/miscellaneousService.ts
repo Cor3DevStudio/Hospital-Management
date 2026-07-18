@@ -2,7 +2,13 @@ import { getLatestAdmission } from "@/lib/services/admissionService";
 import { resolveLineItemPrice } from "@/lib/services/billingService";
 import { postServiceCharge } from "@/lib/services/chargePostingService";
 import { createPriceItem } from "@/lib/services/priceListService";
-import { uid, todayISO, type AppState, type MiscellaneousRecord, type PriceItem } from "@/lib/store";
+import {
+  uid,
+  todayISO,
+  type AppState,
+  type MiscellaneousRecord,
+  type PriceItem,
+} from "@/lib/store";
 
 /** Seed fee types — add more entries here or via Admin Settings. */
 export const DEFAULT_MISC_FEES: { code: string; description: string; amount: number }[] = [
@@ -41,7 +47,7 @@ export function postMiscellaneousCharge(
     chargeDate?: string;
     orderedBy?: string;
     notes?: string;
-  }
+  },
 ): { state: AppState; record: MiscellaneousRecord } | { error: string } {
   if (!input.patientId) return { error: "Patient is required" };
   const fee = state.prices.find((p) => p.id === input.feeTypeId && p.category === "Miscellaneous");
@@ -105,7 +111,7 @@ export function deleteMiscellaneousRecord(state: AppState, recordId: string): Ap
 
 export function cancelMiscellaneousRecord(
   state: AppState,
-  recordId: string
+  recordId: string,
 ): AppState | { error: string } {
   const record = (state.miscellaneousRecords ?? []).find((r) => r.id === recordId);
   if (!record) return { error: "Record not found" };
@@ -113,7 +119,7 @@ export function cancelMiscellaneousRecord(
   return {
     ...state,
     miscellaneousRecords: (state.miscellaneousRecords ?? []).map((r) =>
-      r.id === recordId ? { ...r, status: "Cancelled" as const } : r
+      r.id === recordId ? { ...r, status: "Cancelled" as const } : r,
     ),
   };
 }

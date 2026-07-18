@@ -9,8 +9,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import {
@@ -21,10 +34,7 @@ import {
   updatePriceItem,
 } from "@/lib/services/priceListService";
 import { getPriceHistoryForItem } from "@/lib/priceService";
-import {
-  persistCaseRate,
-  persistDeleteCaseRate,
-} from "@/lib/services/caseRateCrudService";
+import { persistCaseRate, persistDeleteCaseRate } from "@/lib/services/caseRateCrudService";
 import { searchCaseRatesApi } from "@/lib/services/caseRateApi";
 import { useStore, todayISO, type CaseRate, type PriceItem } from "@/lib/store";
 
@@ -68,7 +78,7 @@ function PriceListPage() {
 
   const filtered = useMemo(
     () => filterPriceItems(state.prices, { query: q, category: categoryFilter }),
-    [state.prices, q, categoryFilter]
+    [state.prices, q, categoryFilter],
   );
 
   const priceList = usePaginatedList(filtered, 50);
@@ -144,8 +154,8 @@ function PriceListPage() {
     setCrForm({
       ...crForm,
       amount,
-      healthFacilityFee: Math.round((amount * hfPct) / 100 * 100) / 100,
-      professionalFeeAmount: Math.round((amount * pfPct) / 100 * 100) / 100,
+      healthFacilityFee: Math.round(((amount * hfPct) / 100) * 100) / 100,
+      professionalFeeAmount: Math.round(((amount * pfPct) / 100) * 100) / 100,
     });
   };
 
@@ -206,7 +216,10 @@ function PriceListPage() {
                 <div className="grid gap-3 md:grid-cols-6">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Code</Label>
-                    <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+                    <Input
+                      value={form.code}
+                      onChange={(e) => setForm({ ...form, code: e.target.value })}
+                    />
                   </div>
                   <div className="md:col-span-2 space-y-1.5">
                     <Label className="text-xs">Description</Label>
@@ -217,7 +230,10 @@ function PriceListPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Category</Label>
-                    <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                    <Select
+                      value={form.category}
+                      onValueChange={(v) => setForm({ ...form, category: v })}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -324,7 +340,10 @@ function PriceListPage() {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="py-8 text-center text-sm text-muted-foreground"
+                        >
                           No records yet
                         </TableCell>
                       </TableRow>
@@ -335,7 +354,9 @@ function PriceListPage() {
                           <TableCell className="font-medium">{p.description}</TableCell>
                           <TableCell>{p.category}</TableCell>
                           <TableCell className="text-xs">{p.effectiveDate || "N/A"}</TableCell>
-                          <TableCell className="text-right">₱{p.caseRate.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">
+                            ₱{p.caseRate.toLocaleString()}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Button
                               size="sm"
@@ -430,9 +451,7 @@ function PriceListPage() {
                     <Input
                       type="number"
                       value={crForm.healthFacilityFee ?? 0}
-                      onChange={(e) =>
-                        setCrForm({ ...crForm, healthFacilityFee: +e.target.value })
-                      }
+                      onChange={(e) => setCrForm({ ...crForm, healthFacilityFee: +e.target.value })}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -450,9 +469,7 @@ function PriceListPage() {
                     <Input
                       type="number"
                       value={crForm.hospitalSharePct ?? 70}
-                      onChange={(e) =>
-                        setCrForm({ ...crForm, hospitalSharePct: +e.target.value })
-                      }
+                      onChange={(e) => setCrForm({ ...crForm, hospitalSharePct: +e.target.value })}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -534,13 +551,19 @@ function PriceListPage() {
                   <TableBody>
                     {crLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={8}
+                          className="py-8 text-center text-sm text-muted-foreground"
+                        >
                           Loading…
                         </TableCell>
                       </TableRow>
                     ) : crItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={8}
+                          className="py-8 text-center text-sm text-muted-foreground"
+                        >
                           No case rates found. Run: npm run db:seed
                         </TableCell>
                       </TableRow>

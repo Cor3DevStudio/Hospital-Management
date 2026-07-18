@@ -32,7 +32,9 @@ function dobCells(birthDate?: string): string[] {
   return `${m}${d}${y}`.split("");
 }
 
-function parseRelationship(patient?: Patient): Pick<CsfFormData, "patRelChild" | "patRelParent" | "patRelSpouse" | "patRelSibling"> {
+function parseRelationship(
+  patient?: Patient,
+): Pick<CsfFormData, "patRelChild" | "patRelParent" | "patRelSpouse" | "patRelSibling"> {
   const rel = (patient?.philhealth?.memberType ?? "").toLowerCase();
   return {
     patRelChild: rel.includes("child"),

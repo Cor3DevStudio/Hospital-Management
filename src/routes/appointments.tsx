@@ -9,9 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, StatChip } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
@@ -61,7 +74,7 @@ function AppointmentsPage() {
   const activePatients = state.patients.filter((p) => !p.archived);
   const dayAppts = useMemo(
     () => getAppointmentsForDate(state.appointments, date),
-    [state.appointments, date]
+    [state.appointments, date],
   );
   const allAppts = useMemo(() => getAllAppointments(state.appointments), [state.appointments]);
   const allApptsList = usePaginatedList(allAppts, 50);
@@ -122,29 +135,48 @@ function AppointmentsPage() {
       <TableCell className="text-xs">{a.doctor}</TableCell>
       <TableCell className="text-xs text-muted-foreground">{a.reason || "—"}</TableCell>
       <TableCell>
-        <Badge className={`text-[10px] ${statusColors[a.status]}`} variant="outline">{a.status}</Badge>
+        <Badge className={`text-[10px] ${statusColors[a.status]}`} variant="outline">
+          {a.status}
+        </Badge>
       </TableCell>
     </TableRow>
   );
 
   return (
     <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
-      <PageHeader title="Appointments" description="Daily appointment scheduler with full lifecycle management." />
+      <PageHeader
+        title="Appointments"
+        description="Daily appointment scheduler with full lifecycle management."
+      />
       <div className="flex-1 grid gap-4 p-4 md:grid-cols-[1.2fr_1fr] lg:grid-cols-[1.4fr_1fr] items-stretch min-h-0 overflow-hidden">
         <Card className="flex flex-col h-full min-h-0">
           <CardHeader className="pb-3 pt-4 px-4">
             <Tabs value={tab} onValueChange={(v) => setTab(v as "day" | "all")}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <TabsList className="h-8">
-                  <TabsTrigger value="day" className="text-xs px-3">By Date</TabsTrigger>
-                  <TabsTrigger value="all" className="text-xs px-3">All Appointments</TabsTrigger>
+                  <TabsTrigger value="day" className="text-xs px-3">
+                    By Date
+                  </TabsTrigger>
+                  <TabsTrigger value="all" className="text-xs px-3">
+                    All Appointments
+                  </TabsTrigger>
                 </TabsList>
                 {tab === "day" && (
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setDate(todayISO())}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => setDate(todayISO())}
+                    >
                       Today
                     </Button>
-                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto h-8 text-xs py-1" />
+                    <Input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-auto h-8 text-xs py-1"
+                    />
                   </div>
                 )}
               </div>
@@ -156,9 +188,17 @@ function AppointmentsPage() {
                   <StatChip label="Confirmed" value={stats.confirmed} tone="success" />
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {(["Scheduled", "Confirmed", "Completed", "Cancelled", "No Show"] as const).map((s) => (
-                    <Badge key={s} className={`text-[10px] px-1.5 py-0.5 font-normal ${statusColors[s]}`} variant="outline">{s}</Badge>
-                  ))}
+                  {(["Scheduled", "Confirmed", "Completed", "Cancelled", "No Show"] as const).map(
+                    (s) => (
+                      <Badge
+                        key={s}
+                        className={`text-[10px] px-1.5 py-0.5 font-normal ${statusColors[s]}`}
+                        variant="outline"
+                      >
+                        {s}
+                      </Badge>
+                    ),
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -178,14 +218,20 @@ function AppointmentsPage() {
                       <span className="font-mono text-xs font-semibold">{a.time}</span>
                       <div>
                         <p className="font-medium">{patientName(state.patients, a.patientId)}</p>
-                        <p className="text-xs text-muted-foreground">{a.doctor} · {a.reason}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {a.doctor} · {a.reason}
+                        </p>
                       </div>
-                      <Badge className={`text-xs ${statusColors[a.status]}`} variant="outline">{a.status}</Badge>
+                      <Badge className={`text-xs ${statusColors[a.status]}`} variant="outline">
+                        {a.status}
+                      </Badge>
                     </button>
                   </li>
                 ))}
                 {dayAppts.length === 0 && (
-                  <li className="p-6 text-center text-sm text-muted-foreground">No appointments for this date</li>
+                  <li className="p-6 text-center text-sm text-muted-foreground">
+                    No appointments for this date
+                  </li>
                 )}
               </ul>
             ) : (
@@ -204,7 +250,10 @@ function AppointmentsPage() {
                   <TableBody>
                     {allAppts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="py-8 text-center text-sm text-muted-foreground"
+                        >
                           No records found
                         </TableCell>
                       </TableRow>
@@ -213,7 +262,12 @@ function AppointmentsPage() {
                     )}
                   </TableBody>
                 </Table>
-                <ListPagination page={allApptsList.page} totalPages={allApptsList.totalPages} totalItems={allApptsList.totalItems} onPageChange={allApptsList.setPage} />
+                <ListPagination
+                  page={allApptsList.page}
+                  totalPages={allApptsList.totalPages}
+                  totalItems={allApptsList.totalItems}
+                  onPageChange={allApptsList.setPage}
+                />
               </>
             )}
           </CardContent>
@@ -221,7 +275,9 @@ function AppointmentsPage() {
 
         <Card className="flex flex-col h-full min-h-0">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-base">{selectedId ? "Edit Appointment" : "New Appointment"}</CardTitle>
+            <CardTitle className="text-base">
+              {selectedId ? "Edit Appointment" : "New Appointment"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-4 p-4 pt-2 border-t flex flex-col justify-between">
             <div className="space-y-4">
@@ -234,12 +290,20 @@ function AppointmentsPage() {
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Attending doctor</Label>
                 <Select value={form.doctor} onValueChange={(v) => setForm({ ...form, doctor: v })}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Select doctor" /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select doctor" />
+                  </SelectTrigger>
                   <SelectContent>
                     {doctors.length === 0 ? (
-                      <SelectItem value="__none" disabled>No doctors in system — log in after DB seed</SelectItem>
+                      <SelectItem value="__none" disabled>
+                        No doctors in system — log in after DB seed
+                      </SelectItem>
                     ) : (
-                      doctors.map((d) => <SelectItem key={d.id} value={d.fullName}>{d.fullName}</SelectItem>)
+                      doctors.map((d) => (
+                        <SelectItem key={d.id} value={d.fullName}>
+                          {d.fullName}
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
@@ -248,42 +312,77 @@ function AppointmentsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Date</Label>
-                  <Input className="h-9 text-xs" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+                  <Input
+                    className="h-9 text-xs"
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Time</Label>
-                  <Input className="h-9 text-xs" type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} />
+                  <Input
+                    className="h-9 text-xs"
+                    type="time"
+                    value={form.time}
+                    onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Reason</Label>
-                <Input className="h-9 text-sm" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
+                <Input
+                  className="h-9 text-sm"
+                  value={form.reason}
+                  onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                />
               </div>
 
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as Appointment["status"] })}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.status}
+                  onValueChange={(v) => setForm({ ...form, status: v as Appointment["status"] })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(["Scheduled", "Confirmed", "Completed", "Cancelled", "No Show"] as const).map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
+                    {(["Scheduled", "Confirmed", "Completed", "Cancelled", "No Show"] as const).map(
+                      (s) => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="flex flex-wrap justify-end gap-2 border-t pt-3 mt-4 shrink-0">
-              <Button variant="outline" size="sm" onClick={reset}><RotateCcw className="h-3.5 w-3.5" /> Clear</Button>
+              <Button variant="outline" size="sm" onClick={reset}>
+                <RotateCcw className="h-3.5 w-3.5" /> Clear
+              </Button>
               {selectedId && (
                 <>
-                  <Button variant="destructive" size="sm" onClick={cancel}><Ban className="h-3.5 w-3.5" /> Cancel</Button>
-                  <Button variant="destructive" size="sm" onClick={remove}><Trash2 className="h-3.5 w-3.5" /> Delete</Button>
+                  <Button variant="destructive" size="sm" onClick={cancel}>
+                    <Ban className="h-3.5 w-3.5" /> Cancel
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={remove}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
                 </>
               )}
-              <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> Save</Button>
-              {!selectedId && <Button variant="secondary" size="sm" onClick={() => setForm(empty())}><Plus className="h-3.5 w-3.5" /> New</Button>}
+              <Button size="sm" onClick={save}>
+                <Save className="h-3.5 w-3.5" /> Save
+              </Button>
+              {!selectedId && (
+                <Button variant="secondary" size="sm" onClick={() => setForm(empty())}>
+                  <Plus className="h-3.5 w-3.5" /> New
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

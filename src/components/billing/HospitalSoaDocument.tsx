@@ -40,11 +40,7 @@ function FeeRowCells({
   );
 }
 
-function DiscountCheckboxes({
-  checks,
-}: {
-  checks: HospitalSoaModel["discountChecks"];
-}) {
+function DiscountCheckboxes({ checks }: { checks: HospitalSoaModel["discountChecks"] }) {
   const items = [
     { key: "pcsO", label: "PCSO" },
     { key: "dswd", label: "DSWD" },
@@ -125,88 +121,88 @@ export function HospitalSoaDocument({
       <section className="hospital-soa-fees">
         {showSummary ? (
           <>
-        <h2 className="hospital-soa-fees__title">SUMMARY OF FEES</h2>
-        <table className="hospital-soa-table">
-          <thead>
-            <tr>
-              <th rowSpan={2} className="hospital-soa-table__particulars">
-                Particulars
-              </th>
-              <th rowSpan={2}>Actual Charges</th>
-              <th rowSpan={2}>VAT exempt</th>
-              <th colSpan={2}>Amount of Discounts</th>
-              <th colSpan={2}>PhilHealth Benefits</th>
-              <th rowSpan={2}>Out of Pocket of Patient</th>
-            </tr>
-            <tr>
-              <th>Senior Citizen/PWD</th>
-              <th className="hospital-soa-table__please-check">
-                <span className="hospital-soa-table__please-check-label">Please Check</span>
-                <DiscountCheckboxes checks={model.discountChecks} />
-              </th>
-              <th>First Case Rate Amount</th>
-              <th>Second Case Rate Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="hospital-soa-table__section">
-              <td colSpan={8}>HCI fees</td>
-            </tr>
-            {model.hciRows.map((row) => (
-              <tr key={row.label} className={row.highlight ? "hospital-soa-table__highlight" : undefined}>
-                <td className="hospital-soa-table__particulars">
-                  {row.label}
-                  {row.detail ? (
-                    <span className="hospital-soa-table__detail">
-                      {" "}
-                      {row.detail}
-                    </span>
-                  ) : null}
-                </td>
-                <FeeRowCells row={row} blankPhilhealthIfZero />
-              </tr>
-            ))}
-            <tr className="hospital-soa-table__subtotal">
-              <td className="hospital-soa-table__particulars">{model.hciSubtotal.label}</td>
-              <FeeRowCells row={model.hciSubtotal} />
-            </tr>
+            <h2 className="hospital-soa-fees__title">SUMMARY OF FEES</h2>
+            <table className="hospital-soa-table">
+              <thead>
+                <tr>
+                  <th rowSpan={2} className="hospital-soa-table__particulars">
+                    Particulars
+                  </th>
+                  <th rowSpan={2}>Actual Charges</th>
+                  <th rowSpan={2}>VAT exempt</th>
+                  <th colSpan={2}>Amount of Discounts</th>
+                  <th colSpan={2}>PhilHealth Benefits</th>
+                  <th rowSpan={2}>Out of Pocket of Patient</th>
+                </tr>
+                <tr>
+                  <th>Senior Citizen/PWD</th>
+                  <th className="hospital-soa-table__please-check">
+                    <span className="hospital-soa-table__please-check-label">Please Check</span>
+                    <DiscountCheckboxes checks={model.discountChecks} />
+                  </th>
+                  <th>First Case Rate Amount</th>
+                  <th>Second Case Rate Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="hospital-soa-table__section">
+                  <td colSpan={8}>HCI fees</td>
+                </tr>
+                {model.hciRows.map((row) => (
+                  <tr
+                    key={row.label}
+                    className={row.highlight ? "hospital-soa-table__highlight" : undefined}
+                  >
+                    <td className="hospital-soa-table__particulars">
+                      {row.label}
+                      {row.detail ? (
+                        <span className="hospital-soa-table__detail"> {row.detail}</span>
+                      ) : null}
+                    </td>
+                    <FeeRowCells row={row} blankPhilhealthIfZero />
+                  </tr>
+                ))}
+                <tr className="hospital-soa-table__subtotal">
+                  <td className="hospital-soa-table__particulars">{model.hciSubtotal.label}</td>
+                  <FeeRowCells row={model.hciSubtotal} />
+                </tr>
 
-            <tr className="hospital-soa-table__section">
-              <td colSpan={8}>Professional fee/s</td>
-            </tr>
-            {model.professionalFees.map((pf) => (
-              <tr key={pf.name}>
-                <td className="hospital-soa-table__particulars">{pf.name}</td>
-                <FeeRowCells row={pf.row} blankPhilhealthIfZero />
-              </tr>
-            ))}
-            <tr className="hospital-soa-table__subtotal">
-              <td className="hospital-soa-table__particulars">{model.pfSubtotal.label}</td>
-              <FeeRowCells row={model.pfSubtotal} />
-            </tr>
+                <tr className="hospital-soa-table__section">
+                  <td colSpan={8}>Professional fee/s</td>
+                </tr>
+                {model.professionalFees.map((pf) => (
+                  <tr key={pf.name}>
+                    <td className="hospital-soa-table__particulars">{pf.name}</td>
+                    <FeeRowCells row={pf.row} blankPhilhealthIfZero />
+                  </tr>
+                ))}
+                <tr className="hospital-soa-table__subtotal">
+                  <td className="hospital-soa-table__particulars">{model.pfSubtotal.label}</td>
+                  <FeeRowCells row={model.pfSubtotal} />
+                </tr>
 
-            <tr className="hospital-soa-table__total">
-              <td className="hospital-soa-table__particulars">TOTAL</td>
-              <MoneyCell value={model.total.actual} />
-              <MoneyCell value={model.total.vatExempt} />
-              <MoneyCell value={model.total.discountScPwd} />
-              <td
-                className={`hospital-soa-table__discount-check${
-                  model.total.discountAgency > 0 ? " hospital-soa-table__highlight" : ""
-                }`}
-              >
-                {model.total.discountAgency > 0 ? (
-                  <span className="hospital-soa-table__agency-discount">
-                    {formatSoaMoney(model.total.discountAgency)}
-                  </span>
-                ) : null}
-              </td>
-              <MoneyCell value={model.total.phicFirst} />
-              <MoneyCell value={model.total.phicSecond} />
-              <MoneyCell value={model.total.outOfPocket} />
-            </tr>
-          </tbody>
-        </table>
+                <tr className="hospital-soa-table__total">
+                  <td className="hospital-soa-table__particulars">TOTAL</td>
+                  <MoneyCell value={model.total.actual} />
+                  <MoneyCell value={model.total.vatExempt} />
+                  <MoneyCell value={model.total.discountScPwd} />
+                  <td
+                    className={`hospital-soa-table__discount-check${
+                      model.total.discountAgency > 0 ? " hospital-soa-table__highlight" : ""
+                    }`}
+                  >
+                    {model.total.discountAgency > 0 ? (
+                      <span className="hospital-soa-table__agency-discount">
+                        {formatSoaMoney(model.total.discountAgency)}
+                      </span>
+                    ) : null}
+                  </td>
+                  <MoneyCell value={model.total.phicFirst} />
+                  <MoneyCell value={model.total.phicSecond} />
+                  <MoneyCell value={model.total.outOfPocket} />
+                </tr>
+              </tbody>
+            </table>
           </>
         ) : null}
       </section>

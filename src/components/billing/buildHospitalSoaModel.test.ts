@@ -13,7 +13,13 @@ const bill: Bill = {
   date: "2023-08-19",
   patientType: "In-Patient",
   items: [
-    { description: "Room & Board — Private · 5 days @ ₱800", amount: 4000, qty: 5, unitPrice: 800, category: "Room" },
+    {
+      description: "Room & Board — Private · 5 days @ ₱800",
+      amount: 4000,
+      qty: 5,
+      unitPrice: 800,
+      category: "Room",
+    },
     { description: "Paracetamol", amount: 2392, category: "Medicine" },
     { description: "CBC", amount: 3936, category: "Lab" },
     { description: "Chest X-Ray", amount: 1200, category: "Radiology" },
@@ -95,7 +101,10 @@ assert.equal(model.hciSubtotal.phicFirst, 5600);
 assert.equal(model.pfSubtotal.phicFirst, 2400);
 assert.equal(model.total.outOfPocket, 11836);
 assert.equal(model.admittingDiagnosis.includes("L02.8 - ABSCESS OCCIPITAL AREA"), true);
-assert.equal(model.finalDiagnoses.some((d) => d.includes("L02.8 - ABSCESS OCCIPITAL AREA")), true);
+assert.equal(
+  model.finalDiagnoses.some((d) => d.includes("L02.8 - ABSCESS OCCIPITAL AREA")),
+  true,
+);
 assert.ok(model.phicCoverage);
 assert.equal(model.phicCoverage!.totalBenefit, 8000);
 assert.equal(model.phicCoverage!.patientExcess, 11836);
@@ -110,7 +119,13 @@ const appendectomyBill: Bill = {
   patientType: "In-Patient",
   dischargeDate: "2026-07-05",
   items: [
-    { description: "ROOM - Surgical Nurse Station Room 14 (7 day/s) (600.00)", amount: 4200, qty: 7, unitPrice: 600, category: "Room" },
+    {
+      description: "ROOM - Surgical Nurse Station Room 14 (7 day/s) (600.00)",
+      amount: 4200,
+      qty: 7,
+      unitPrice: 600,
+      category: "Room",
+    },
     { description: "Paracetamol", amount: 13454, category: "Medicine" },
     { description: "Gauze", amount: 9437.3, category: "Supplies" },
     { description: "CBC", amount: 2520, category: "Lab" },
@@ -139,15 +154,38 @@ const appendectomyState = {
     },
   ],
   prices: [
-    { id: "misc-adm", code: "MISC-ADM", description: "Admission Fee", category: "Miscellaneous", caseRate: 300, effectiveDate: "2026-01-01" },
-    { id: "misc-or", code: "MISC-OR", description: "Operating Room Fee", category: "Miscellaneous", caseRate: 3500, effectiveDate: "2026-01-01" },
+    {
+      id: "misc-adm",
+      code: "MISC-ADM",
+      description: "Admission Fee",
+      category: "Miscellaneous",
+      caseRate: 300,
+      effectiveDate: "2026-01-01",
+    },
+    {
+      id: "misc-or",
+      code: "MISC-OR",
+      description: "Operating Room Fee",
+      category: "Miscellaneous",
+      caseRate: 3500,
+      effectiveDate: "2026-01-01",
+    },
   ],
 } as AppState;
 
 const appendectomy = buildHospitalSoaModel({
   bill: appendectomyBill,
   state: appendectomyState,
-  patient: { id: "p2", firstName: "Jose", lastName: "Rizal", birthDate: "2008-01-01", gender: "Male", civilStatus: "Single", contactNumber: "", address: {} },
+  patient: {
+    id: "p2",
+    firstName: "Jose",
+    lastName: "Rizal",
+    birthDate: "2008-01-01",
+    gender: "Male",
+    civilStatus: "Single",
+    contactNumber: "",
+    address: {},
+  },
   hospital: { name: "Medical Center", address: "Manila", phone: "" },
   caseRate: {
     id: "44960",
@@ -202,8 +240,22 @@ const pfFallbackState = {
     },
   ],
   prices: [
-    { id: "rb-ward", code: "RB-WARD", description: "Ward", category: "Room Rate", caseRate: 800, effectiveDate: "2026-01-01" },
-    { id: "misc-or", code: "MISC-OR", description: "Operating Room Fee", category: "Miscellaneous", caseRate: 8000, effectiveDate: "2026-01-01" },
+    {
+      id: "rb-ward",
+      code: "RB-WARD",
+      description: "Ward",
+      category: "Room Rate",
+      caseRate: 800,
+      effectiveDate: "2026-01-01",
+    },
+    {
+      id: "misc-or",
+      code: "MISC-OR",
+      description: "Operating Room Fee",
+      category: "Miscellaneous",
+      caseRate: 8000,
+      effectiveDate: "2026-01-01",
+    },
   ],
   users: [
     {
@@ -220,7 +272,16 @@ const pfFallbackState = {
 const pfFallback = buildHospitalSoaModel({
   bill: pfFallbackBill,
   state: pfFallbackState,
-  patient: { id: "p3", firstName: "Jose", lastName: "Rizal", birthDate: "2008-01-01", gender: "Male", civilStatus: "Single", contactNumber: "", address: {} },
+  patient: {
+    id: "p3",
+    firstName: "Jose",
+    lastName: "Rizal",
+    birthDate: "2008-01-01",
+    gender: "Male",
+    civilStatus: "Single",
+    contactNumber: "",
+    address: {},
+  },
   hospital: { name: "Hospital", address: "Manila", phone: "" },
   caseRate: {
     id: "M00.98",
@@ -262,7 +323,16 @@ const noRoomBill: Bill = {
 const noRoomModel = buildHospitalSoaModel({
   bill: noRoomBill,
   state: emptyState,
-  patient: { id: "p4", firstName: "Ana", lastName: "Reyes", birthDate: "1990-01-01", gender: "Female", civilStatus: "Single", contactNumber: "", address: {} },
+  patient: {
+    id: "p4",
+    firstName: "Ana",
+    lastName: "Reyes",
+    birthDate: "1990-01-01",
+    gender: "Female",
+    civilStatus: "Single",
+    contactNumber: "",
+    address: {},
+  },
   hospital: { name: "Hospital", address: "Manila", phone: "" },
 });
 

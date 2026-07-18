@@ -39,7 +39,7 @@ export function ensureDefaultLabPrices(state: AppState): AppState {
 export function createLabOrder(
   state: AppState,
   form: Omit<LaboratoryRecord, "id">,
-  postCharge = true
+  postCharge = true,
 ): { state: AppState; record: LaboratoryRecord } | { error: string } {
   const working = ensureDefaultLabPrices(state);
   const chargeDate = form.requestDate || todayISO();
@@ -90,7 +90,7 @@ export function createLabOrder(
     next = {
       ...next,
       laboratoryRecords: next.laboratoryRecords.map((r) =>
-        r.id === record.id ? { ...record, billId: charge.bill.id } : r
+        r.id === record.id ? { ...record, billId: charge.bill.id } : r,
       ),
     };
   }

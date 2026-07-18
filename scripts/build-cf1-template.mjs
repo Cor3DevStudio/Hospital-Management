@@ -104,7 +104,7 @@ function buildCf1() {
       }
       // Keep fill text on the line; do not alter box geometry
       return `${open}__${token}__${close}`;
-    }
+    },
   );
 
   // Inject digit tokens INSIDE each box div (same positioning context as the SVG)
@@ -115,7 +115,7 @@ function buildCf1() {
     const re = new RegExp(
       `(<div style="position:absolute; left:${leftRe}pt; top:${topRe}pt"\\s*>\\s*` +
         `<svg[\\s\\S]*?<\\/svg>)\\s*<\\/div>`,
-      "i"
+      "i",
     );
     const next = html.replace(re, `$1${digitSpan(token)}</div>`);
     if (next === html) {
@@ -129,7 +129,7 @@ function buildCf1() {
   // Ensure page root is an explicit positioning context for all absolute children
   html = html.replace(
     'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:612pt; height:936pt;"',
-    'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:612pt; height:936pt; box-sizing:content-box;"'
+    'style="position:relative; border:solid 1pt black; margin:10pt auto 10pt auto; overflow:hidden; width:612pt; height:936pt; box-sizing:content-box;"',
   );
 
   fs.writeFileSync(path.join(formsDir, "CF1.html"), fs.readFileSync(srcPath, "utf8"));

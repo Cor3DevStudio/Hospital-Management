@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import * as fileStore from "./fileStore";
 import { validateAttachmentFile } from "./attachmentValidation";
 import * as authService from "./auth/authService";
@@ -13,7 +6,12 @@ import { InactivityHandler } from "@/components/InactivityHandler";
 import { fetchAuthSessionData, updateUserDarkModeViaApi } from "./services/userService";
 import { normalizeConsultations } from "./services/consultationService";
 import { mergeDatabaseIntoState } from "./services/syncService";
-import { cancelPendingAutoSync, pauseAutoSync, resumeAutoSync, scheduleAutoSync } from "./services/autoSyncService";
+import {
+  cancelPendingAutoSync,
+  pauseAutoSync,
+  resumeAutoSync,
+  scheduleAutoSync,
+} from "./services/autoSyncService";
 import type { UserRole } from "./auth/types";
 
 // ---------- Types ----------
@@ -63,12 +61,7 @@ export type Consultation = {
 };
 
 export type InventoryCategory =
-  | "Medicine"
-  | "Supplies"
-  | "Equipment"
-  | "Laboratory"
-  | "Radiology"
-  | "Miscellaneous";
+  "Medicine" | "Supplies" | "Equipment" | "Laboratory" | "Radiology" | "Miscellaneous";
 
 export type Medicine = {
   id: string;
@@ -502,7 +495,7 @@ function normalizeLoadedState(parsed: Partial<State>): State {
     patients: Array.isArray(parsed.patients) ? parsed.patients : [],
     appointments: Array.isArray(parsed.appointments) ? parsed.appointments : [],
     consultations: normalizeConsultations(
-      Array.isArray(parsed.consultations) ? parsed.consultations : []
+      Array.isArray(parsed.consultations) ? parsed.consultations : [],
     ),
     medicines: Array.isArray(parsed.medicines)
       ? parsed.medicines.map((m) => ({ ...m, unit: m.unit ?? "pcs" }))
@@ -513,10 +506,14 @@ function normalizeLoadedState(parsed: Partial<State>): State {
     opdRecords: Array.isArray(parsed.opdRecords) ? parsed.opdRecords : [],
     pharmacyRecords: Array.isArray(parsed.pharmacyRecords) ? parsed.pharmacyRecords : [],
     suppliesRecords: Array.isArray(parsed.suppliesRecords) ? parsed.suppliesRecords : [],
-    miscellaneousRecords: Array.isArray(parsed.miscellaneousRecords) ? parsed.miscellaneousRecords : [],
+    miscellaneousRecords: Array.isArray(parsed.miscellaneousRecords)
+      ? parsed.miscellaneousRecords
+      : [],
     laboratoryRecords: Array.isArray(parsed.laboratoryRecords) ? parsed.laboratoryRecords : [],
     radiologyRecords: Array.isArray(parsed.radiologyRecords) ? parsed.radiologyRecords : [],
-    cashierTransactions: Array.isArray(parsed.cashierTransactions) ? parsed.cashierTransactions : [],
+    cashierTransactions: Array.isArray(parsed.cashierTransactions)
+      ? parsed.cashierTransactions
+      : [],
     medicalRecords: Array.isArray(parsed.medicalRecords) ? parsed.medicalRecords : [],
     prices: Array.isArray(parsed.prices) ? parsed.prices : [],
     priceHistories: Array.isArray(parsed.priceHistories) ? parsed.priceHistories : [],
@@ -537,11 +534,11 @@ function normalizeLoadedState(parsed: Partial<State>): State {
         : defaultState.hospital,
     inactivityTimeoutMinutes: coerceInactivityMinutes(
       parsed.inactivityTimeoutMinutes,
-      defaultState.inactivityTimeoutMinutes ?? 15
+      defaultState.inactivityTimeoutMinutes ?? 15,
     ),
     inactivityWarningSeconds: coerceInactivityMinutes(
       parsed.inactivityWarningSeconds,
-      defaultState.inactivityWarningSeconds ?? 60
+      defaultState.inactivityWarningSeconds ?? 60,
     ),
   };
 }
@@ -552,8 +549,7 @@ function load(): State {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultState;
     const parsed = JSON.parse(raw) as Partial<State>;
-    const hadCatalog =
-      Array.isArray(parsed.caseRates) && parsed.caseRates.length > 0;
+    const hadCatalog = Array.isArray(parsed.caseRates) && parsed.caseRates.length > 0;
     // Drop catalog before spreading into state (avoids holding 9k rows in memory).
     if (hadCatalog) parsed.caseRates = [];
     const state = normalizeLoadedState(parsed);
@@ -618,11 +614,15 @@ type Ctx = {
     username: string,
     fullName: string,
     role: "Administrator" | "Doctor" | "Receptionist" | "Cashier",
-    password?: string
+    password?: string,
   ) => Promise<boolean>;
   logout: () => void;
   resetAll: () => void;
-  addAttachment: (refType: "patient" | "admission" | "bill" | "eclaim", refId: string, file: File) => Promise<Attachment>;
+  addAttachment: (
+    refType: "patient" | "admission" | "bill" | "eclaim",
+    refId: string,
+    file: File,
+  ) => Promise<Attachment>;
   deleteAttachment: (attachmentId: string) => Promise<void>;
   getAttachmentBlob: (key: string) => Promise<Blob | null>;
   setDarkMode: (val: boolean) => void;
@@ -658,7 +658,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return;
       }
       try {
-        const session = JSON.parse(e.newValue) as { user?: { username?: string }; expiresAt?: string };
+        const session = JSON.parse(e.newValue) as {
+          user?: { username?: string };
+          expiresAt?: string;
+        };
         if (session.expiresAt && new Date(session.expiresAt) <= new Date()) {
           cancelPendingAutoSync();
           _setState((s) => ({ ...s, authedUser: null }));
@@ -708,9 +711,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (result.success && result.user) {
       const authedUser = result.user!.username;
       const { users, clinicalPayload, clinicalUpdatedAt } = await fetchAuthSessionData();
-      const preferDatabase = Boolean(clinicalUpdatedAt) || Boolean(clinicalPayload && clinicalPayload.patients.length > 0);
+      const preferDatabase =
+        Boolean(clinicalUpdatedAt) ||
+        Boolean(clinicalPayload && clinicalPayload.patients.length > 0);
       setStateWithoutSync((s) =>
-        mergeDatabaseIntoState({ ...s, authedUser, users }, clinicalPayload, { preferDatabase })
+        mergeDatabaseIntoState({ ...s, authedUser, users }, clinicalPayload, { preferDatabase }),
       );
       return true;
     }
@@ -721,7 +726,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     username: string,
     fullName: string,
     role: "Administrator" | "Doctor" | "Receptionist" | "Cashier",
-    password?: string
+    password?: string,
   ) => {
     if (!password) return false;
 
@@ -735,9 +740,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (result.success && result.user) {
       const authedUser = result.user!.username;
       const { users, clinicalPayload, clinicalUpdatedAt } = await fetchAuthSessionData();
-      const preferDatabase = Boolean(clinicalUpdatedAt) || Boolean(clinicalPayload && clinicalPayload.patients.length > 0);
+      const preferDatabase =
+        Boolean(clinicalUpdatedAt) ||
+        Boolean(clinicalPayload && clinicalPayload.patients.length > 0);
       setStateWithoutSync((s) =>
-        mergeDatabaseIntoState({ ...s, authedUser, users }, clinicalPayload, { preferDatabase })
+        mergeDatabaseIntoState({ ...s, authedUser, users }, clinicalPayload, { preferDatabase }),
       );
       return true;
     }
@@ -760,7 +767,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   // Attachment helpers (store binary blobs in IndexedDB and metadata in app state)
-  const addAttachment = async (refType: "patient" | "admission" | "bill" | "eclaim", refId: string, file: File) => {
+  const addAttachment = async (
+    refType: "patient" | "admission" | "bill" | "eclaim",
+    refId: string,
+    file: File,
+  ) => {
     const validation = validateAttachmentFile(file);
     if (!validation.valid) {
       throw new Error(validation.message);
@@ -768,7 +779,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const lowerName = file.name.toLowerCase();
     let detectedDocType = "Other";
-    if (lowerName.includes("esoa") || lowerName.includes("soa") || lowerName.includes("statement")) {
+    if (
+      lowerName.includes("esoa") ||
+      lowerName.includes("soa") ||
+      lowerName.includes("statement")
+    ) {
       detectedDocType = "ESOA";
     } else if (lowerName.includes("cf4") || lowerName.includes("claim form 4")) {
       detectedDocType = "CF4";
@@ -810,7 +825,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const att = prev.attachments?.find((a) => a.id === attachmentId);
       if (!att) return prev;
       fileKey = att.key;
-      return { ...prev, attachments: (prev.attachments || []).filter((a) => a.id !== attachmentId) };
+      return {
+        ...prev,
+        attachments: (prev.attachments || []).filter((a) => a.id !== attachmentId),
+      };
     });
     if (fileKey) await fileStore.deleteFile(fileKey);
     persistStoreNow();
@@ -825,13 +843,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       if (state.authedUser) {
         const u = state.users.find((x) => x.username === state.authedUser);
-        if (u && u.preferences && typeof u.preferences.darkMode === 'boolean') return u.preferences.darkMode;
+        if (u && u.preferences && typeof u.preferences.darkMode === "boolean")
+          return u.preferences.darkMode;
       }
       if (!hydrated || typeof window === "undefined") return false;
-      const local = localStorage.getItem('pref_dark');
-      if (local !== null) return local === '1';
+      const local = localStorage.getItem("pref_dark");
+      if (local !== null) return local === "1";
       // fallback to prefers-color-scheme
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
     } catch {
       return false;
     }
@@ -842,15 +861,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const current = state.users.find((u) => u.username === state.authedUser);
       setState((s) => ({
         ...s,
-        users: s.users.map((u) => u.username === s.authedUser ? { ...u, preferences: { ...(u.preferences || {}), darkMode: val } } : u),
+        users: s.users.map((u) =>
+          u.username === s.authedUser
+            ? { ...u, preferences: { ...(u.preferences || {}), darkMode: val } }
+            : u,
+        ),
       }));
       if (current?.id) {
         void updateUserDarkModeViaApi(current.id, val);
       }
     } else {
-      try { localStorage.setItem('pref_dark', val ? '1' : '0'); } catch {}
+      try {
+        localStorage.setItem("pref_dark", val ? "1" : "0");
+      } catch {}
       // apply immediately
-      if (val) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
+      if (val) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
     }
   };
 
@@ -860,12 +886,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const dark = resolveDarkPref();
-      if (dark) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
+      if (dark) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
     } catch {}
   }, [state.authedUser, state.users, hydrated]);
 
   return (
-    <StoreCtx.Provider value={{ state, setState, login, register, logout, resetAll, addAttachment, deleteAttachment, getAttachmentBlob, setDarkMode, isDark }}>
+    <StoreCtx.Provider
+      value={{
+        state,
+        setState,
+        login,
+        register,
+        logout,
+        resetAll,
+        addAttachment,
+        deleteAttachment,
+        getAttachmentBlob,
+        setDarkMode,
+        isDark,
+      }}
+    >
       {children}
       {hydrated ? <InactivityHandler /> : null}
     </StoreCtx.Provider>

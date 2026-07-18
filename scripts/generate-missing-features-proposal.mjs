@@ -19,7 +19,8 @@ const FEATURES = [
   {
     no: 1,
     name: "Nursing & Clinical Documentation",
-    summary: "Vitals charting, intake/output, nursing notes, and medication administration record (MAR).",
+    summary:
+      "Vitals charting, intake/output, nursing notes, and medication administration record (MAR).",
     module: "New: Nursing",
     priceAmount: 7500,
   },
@@ -103,7 +104,8 @@ const FEATURES = [
   {
     no: 13,
     name: "SMS / Email Notification Engine",
-    summary: "Appointment reminders, lab-ready alerts, payment receipts, and discharge instructions.",
+    summary:
+      "Appointment reminders, lab-ready alerts, payment receipts, and discharge instructions.",
     module: "New: Notifications",
     priceAmount: 3000,
   },
@@ -346,7 +348,14 @@ async function buildPdf() {
       drawText(line, margin + 8, y, 8.5, false, muted);
       y -= 11;
     }
-    drawText(`Bundle Price: ${formatPhp(b.priceAmount)}  (${b.note})`, margin + 8, y, 9, true, brand);
+    drawText(
+      `Bundle Price: ${formatPhp(b.priceAmount)}  (${b.note})`,
+      margin + 8,
+      y,
+      9,
+      true,
+      brand,
+    );
     y -= 18;
   }
 
@@ -376,11 +385,28 @@ async function buildPdf() {
   y -= 20;
   drawText("Acceptance", margin, y, 11, true, ink);
   y -= 18;
-  drawText("Client Representative: _________________________________    Date: ______________", margin, y, 9);
+  drawText(
+    "Client Representative: _________________________________    Date: ______________",
+    margin,
+    y,
+    9,
+  );
   y -= 16;
-  drawText("Service Provider: _____________________________________    Date: ______________", margin, y, 9);
+  drawText(
+    "Service Provider: _____________________________________    Date: ______________",
+    margin,
+    y,
+    9,
+  );
   y -= 22;
-  drawText("Select individual features or a bundle above. Total = sum of chosen fixed prices.", margin, y, 8.5, false, muted);
+  drawText(
+    "Select individual features or a bundle above. Total = sum of chosen fixed prices.",
+    margin,
+    y,
+    8.5,
+    false,
+    muted,
+  );
 
   const pdfBytes = await doc.save();
   await mkdir(OUT_DIR, { recursive: true });
@@ -396,7 +422,7 @@ function buildHtml() {
         <td><strong>${f.name}</strong><br><span class="desc">${f.summary}</span></td>
         <td class="module">${f.module}</td>
         <td class="price">${formatPhp(f.priceAmount)}</td>
-      </tr>`
+      </tr>`,
   ).join("");
 
   const bundleRows = BUNDLES.map(
@@ -405,7 +431,7 @@ function buildHtml() {
         <td><strong>${b.name}</strong><br><span class="desc">${b.includes}</span></td>
         <td class="price">${formatPhp(b.priceAmount)}</td>
         <td class="note">${b.note}</td>
-      </tr>`
+      </tr>`,
   ).join("");
 
   return `<!DOCTYPE html>

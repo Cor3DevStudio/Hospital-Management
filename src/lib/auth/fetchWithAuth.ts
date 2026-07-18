@@ -8,10 +8,7 @@ export function getAuthHeaders(): Record<string, string> {
 }
 
 /** fetch wrapper that attaches the session token when available. */
-export async function fetchWithAuth(
-  url: string,
-  init: RequestInit = {}
-): Promise<Response> {
+export async function fetchWithAuth(url: string, init: RequestInit = {}): Promise<Response> {
   const session = getSession();
   if (!session?.token) {
     return new Response(JSON.stringify({ message: "Authentication required." }), {

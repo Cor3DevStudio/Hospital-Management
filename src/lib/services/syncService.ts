@@ -45,7 +45,7 @@ export async function loadAllFromDatabase(): Promise<{
 export function mergeDatabaseIntoState(
   state: AppState,
   payload: ClinicalPayload | null,
-  options?: { preferDatabase?: boolean }
+  options?: { preferDatabase?: boolean },
 ): AppState {
   if (!payload) return state;
 

@@ -33,9 +33,7 @@ export function DoctorSearchPicker({
   }, []);
 
   const q = query.trim().toLowerCase();
-  const results = q
-    ? doctors.filter((d) => d.fullName.toLowerCase().includes(q))
-    : doctors;
+  const results = q ? doctors.filter((d) => d.fullName.toLowerCase().includes(q)) : doctors;
 
   return (
     <div ref={wrapRef} className={`relative ${className ?? ""}`}>

@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/users/$id")({
             if (!ok) {
               return Response.json(
                 { success: false, message: "Unable to update user access." },
-                { status: 400 }
+                { status: 400 },
               );
             }
           }
@@ -43,14 +43,14 @@ export const Route = createFileRoute("/api/users/$id")({
             if (!Array.isArray(body.pageAccess)) {
               return Response.json(
                 { success: false, message: "pageAccess must be an array of paths." },
-                { status: 400 }
+                { status: 400 },
               );
             }
             const ok = await updateUserPageAccess(id, body.pageAccess);
             if (!ok) {
               return Response.json(
                 { success: false, message: "Unable to update page access." },
-                { status: 400 }
+                { status: 400 },
               );
             }
           }
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/api/users/$id")({
           console.error("[api/users/$id PATCH]", error);
           return Response.json(
             { success: false, message: "Unable to update user." },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },
@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/users/$id")({
           if (!ok) {
             return Response.json(
               { success: false, message: "Cannot delete this user account." },
-              { status: 400 }
+              { status: 400 },
             );
           }
           return Response.json({ success: true });
@@ -81,7 +81,7 @@ export const Route = createFileRoute("/api/users/$id")({
           console.error("[api/users/$id DELETE]", error);
           return Response.json(
             { success: false, message: "Unable to delete user." },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

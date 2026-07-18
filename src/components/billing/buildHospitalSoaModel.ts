@@ -1,47 +1,30 @@
 import type { AppState, Bill, CaseRate, Patient } from "@/lib/store";
 
 import {
-
   formatAddress,
-
   formatDateTime12,
-
   formatPrintedAt,
-
   getAgeYears,
-
   getFullName,
-
   money2,
-
 } from "@/lib/forms/fillFormTemplate";
 
 import {
-
   resolveChargeCategory,
-
   type BillChargeCategory,
-
 } from "@/lib/services/billChargeCategories";
 
 import { resolveClaimAdmission } from "@/lib/services/eclaimService";
 
 import { computeRoomBoardCharges } from "@/lib/services/roomBoardService";
 
-import {
-
-  allocatePhilhealthToSoaRows,
-
-} from "@/lib/services/soaPhilhealthAllocation";
+import { allocatePhilhealthToSoaRows } from "@/lib/services/soaPhilhealthAllocation";
 
 import type { SOAPrintOptions } from "@/components/billing/soaPrintOptions";
 
 import type { SoaHospital } from "@/components/billing/buildSoaValues";
 
-
-
 export type SoaAmountRow = {
-
   label: string;
 
   detail?: string;
@@ -61,7 +44,6 @@ export type SoaAmountRow = {
   outOfPocket: number;
 
   highlight?: boolean;
-
 };
 
 export type SoaItemizedLine = {
@@ -87,7 +69,6 @@ export type SoaPhilhealthCoverage = {
 };
 
 export type HospitalSoaModel = {
-
   hospitalName: string;
 
   hospitalAddress: string;
@@ -148,13 +129,9 @@ export type HospitalSoaModel = {
   hospitalCity: string;
   printedAt: string;
   secondCaseDescription: string;
-
 };
 
-
-
 type NormalizedItem = {
-
   description: string;
 
   category: BillChargeCategory;
@@ -170,27 +147,18 @@ type NormalizedItem = {
   medicineId?: string;
 
   doctorRole?: string;
-
 };
-
-
 
 type HciBucket = "room" | "medicine" | "lab" | "radiology" | "or" | "supplies" | "misc" | "other";
 
-
-
 function normalizeItems(bill: Bill, state: AppState): NormalizedItem[] {
-
   return bill.items.map((it) => {
-
     const qty = it.qty && it.qty > 0 ? it.qty : 1;
 
     const unitPrice =
-
       it.unitPrice != null && it.unitPrice > 0 ? it.unitPrice : (it.amount || 0) / qty;
 
     const category = resolveChargeCategory(state, {
-
       category: it.category,
 
       priceItemId: it.priceItemId,
@@ -198,11 +166,9 @@ function normalizeItems(bill: Bill, state: AppState): NormalizedItem[] {
       medicineId: it.medicineId,
 
       description: it.description,
-
     });
 
     return {
-
       description: it.description,
 
       category,
@@ -218,18 +184,15 @@ function normalizeItems(bill: Bill, state: AppState): NormalizedItem[] {
       medicineId: it.medicineId,
 
       doctorRole: it.doctorRole,
-
     };
-
   });
-
 }
 
 function augmentItemsWithAdmissionRoom(
   bill: Bill,
   state: AppState,
   items: NormalizedItem[],
-  admission?: ReturnType<typeof resolveClaimAdmission>
+  admission?: ReturnType<typeof resolveClaimAdmission>,
 ): NormalizedItem[] {
   if (!admission) return items;
   if (items.some((item) => item.category === "Room" && item.amount > 0)) return items;
@@ -240,9 +203,7 @@ function augmentItemsWithAdmissionRoom(
   const dischargeDate =
     admission.dischargeDate || bill.dischargeDate || bill.date || admission.admissionDate;
   const roomAdmission =
-    admission.dischargeDate != null
-      ? admission
-      : { ...admission, dischargeDate };
+    admission.dischargeDate != null ? admission : { ...admission, dischargeDate };
 
   const roomLines = computeRoomBoardCharges(state, roomAdmission);
   if (roomLines.length === 0) return items;
@@ -267,146 +228,110 @@ function resolvePhysicianAccreditation(state: AppState, physicianName: string): 
   const normalized = physicianName.trim().toLowerCase();
   if (!normalized) return "";
   const doctor = (state.users ?? []).find(
-    (user) =>
-      user.role === "Doctor" &&
-      user.fullName.trim().toLowerCase() === normalized
+    (user) => user.role === "Doctor" && user.fullName.trim().toLowerCase() === normalized,
   );
   return doctor?.philhealthAccreditation?.trim() ?? "";
 }
 
-
-
 function isOrFee(item: NormalizedItem, state: AppState): boolean {
-
   if (/operating\s*room|\bor\s*fee\b/i.test(item.description)) return true;
 
   if (item.priceItemId) {
-
     const price = state.prices.find((p) => p.id === item.priceItemId);
 
     if (price?.code === "MISC-OR" || /operating room/i.test(price.description)) return true;
-
   }
 
   return false;
-
 }
 
-
-
 function isMiscCharge(item: NormalizedItem, state: AppState): boolean {
-
   if (item.priceItemId) {
-
     const price = state.prices.find((p) => p.id === item.priceItemId);
 
     if (price?.category === "Miscellaneous" && !isOrFee(item, state)) return true;
-
   }
 
   return (
-
     item.category === "Other" &&
-
     !isOrFee(item, state) &&
-
     (/miscellaneous|delivery\s*room|misc-/i.test(item.description) ||
-
       /\bfee\b/i.test(item.description))
-
   );
-
 }
 
-
-
 function hciBucketFor(item: NormalizedItem, state: AppState): HciBucket {
-
   if (item.category === "PF") return "other";
 
   if (isOrFee(item, state)) return "or";
 
   if (isMiscCharge(item, state)) return "misc";
 
-
-
   switch (item.category) {
-
     case "Room":
-
       return "room";
 
     case "Medicine":
-
       return "medicine";
 
     case "Lab":
-
       return "lab";
 
     case "Radiology":
-
       return "radiology";
 
     case "Supplies":
-
       return "supplies";
 
     case "Other":
-
       return "other";
 
     default:
-
       return "other";
-
   }
-
 }
 
-
-
 function sumBucket(items: NormalizedItem[], bucket: HciBucket, state: AppState): number {
-
   return items
 
     .filter((i) => i.category !== "PF" && hciBucketFor(i, state) === bucket)
 
     .reduce((s, i) => s + i.amount, 0);
-
 }
-
-
 
 function roomDetail(items: NormalizedItem[]): string | undefined {
   const rooms = items.filter((i) => i.category === "Room");
   if (rooms.length === 0) return undefined;
 
-  return rooms
-    .map((room) => {
-      const roomFormat = room.description.match(/ROOM\s*-\s*.+\((\d+)\s*day\/s\)\s*\(([\d,]+(?:\.\d+)?)\)/i);
-      if (roomFormat) {
-        return `${roomFormat[1]}.00 Day(s) @ ${roomFormat[2].replace(/,/g, "")}`;
-      }
+  return (
+    rooms
+      .map((room) => {
+        const roomFormat = room.description.match(
+          /ROOM\s*-\s*.+\((\d+)\s*day\/s\)\s*\(([\d,]+(?:\.\d+)?)\)/i,
+        );
+        if (roomFormat) {
+          return `${roomFormat[1]}.00 Day(s) @ ${roomFormat[2].replace(/,/g, "")}`;
+        }
 
-      const daysMatch = room.description.match(/(\d+)\s*day/i);
-      const rateMatch = room.description.match(/@\s*₱?([\d,]+(?:\.\d+)?)/i) ?? room.description.match(/\(([\d,]+(?:\.\d+)?)\)\s*$/);
+        const daysMatch = room.description.match(/(\d+)\s*day/i);
+        const rateMatch =
+          room.description.match(/@\s*₱?([\d,]+(?:\.\d+)?)/i) ??
+          room.description.match(/\(([\d,]+(?:\.\d+)?)\)\s*$/);
 
-      if (daysMatch && rateMatch) {
-        return `${daysMatch[1]}.00 Day(s) @ ${rateMatch[1].replace(/,/g, "")}`;
-      }
+        if (daysMatch && rateMatch) {
+          return `${daysMatch[1]}.00 Day(s) @ ${rateMatch[1].replace(/,/g, "")}`;
+        }
 
-      if (room.qty > 0 && room.unitPrice > 0) {
-        return `${room.qty.toFixed(2)} Day(s) @ ${room.unitPrice.toFixed(2)}`;
-      }
+        if (room.qty > 0 && room.unitPrice > 0) {
+          return `${room.qty.toFixed(2)} Day(s) @ ${room.unitPrice.toFixed(2)}`;
+        }
 
-      return "";
-    })
-    .filter(Boolean)
-    .join(" + ") || undefined;
+        return "";
+      })
+      .filter(Boolean)
+      .join(" + ") || undefined
+  );
 }
-
-
 
 function resolveItemUnit(state: AppState, item: NormalizedItem): string {
   if (item.medicineId) {
@@ -444,22 +369,21 @@ function getAgeParts(birthDate?: string): { years: string; months: string; days:
 
 function cityFromAddress(address?: string): string {
   if (!address) return "";
-  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = address
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   return parts[parts.length - 1] || parts[0] || "";
 }
 
 function amountRow(
-
   label: string,
 
   actual: number,
 
-  extras?: Partial<SoaAmountRow>
-
+  extras?: Partial<SoaAmountRow>,
 ): SoaAmountRow {
-
   return {
-
     label,
 
     detail: extras?.detail,
@@ -479,15 +403,10 @@ function amountRow(
     outOfPocket: extras?.outOfPocket ?? actual,
 
     highlight: extras?.highlight,
-
   };
-
 }
 
-
-
 export function buildHospitalSoaModel(input: {
-
   bill: Bill;
 
   patient?: Patient;
@@ -503,23 +422,16 @@ export function buildHospitalSoaModel(input: {
   caseRateDescription?: string;
 
   caseRate?: CaseRate | null;
-
 }): HospitalSoaModel {
-
   const { bill, patient, hospital, state } = input;
 
   const admission = resolveClaimAdmission(
     state,
     { patientId: bill.patientId, admissionDate: bill.date },
-    bill
+    bill,
   );
 
-  const items = augmentItemsWithAdmissionRoom(
-    bill,
-    state,
-    normalizeItems(bill, state),
-    admission
-  );
+  const items = augmentItemsWithAdmissionRoom(bill, state, normalizeItems(bill, state), admission);
 
   const subtotal = items.reduce((s, i) => s + i.amount, 0);
 
@@ -537,15 +449,14 @@ export function buildHospitalSoaModel(input: {
   const itemizedLines: SoaItemizedLine[] = [...items]
     .sort((a, b) => (a.category === "Room" ? 0 : 1) - (b.category === "Room" ? 0 : 1))
     .map((item) => ({
-      serviceDate: bill.items.find((bi) => bi.description === item.description)?.effectiveDate ?? bill.date,
+      serviceDate:
+        bill.items.find((bi) => bi.description === item.description)?.effectiveDate ?? bill.date,
       itemName: item.description,
       unit: resolveItemUnit(state, item),
       price: item.unitPrice,
       quantity: item.qty,
       amount: item.amount,
     }));
-
-
 
   const roomAmount = sumBucket(items, "room", state);
 
@@ -563,10 +474,7 @@ export function buildHospitalSoaModel(input: {
 
   const otherAmount = sumBucket(items, "other", state);
 
-
-
   const hciRowsBase: SoaAmountRow[] = [
-
     amountRow("Room and Board", roomAmount, { detail: roomDetail(items) }),
 
     amountRow("Pharmacy", medicineAmount),
@@ -582,10 +490,7 @@ export function buildHospitalSoaModel(input: {
     amountRow("Miscellaneous", miscAmount),
 
     amountRow("Others", otherAmount, { detail: otherAmount > 0 ? undefined : "pls. specify" }),
-
   ];
-
-
 
   const pfItems = items.filter((i) => i.category === "PF");
 
@@ -613,20 +518,18 @@ export function buildHospitalSoaModel(input: {
       input.caseRate.professionalFeeAmount && input.caseRate.professionalFeeAmount > 0
         ? input.caseRate.professionalFeeAmount
         : input.caseRate.amount > 0
-          ? Math.round(input.caseRate.amount * ((input.caseRate.professionalFeePct ?? 30) / 100) * 100) / 100
+          ? Math.round(
+              input.caseRate.amount * ((input.caseRate.professionalFeePct ?? 30) / 100) * 100,
+            ) / 100
           : 0;
     if (fallbackPf > 0) {
       const physicianName =
-        admission?.attendingDoctor?.trim() ||
-        `Professional Fee — ${input.caseRate.code}`;
+        admission?.attendingDoctor?.trim() || `Professional Fee — ${input.caseRate.code}`;
       pfRowsBase.push(amountRow(physicianName, fallbackPf));
     }
   }
 
-
-
   const allocation = allocatePhilhealthToSoaRows({
-
     hciRows: hciRowsBase,
 
     professionalFeeRows: pfRowsBase,
@@ -634,24 +537,17 @@ export function buildHospitalSoaModel(input: {
     totalPhic: phic,
 
     caseRate: input.caseRate,
-
   });
-
-
 
   const hciRows = allocation.hciRows;
 
   const hciActualTotal = hciRows.reduce((s, r) => s + r.actual, 0);
 
   const hciSubtotal = amountRow("Subtotal (HCI fees)", hciActualTotal, {
-
     phicFirst: allocation.hciBenefit,
 
     outOfPocket: Math.max(0, hciActualTotal - allocation.hciBenefit),
-
   });
-
-
 
   const professionalFees = allocation.pfRows
     .filter((row) => row.actual > 0)
@@ -665,25 +561,17 @@ export function buildHospitalSoaModel(input: {
       };
     });
 
-
-
   const pfActualTotal = allocation.pfRows.reduce((s, r) => s + r.actual, 0);
 
   const pfSubtotal = amountRow("Subtotal (Professional fee/s)", pfActualTotal, {
-
     phicFirst: allocation.pfBenefit,
 
     outOfPocket: Math.max(0, pfActualTotal - allocation.pfBenefit),
-
   });
-
-
 
   const refYear = bill.date.slice(0, 4);
 
   const refSeq = (bill.id ? bill.id.replace(/\D/g, "").slice(-6) : "000000").padStart(6, "0");
-
-
 
   const diagnosisParts: string[] = [];
   if (admission?.notes?.trim()) diagnosisParts.push(admission.notes.trim());
@@ -693,27 +581,21 @@ export function buildHospitalSoaModel(input: {
     diagnosisParts.push(withCode);
   } else if (input.caseRateDescription?.trim()) {
     diagnosisParts.push(
-      bill.caseRateCode ? `${bill.caseRateCode} - ${input.caseRateDescription.trim()}` : input.caseRateDescription.trim()
+      bill.caseRateCode
+        ? `${bill.caseRateCode} - ${input.caseRateDescription.trim()}`
+        : input.caseRateDescription.trim(),
     );
   } else if (bill.caseRateCode) {
     diagnosisParts.push(bill.caseRateCode);
   }
   const diagnosisText = [...new Set(diagnosisParts)].join("; ");
 
-
-
   const caseRateLabel =
-
     bill.caseRateCode && bill.caseRateCode !== "none"
-
       ? `${bill.caseRateCode}${input.caseRate?.description ? ` — ${input.caseRate.description}` : ""}`
-
       : "";
 
-
-
   return {
-
     hospitalName: (hospital.name || "HOSPITAL").toUpperCase(),
 
     hospitalAddress: hospital.address || "",
@@ -743,9 +625,10 @@ export function buildHospitalSoaModel(input: {
     secondCaseRate: "",
 
     finalDiagnoses: diagnosisText
-
-      ? diagnosisText.split(/[,;]/).map((d) => d.trim()).filter(Boolean)
-
+      ? diagnosisText
+          .split(/[,;]/)
+          .map((d) => d.trim())
+          .filter(Boolean)
       : [],
 
     surgicalProcedures: input.caseRate?.category === "Surgical" ? input.caseRate.description : "",
@@ -759,17 +642,14 @@ export function buildHospitalSoaModel(input: {
     pfSubtotal,
 
     total: amountRow("TOTAL", subtotal, {
-
       discountAgency: allocation.totalBenefit,
 
       phicFirst: allocation.totalBenefit,
 
       outOfPocket: balance,
-
     }),
 
     discountChecks: {
-
       pcsO: false,
 
       dswd: false,
@@ -779,7 +659,6 @@ export function buildHospitalSoaModel(input: {
       hmo: false,
 
       others: false,
-
     },
 
     preparedBy: input.billingOfficerName || "",
@@ -811,24 +690,14 @@ export function buildHospitalSoaModel(input: {
     wardRoom: admission?.roomWard?.trim() ?? "",
     accountNumber: bill.id || `${refYear}-${refSeq}`,
     phicMembership:
-      patient?.philhealth?.memberNumber?.trim() ||
-      patient?.philhealth?.memberType?.trim() ||
-      "",
+      patient?.philhealth?.memberNumber?.trim() || patient?.philhealth?.memberType?.trim() || "",
     patientType: bill.patientType || "",
     hospitalCity: cityFromAddress(hospital.address),
     printedAt: formatPrintedAt(),
     secondCaseDescription: "",
-
   };
-
 }
-
-
 
 export function formatSoaMoney(n: number): string {
-
   return money2(n);
-
 }
-
-

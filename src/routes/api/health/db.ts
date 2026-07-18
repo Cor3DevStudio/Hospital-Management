@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/health/db")({
                 "MariaDB connection failed. Start MariaDB, run database/install_all.sql in HeidiSQL, and set .env.",
               error: error instanceof Error ? error.message : "Unknown error",
             },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

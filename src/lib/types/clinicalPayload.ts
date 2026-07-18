@@ -101,10 +101,8 @@ export function applyClinicalPayload(state: AppState, payload: ClinicalPayload):
     miscellaneousRecords: payload.miscellaneousRecords ?? [],
     eClaims: payload.eClaims ?? [],
     attachments: mergeAttachmentLists(state.attachments ?? [], payload.attachments ?? []),
-    inactivityTimeoutMinutes:
-      payload.inactivityTimeoutMinutes ?? state.inactivityTimeoutMinutes,
-    inactivityWarningSeconds:
-      payload.inactivityWarningSeconds ?? state.inactivityWarningSeconds,
+    inactivityTimeoutMinutes: payload.inactivityTimeoutMinutes ?? state.inactivityTimeoutMinutes,
+    inactivityWarningSeconds: payload.inactivityWarningSeconds ?? state.inactivityWarningSeconds,
     authedUser: state.authedUser,
     users: state.users,
   };

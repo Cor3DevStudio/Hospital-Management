@@ -16,12 +16,7 @@ export const users = mysqlTable("users", {
   username: varchar("username", { length: 100 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
-  role: mysqlEnum("role", [
-    "Administrator",
-    "Doctor",
-    "Receptionist",
-    "Cashier",
-  ]).notNull(),
+  role: mysqlEnum("role", ["Administrator", "Doctor", "Receptionist", "Cashier"]).notNull(),
   active: boolean("active").notNull().default(true),
   darkMode: boolean("dark_mode").notNull().default(false),
   /** JSON array of allowed route paths (e.g. ["/dashboard","/patients"]). Null = all pages. */
@@ -51,12 +46,7 @@ export const patients = mysqlTable("patients", {
   suffix: varchar("suffix", { length: 20 }),
   birthDate: date("birth_date").notNull(),
   gender: mysqlEnum("gender", ["Male", "Female"]).notNull(),
-  civilStatus: mysqlEnum("civil_status", [
-    "Single",
-    "Married",
-    "Widowed",
-    "Separated",
-  ]).notNull(),
+  civilStatus: mysqlEnum("civil_status", ["Single", "Married", "Widowed", "Separated"]).notNull(),
   contactNumber: varchar("contact_number", { length: 50 }).notNull(),
   email: varchar("email", { length: 255 }),
   street: varchar("street", { length: 255 }).notNull(),

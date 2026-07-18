@@ -11,8 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
@@ -56,7 +69,7 @@ function RadiologyPage() {
         secondary: [p.code ? `Code ${p.code}` : null, p.category].filter(Boolean).join(" · "),
         meta: p.caseRate > 0 ? `₱${p.caseRate.toLocaleString()}` : undefined,
       })),
-    [state.prices, state.priceHistories]
+    [state.prices, state.priceHistories],
   );
 
   const unitPrice = useMemo(() => {
@@ -108,9 +121,7 @@ function RadiologyPage() {
     if (errorMessage) return toast.error(errorMessage);
 
     toast.success(
-      createdBillId
-        ? `Order created — billed on ${createdBillId}`
-        : "Radiology order created"
+      createdBillId ? `Order created — billed on ${createdBillId}` : "Radiology order created",
     );
     reset();
   };
@@ -164,7 +175,10 @@ function RadiologyPage() {
               <TableBody>
                 {state.radiologyRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No records yet
                     </TableCell>
                   </TableRow>
@@ -174,9 +188,7 @@ function RadiologyPage() {
                       <TableCell className="pl-4 text-xs">
                         {patientMap.get(item.patientId)?.lastName ?? "—"}
                       </TableCell>
-                      <TableCell className="text-xs">
-                        {item.examType || item.imagingType}
-                      </TableCell>
+                      <TableCell className="text-xs">{item.examType || item.imagingType}</TableCell>
                       <TableCell className="text-xs">{item.requestDate}</TableCell>
                       <TableCell className="text-xs">
                         ₱{(item.totalAmount ?? 0).toLocaleString()}
@@ -220,7 +232,9 @@ function RadiologyPage() {
 
         <Card className="flex flex-col h-full min-h-0">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-base">{editId ? "Edit Order" : "New Radiology Order"}</CardTitle>
+            <CardTitle className="text-base">
+              {editId ? "Edit Order" : "New Radiology Order"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto space-y-4 p-4 pt-2 border-t">
             <PatientSearchWithHistory

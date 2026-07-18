@@ -23,7 +23,11 @@ export type OfficialCF5SheetProps = {
  */
 export function OfficialCF5Sheet({ bill, patient, hospital, admission }: OfficialCF5SheetProps) {
   const d = buildCf5FormData({ bill, patient, hospital, admission });
-  const pinChars = d.patientPin.padEnd(12, " ").slice(0, 12).split("").map((c) => (c === " " ? "" : c));
+  const pinChars = d.patientPin
+    .padEnd(12, " ")
+    .slice(0, 12)
+    .split("")
+    .map((c) => (c === " " ? "" : c));
   const accChars = d.hciAccreditation
     .replace(/\D/g, "")
     .padEnd(12, " ")

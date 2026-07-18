@@ -11,11 +11,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PageHeader, StatChip } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
-import { CashierPatientInfoSheet, CashierReceiptSheet } from "@/components/billing/CashierPrintSheets";
+import {
+  CashierPatientInfoSheet,
+  CashierReceiptSheet,
+} from "@/components/billing/CashierPrintSheets";
 import { getBillingPrintCss } from "@/components/billing/billingPrintStyles";
 import { OfficialSOASheet } from "@/components/billing/OfficialSOASheet";
 import { SOAPrintOptionsModal } from "@/components/billing/SOAPrintOptionsModal";
@@ -47,7 +63,9 @@ function CashierPage() {
   const [patientId, setPatientId] = useState("");
   const [billId, setBillId] = useState("");
   const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Card" | "GCash" | "Insurance" | "Credit">("Cash");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "Cash" | "Card" | "GCash" | "Insurance" | "Credit"
+  >("Cash");
   const [receiptNumber, setReceiptNumber] = useState("");
   const [transactionDate, setTransactionDate] = useState(todayISO());
   const [paymentFeedback, setPaymentFeedback] = useState<{
@@ -61,11 +79,17 @@ function CashierPage() {
   const [showSoaPrintOptions, setShowSoaPrintOptions] = useState(false);
   const [printOptions, setPrintOptions] = useState<SOAPrintOptions>(DEFAULT_SOA_PRINT_OPTIONS);
 
-  const openBills = useMemo(() => (patientId ? getPatientOpenBills(state, patientId) : []), [state, patientId]);
-  const patientBills = useMemo(() => (patientId ? getPatientBills(state, patientId) : []), [state, patientId]);
+  const openBills = useMemo(
+    () => (patientId ? getPatientOpenBills(state, patientId) : []),
+    [state, patientId],
+  );
+  const patientBills = useMemo(
+    () => (patientId ? getPatientBills(state, patientId) : []),
+    [state, patientId],
+  );
   const patientPayments = useMemo(
     () => (patientId ? getPatientPayments(state, patientId) : []),
-    [state, patientId]
+    [state, patientId],
   );
   const selectedBill = state.bills.find((b) => b.id === billId);
   const selectedPatient = state.patients.find((p) => p.id === patientId);
@@ -81,7 +105,9 @@ function CashierPage() {
   }, [state.cashierTransactions, txFilter, patientId]);
   const txList = usePaginatedList(filteredTx, 50);
   const cashierName =
-    state.users.find((u) => u.username === state.authedUser)?.fullName || state.authedUser || "Cashier";
+    state.users.find((u) => u.username === state.authedUser)?.fullName ||
+    state.authedUser ||
+    "Cashier";
 
   const triggerPrint = (mode: CashierPrintMode) => {
     setPrintMode(mode);
@@ -177,7 +203,7 @@ function CashierPage() {
       minimumFractionDigits: 2,
     })} recorded via ${paymentMethod}. OR #${recorded.receiptNumber}. Balance remaining: ₱${balanceRemaining.toLocaleString(
       undefined,
-      { minimumFractionDigits: 2 }
+      { minimumFractionDigits: 2 },
     )}.`;
 
     setPaymentFeedback({ type: "success", message });
@@ -215,24 +241,33 @@ function CashierPage() {
       <style>{getBillingPrintCss()}</style>
 
       <div className="no-print h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
-        <PageHeader title="Cashier" description="Process payments, view patient payment history, and print receipts or statements." />
+        <PageHeader
+          title="Cashier"
+          description="Process payments, view patient payment history, and print receipts or statements."
+        />
         <div className="px-4 pt-4 shrink-0 flex flex-wrap gap-2">
-          <StatChip label="Today's Collections" value={`₱${todayTotal.toLocaleString()}`} tone="success" />
-          <StatChip label="Transactions" value={state.cashierTransactions.filter((t) => t.status === "Paid").length} />
+          <StatChip
+            label="Today's Collections"
+            value={`₱${todayTotal.toLocaleString()}`}
+            tone="success"
+          />
+          <StatChip
+            label="Transactions"
+            value={state.cashierTransactions.filter((t) => t.status === "Paid").length}
+          />
         </div>
         <div className="flex-1 grid gap-4 p-4 md:grid-cols-[1.4fr_1fr] items-stretch min-h-0 overflow-hidden">
           <Card className="flex flex-col h-full min-h-0">
             <CardHeader className="pb-3 pt-4 px-4 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-base">Payment Transactions</CardTitle>
-              <Select
-                value={txFilter}
-                onValueChange={(v) => setTxFilter(v as "all" | "patient")}
-              >
+              <Select value={txFilter} onValueChange={(v) => setTxFilter(v as "all" | "patient")}>
                 <SelectTrigger className="h-8 w-[170px] text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-xs">All patients</SelectItem>
+                  <SelectItem value="all" className="text-xs">
+                    All patients
+                  </SelectItem>
                   <SelectItem value="patient" className="text-xs" disabled={!patientId}>
                     Selected patient only
                   </SelectItem>
@@ -255,19 +290,28 @@ function CashierPage() {
                 <TableBody>
                   {filteredTx.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
-                        {txFilter === "patient" && patientId ? "No payments for this patient yet." : "No records yet"}
+                      <TableCell
+                        colSpan={7}
+                        className="py-8 text-center text-sm text-muted-foreground"
+                      >
+                        {txFilter === "patient" && patientId
+                          ? "No payments for this patient yet."
+                          : "No records yet"}
                       </TableCell>
                     </TableRow>
                   ) : (
                     txList.pageItems.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="pl-4 text-xs">{item.transactionDate}</TableCell>
-                        <TableCell className="text-xs">{patientMap.get(item.patientId)?.lastName ?? "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {patientMap.get(item.patientId)?.lastName ?? "—"}
+                        </TableCell>
                         <TableCell className="text-xs font-mono">{item.receiptNumber}</TableCell>
                         <TableCell className="text-xs font-mono">{item.billId ?? "—"}</TableCell>
                         <TableCell className="text-xs">₱{item.amount.toLocaleString()}</TableCell>
-                        <TableCell className="text-xs">₱{(item.balanceRemaining ?? 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-xs">
+                          ₱{(item.balanceRemaining ?? 0).toLocaleString()}
+                        </TableCell>
                         <TableCell className="text-right pr-4">
                           <Button
                             variant="ghost"
@@ -278,7 +322,12 @@ function CashierPage() {
                           >
                             <Printer className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(item.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => remove(item.id)}
+                          >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </TableCell>
@@ -314,7 +363,13 @@ function CashierPage() {
 
               {selectedPatient && (
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={printPatientInfo}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={printPatientInfo}
+                  >
                     <Printer className="mr-1 h-3.5 w-3.5" /> Print Patient Info
                   </Button>
                   {selectedBill && (
@@ -340,7 +395,9 @@ function CashierPage() {
                     setPaymentFeedback(null);
                   }}
                 >
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Select bill" /></SelectTrigger>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select bill" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Select bill</SelectItem>
                     {openBills.map((b) => (
@@ -364,7 +421,7 @@ function CashierPage() {
                           type="button"
                           className={cn(
                             "font-mono text-left hover:underline",
-                            billId === b.id ? "font-semibold text-blue-600" : "text-foreground"
+                            billId === b.id ? "font-semibold text-blue-600" : "text-foreground",
                           )}
                           onClick={() => setBillId(b.id)}
                         >
@@ -444,11 +501,18 @@ function CashierPage() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as typeof paymentMethod)}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(v) => setPaymentMethod(v as typeof paymentMethod)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {["Cash", "Card", "GCash", "Insurance", "Credit"].map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -471,7 +535,7 @@ function CashierPage() {
                     "rounded-md border px-3 py-2 text-sm",
                     paymentFeedback.type === "success"
                       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                      : "border-red-200 bg-red-50 text-red-900"
+                      : "border-red-200 bg-red-50 text-red-900",
                   )}
                 >
                   {paymentFeedback.message}

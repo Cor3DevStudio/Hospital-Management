@@ -53,9 +53,7 @@ function sampleBill(overrides: Partial<Bill> = {}): Bill {
 
 function run() {
   // createBill
-  const items: BillLineItem[] = [
-    { description: "Lab", amount: 500, qty: 1, unitPrice: 500 },
-  ];
+  const items: BillLineItem[] = [{ description: "Lab", amount: 500, qty: 1, unitPrice: 500 }];
   const created = createBill(baseState(), { patientId: "P1", items, date: "2026-07-05" });
   assert(!("error" in created), "createBill should succeed");
   assert.equal(created.state.bills.length, 1);
@@ -182,7 +180,12 @@ function run() {
         healthFacilityFee: 28080,
       },
     ],
-    bills: [sampleBill({ id: "BIL-CR", items: [{ description: "Room", amount: 1000, category: "Room" }] })],
+    bills: [
+      sampleBill({
+        id: "BIL-CR",
+        items: [{ description: "Room", amount: 1000, category: "Room" }],
+      }),
+    ],
   } as unknown as AppState;
   const withCaseRate = applyCaseRateToBill(caseRateState, "BIL-CR", "44960");
   const caseRateBill = withCaseRate.bills.find((b) => b.id === "BIL-CR");
@@ -195,7 +198,9 @@ function run() {
   const apiRateState = {
     ...baseState(),
     caseRates: [],
-    bills: [sampleBill({ id: "BIL-API", items: [{ description: "Lab", amount: 500, category: "Lab" }] })],
+    bills: [
+      sampleBill({ id: "BIL-API", items: [{ description: "Lab", amount: 500, category: "Lab" }] }),
+    ],
   } as unknown as AppState;
   const apiRate: CaseRate = {
     id: "api-9633",

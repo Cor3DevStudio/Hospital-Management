@@ -5,10 +5,7 @@ export type LoginFieldErrors = {
   password?: string;
 };
 
-export function validateLoginForm(
-  username: string,
-  password: string
-): LoginFieldErrors {
+export function validateLoginForm(username: string, password: string): LoginFieldErrors {
   const errors: LoginFieldErrors = {};
   const trimmedUsername = username.trim();
 

@@ -20,14 +20,14 @@ export const Route = createFileRoute("/api/auth/register")({
           if (!body?.username?.trim() || !body?.password || !body?.fullName?.trim()) {
             return Response.json(
               { success: false, message: "All fields are required" },
-              { status: 400 }
+              { status: 400 },
             );
           }
 
           if (body.password.length < 6) {
             return Response.json(
               { success: false, message: "Password must be at least 6 characters" },
-              { status: 400 }
+              { status: 400 },
             );
           }
 
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/auth/register")({
               message:
                 "Unable to connect to the database. Check MariaDB is running and .env is configured.",
             },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

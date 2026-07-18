@@ -36,14 +36,14 @@ const opdRecord = (overrides: Partial<OPDRecord> = {}): OPDRecord => ({
 function run() {
   const merged = mergeConsultationSources(
     [consultation(), consultation({ id: "c2", patientId: "p2", date: "2026-07-03" })],
-    [opdRecord()]
+    [opdRecord()],
   );
   assert.equal(merged.length, 3);
   assert.equal(merged[0].date, "2026-07-03");
 
   const deduped = mergeConsultationSources(
     [consultation({ id: "linked" })],
-    [opdRecord({ consultationId: "linked" })]
+    [opdRecord({ consultationId: "linked" })],
   );
   assert.equal(deduped.length, 1);
 
@@ -53,11 +53,9 @@ function run() {
   ]);
   assert.equal(safeSort.length, 2);
 
-  const forPatient = getConsultationsForPatient(
-    [consultation({ patientId: "p1" })],
-    "p1",
-    [opdRecord({ patientId: "p2" })]
-  );
+  const forPatient = getConsultationsForPatient([consultation({ patientId: "p1" })], "p1", [
+    opdRecord({ patientId: "p2" }),
+  ]);
   assert.equal(forPatient.length, 1);
   assert.equal(forPatient[0].patientId, "p1");
 

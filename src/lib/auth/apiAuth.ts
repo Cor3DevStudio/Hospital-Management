@@ -17,9 +17,7 @@ export function extractBearerToken(request: Request): string | null {
   return token || null;
 }
 
-export async function validateAuthToken(
-  token: string
-): Promise<AuthenticatedRequest | null> {
+export async function validateAuthToken(token: string): Promise<AuthenticatedRequest | null> {
   const session = await findValidSession(token);
   if (!session) return null;
 
@@ -36,9 +34,7 @@ export async function validateAuthToken(
   return { userId: session.userId, username };
 }
 
-export async function requireAuth(
-  request: Request
-): Promise<AuthenticatedRequest | Response> {
+export async function requireAuth(request: Request): Promise<AuthenticatedRequest | Response> {
   const token = extractBearerToken(request);
   if (!token) {
     return Response.json({ message: "Authentication required." }, { status: 401 });

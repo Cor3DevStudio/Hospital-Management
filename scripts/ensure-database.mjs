@@ -41,7 +41,7 @@ export function getDatabaseName() {
 export async function inspectDatabase(connection, databaseName = getDatabaseName()) {
   const [schemaRows] = await connection.query(
     "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?",
-    [databaseName]
+    [databaseName],
   );
   if (!schemaRows.length) {
     return {
@@ -54,7 +54,7 @@ export async function inspectDatabase(connection, databaseName = getDatabaseName
 
   const [tableRows] = await connection.query(
     "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?",
-    [databaseName]
+    [databaseName],
   );
   const existing = new Set(tableRows.map((row) => row.TABLE_NAME));
   const missingTables = EXPECTED_TABLES.filter((name) => !existing.has(name));

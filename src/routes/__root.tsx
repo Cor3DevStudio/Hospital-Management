@@ -30,8 +30,13 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <p className="mt-4 text-sm text-muted-foreground">The page you're looking for doesn't exist.</p>
-        <Link to="/" className="mt-6 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+        <p className="mt-4 text-sm text-muted-foreground">
+          The page you're looking for doesn't exist.
+        </p>
+        <Link
+          to="/"
+          className="mt-6 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
           Go home
         </Link>
       </div>
@@ -51,7 +56,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
           Try again
@@ -67,13 +75,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Hospital CMS — Administrator" },
-      { name: "description", content: "Hospital management system: patients, appointments, billing, PhilHealth eClaims." },
+      {
+        name: "description",
+        content: "Hospital management system: patients, appointments, billing, PhilHealth eClaims.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -85,8 +99,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
     </html>
   );
 }
@@ -121,8 +140,8 @@ function AppShell() {
           mergeDatabaseIntoState(
             { ...current, users: users.length > 0 ? users : current.users },
             clinicalPayload,
-            { preferDatabase }
-          )
+            { preferDatabase },
+          ),
         );
         resumeAutoSync();
       } catch {
@@ -136,11 +155,7 @@ function AppShell() {
   }, [state.authedUser, setState]);
 
   // Public routes (no app shell / auth required)
-  if (
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname.startsWith("/api/")
-  ) {
+  if (pathname === "/login" || pathname === "/register" || pathname.startsWith("/api/")) {
     return <Outlet />;
   }
   if (!state.authedUser) return <Navigate to="/login" />;
@@ -185,12 +200,7 @@ function AuthenticatedLayout() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <AppSidebar />
-      <div
-        className={cn(
-          "flex min-h-0 min-w-0 flex-1 flex-col",
-          dashboardBehind && "w-full"
-        )}
-      >
+      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", dashboardBehind && "w-full")}>
         <header className="no-print sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-card/80 px-3 backdrop-blur">
           <span className="text-sm font-medium text-muted-foreground">Administrator Console</span>
           <div className="ml-auto flex items-center gap-2">
@@ -208,7 +218,10 @@ function AuthenticatedLayout() {
 function ThemeToggle() {
   const { setDarkMode, isDark } = useStore();
   return (
-    <button onClick={() => setDarkMode(!isDark)} className="rounded p-1 hover:bg-muted flex items-center gap-2">
+    <button
+      onClick={() => setDarkMode(!isDark)}
+      className="rounded p-1 hover:bg-muted flex items-center gap-2"
+    >
       <SunMoon className="h-5 w-5" />
     </button>
   );

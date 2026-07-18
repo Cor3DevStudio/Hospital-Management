@@ -6,12 +6,7 @@ import { PatientClinicalHistory } from "@/components/PatientClinicalHistory";
 import { PatientSearchModal } from "@/components/PatientSearchModal";
 import { ReAdmissionBanner } from "@/components/ReAdmissionBanner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getPatientAdmissionSummary } from "@/lib/services/admissionService";
 import { formatPatientName } from "@/lib/services/patientHistoryService";
 import { useStore, type Admission, type Patient } from "@/lib/store";
@@ -84,7 +79,7 @@ export function PatientSearchWithHistory({
     () =>
       patients.find((p) => p.id === selectedPatientId) ??
       state.patients.find((p) => p.id === selectedPatientId),
-    [patients, selectedPatientId, state.patients]
+    [patients, selectedPatientId, state.patients],
   );
 
   const admissionSummary = useMemo(
@@ -92,7 +87,7 @@ export function PatientSearchWithHistory({
       selectedPatientId
         ? getPatientAdmissionSummary(state, selectedPatientId, { excludeAdmissionId })
         : null,
-    [state, selectedPatientId, excludeAdmissionId]
+    [state, selectedPatientId, excludeAdmissionId],
   );
 
   const admissions = admissionSummary?.admissions ?? [];
@@ -224,7 +219,8 @@ function AdmissionDetailDialog({
               {formatPatientName(patient)}
             </p>
             <p>
-              <span className="font-medium text-muted-foreground">Date:</span> {admission.admissionDate}
+              <span className="font-medium text-muted-foreground">Date:</span>{" "}
+              {admission.admissionDate}
             </p>
             <p>
               <span className="font-medium text-muted-foreground">Ward:</span> {admission.roomWard}
@@ -234,7 +230,8 @@ function AdmissionDetailDialog({
               {admission.attendingDoctor}
             </p>
             <p>
-              <span className="font-medium text-muted-foreground">Type:</span> {admission.admissionType}
+              <span className="font-medium text-muted-foreground">Type:</span>{" "}
+              {admission.admissionType}
             </p>
             <p>
               <span className="font-medium text-muted-foreground">Status:</span> {admission.status}

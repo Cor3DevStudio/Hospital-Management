@@ -91,7 +91,7 @@ export function buildEsoaXmlPayload(input: {
       <Quantity>${it.qty}</Quantity>
       <Amount>${money2(it.amount)}</Amount>
       <ServiceDate>${escapeXml(it.effectiveDate || input.bill.date)}</ServiceDate>
-    </Item>`
+    </Item>`,
     )
     .join("\n");
 

@@ -14,19 +14,20 @@ export function getAllAppointments(appointments: Appointment[]): Appointment[] {
 }
 
 export function getAppointmentsForDate(appointments: Appointment[], date: string): Appointment[] {
-  return appointments
-    .filter((a) => a.date === date)
-    .sort((a, b) => a.time.localeCompare(b.time));
+  return appointments.filter((a) => a.date === date).sort((a, b) => a.time.localeCompare(b.time));
 }
 
-export function getTodayAppointments(appointments: Appointment[], today = todayISO()): Appointment[] {
+export function getTodayAppointments(
+  appointments: Appointment[],
+  today = todayISO(),
+): Appointment[] {
   return getAppointmentsForDate(appointments, today).filter((a) => a.status !== "Cancelled");
 }
 
 export function getUpcomingForPatient(
   appointments: Appointment[],
   patientId: string,
-  fromDate = todayISO()
+  fromDate = todayISO(),
 ): Appointment[] {
   return appointments
     .filter(
@@ -34,7 +35,7 @@ export function getUpcomingForPatient(
         a.patientId === patientId &&
         a.date >= fromDate &&
         a.status !== "Cancelled" &&
-        a.status !== "Completed"
+        a.status !== "Completed",
     )
     .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
 }
@@ -55,7 +56,7 @@ export function cancelAppointment(state: AppState, appointmentId: string): AppSt
   return {
     ...state,
     appointments: state.appointments.map((a) =>
-      a.id === appointmentId ? { ...a, status: "Cancelled" as const } : a
+      a.id === appointmentId ? { ...a, status: "Cancelled" as const } : a,
     ),
   };
 }
@@ -65,7 +66,7 @@ export function deleteAppointment(state: AppState, appointmentId: string): AppSt
     ...state,
     appointments: state.appointments.filter((a) => a.id !== appointmentId),
     consultations: state.consultations.map((c) =>
-      c.appointmentId === appointmentId ? { ...c, appointmentId: undefined } : c
+      c.appointmentId === appointmentId ? { ...c, appointmentId: undefined } : c,
     ),
   };
 }

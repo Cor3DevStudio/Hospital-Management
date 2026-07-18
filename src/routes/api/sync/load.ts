@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/sync/load")({
               updatedAt: null,
               message: "Unable to load from database. Check MariaDB connection.",
             },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

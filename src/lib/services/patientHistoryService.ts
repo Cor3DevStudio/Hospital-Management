@@ -1,6 +1,4 @@
-import {
-  computeBillBalance,
-} from "@/lib/services/billingService";
+import { computeBillBalance } from "@/lib/services/billingService";
 import { getConsultationsForPatient } from "@/lib/services/consultationService";
 import { getPatientAdmissions } from "@/lib/services/admissionService";
 import type { AppState } from "@/lib/store";
@@ -18,10 +16,7 @@ function sortByDateDesc<T extends { date: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function mapSection<T>(
-  records: T[] | undefined,
-  mapper: (r: T) => HistoryItem
-): HistoryItem[] {
+function mapSection<T>(records: T[] | undefined, mapper: (r: T) => HistoryItem): HistoryItem[] {
   if (!records?.length) return [];
   return sortByDateDesc(records.map(mapper));
 }
@@ -29,7 +24,7 @@ function mapSection<T>(
 export function getPatientClinicalHistory(
   state: AppState,
   patientId: string,
-  index?: PatientRecordIndex
+  index?: PatientRecordIndex,
 ): ClinicalHistorySection[] {
   if (!patientId) return [];
 
@@ -60,7 +55,7 @@ export function getPatientClinicalHistory(
       title: c.chiefComplaint,
       detail: c.diagnosis,
       status: c.status,
-    })
+    }),
   );
 
   const lab = mapSection(idx.laboratory.get(patientId), (r) => ({
@@ -133,7 +128,9 @@ export function getPatientClinicalHistory(
   ];
 }
 
-export function formatPatientName(patient: { firstName: string; middleName?: string; lastName: string } | undefined): string {
+export function formatPatientName(
+  patient: { firstName: string; middleName?: string; lastName: string } | undefined,
+): string {
   if (!patient) return "—";
   return `${patient.lastName}, ${patient.firstName}${patient.middleName ? ` ${patient.middleName}` : ""}`;
 }

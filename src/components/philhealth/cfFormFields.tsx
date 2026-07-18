@@ -75,7 +75,10 @@ export function EditableTextAreaField({
   if (!editable || !onChange) {
     return (
       <div className="cf-line-field cf-line-field--tall" style={{ height: "auto" }}>
-        <div className="cf-line-field__value" style={{ whiteSpace: "pre-wrap", minHeight: "60px", height: "auto", display: "block" }}>
+        <div
+          className="cf-line-field__value"
+          style={{ whiteSpace: "pre-wrap", minHeight: "60px", height: "auto", display: "block" }}
+        >
           {value}
         </div>
         <div className="cf-line-field__label">{label}</div>
@@ -84,10 +87,20 @@ export function EditableTextAreaField({
   }
 
   return (
-    <div className="cf-line-field cf-line-field--editable cf-line-field--tall" style={{ height: "auto" }}>
+    <div
+      className="cf-line-field cf-line-field--editable cf-line-field--tall"
+      style={{ height: "auto" }}
+    >
       <textarea
         className="cf-line-field__value cf-line-field__input w-full p-1"
-        style={{ minHeight: "60px", height: "auto", display: "block", whiteSpace: "pre-wrap", border: "1px solid #e2e8f0", background: "#f8fafc" }}
+        style={{
+          minHeight: "60px",
+          height: "auto",
+          display: "block",
+          whiteSpace: "pre-wrap",
+          border: "1px solid #e2e8f0",
+          background: "#f8fafc",
+        }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={label}
@@ -147,13 +160,18 @@ export function DigitBoxes({
   const nodes: ReactNode[] = [];
   let idx = 0;
   groups.forEach((count, g) => {
-    if (g > 0) nodes.push(<span key={`h-${g}`} className="cf-digit-hyphen">-</span>);
+    if (g > 0)
+      nodes.push(
+        <span key={`h-${g}`} className="cf-digit-hyphen">
+          -
+        </span>,
+      );
     const groupChars: ReactNode[] = [];
     for (let i = 0; i < count; i++) {
       groupChars.push(
         <span key={`${g}-${i}`} className="cf-digit">
           {chars[idx] ?? ""}
-        </span>
+        </span>,
       );
       idx += 1;
     }
@@ -161,7 +179,7 @@ export function DigitBoxes({
       <span key={`g-${g}`} className="cf-digit-group">
         {groupChars}
         {labels?.[g] ? <span className="cf-digit-group__label">{labels[g]}</span> : null}
-      </span>
+      </span>,
     );
   });
   return <div className="cf-digits">{nodes}</div>;

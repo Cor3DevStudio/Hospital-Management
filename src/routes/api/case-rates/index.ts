@@ -45,7 +45,7 @@ export const Route = createFileRoute("/api/case-rates/")({
           console.error("[api/case-rates GET]", error);
           return Response.json(
             { message: "Unable to load case rates from database." },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },
@@ -59,17 +59,14 @@ export const Route = createFileRoute("/api/case-rates/")({
           if (!body?.code || !body?.description) {
             return Response.json(
               { message: "code and description are required." },
-              { status: 400 }
+              { status: 400 },
             );
           }
           const saved = await upsertCaseRateToDatabase(body);
           return Response.json({ success: true, caseRate: saved });
         } catch (error) {
           console.error("[api/case-rates POST]", error);
-          return Response.json(
-            { message: "Unable to save case rate." },
-            { status: 503 }
-          );
+          return Response.json({ message: "Unable to save case rate." }, { status: 503 });
         }
       },
 
@@ -89,7 +86,7 @@ export const Route = createFileRoute("/api/case-rates/")({
           console.error("[api/case-rates DELETE]", error);
           return Response.json(
             { message: "Unable to delete case rate from database." },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

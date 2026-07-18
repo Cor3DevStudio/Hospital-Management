@@ -2,7 +2,14 @@ import { memo, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { Patient } from "@/lib/store";
 
 export type PatientSearchProps = {
@@ -26,14 +33,16 @@ export type PatientSearchProps = {
 export function filterPatients(
   patients: Patient[],
   query: string,
-  showArchived = false
+  showArchived = false,
 ): Patient[] {
   const lowerQuery = query.trim().toLowerCase();
   return patients
     .filter((patient) => showArchived || !patient.archived)
     .filter((patient) => {
       const fullName =
-        `${patient.firstName} ${patient.middleName ?? ""} ${patient.lastName} ${patient.suffix ?? ""}`.trim().toLowerCase();
+        `${patient.firstName} ${patient.middleName ?? ""} ${patient.lastName} ${patient.suffix ?? ""}`
+          .trim()
+          .toLowerCase();
       return (
         !lowerQuery ||
         patient.id.toLowerCase().includes(lowerQuery) ||
@@ -65,7 +74,7 @@ export const PatientSearch = memo(function PatientSearch({
 
   const filtered = useMemo(
     () => filterPatients(patients, query, showArchived),
-    [patients, query, showArchived]
+    [patients, query, showArchived],
   );
 
   const results = filtered.slice(0, maxResults);
@@ -83,7 +92,9 @@ export const PatientSearch = memo(function PatientSearch({
             className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left text-xs transition-colors hover:bg-muted ${selected ? "bg-muted" : ""}`}
           >
             <div className="flex items-start justify-between gap-2">
-              <span className="min-w-0 flex-1 font-medium text-sm leading-snug break-words">{fullName}</span>
+              <span className="min-w-0 flex-1 font-medium text-sm leading-snug break-words">
+                {fullName}
+              </span>
               <span
                 className={`shrink-0 rounded-full border px-1.5 py-0 text-[10px] font-medium ${
                   patient.archived
@@ -102,7 +113,9 @@ export const PatientSearch = memo(function PatientSearch({
         );
       })}
       {filtered.length === 0 && (
-        <p className="px-3 py-4 text-center text-xs text-muted-foreground">No patients match your search.</p>
+        <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+          No patients match your search.
+        </p>
       )}
     </div>
   );
@@ -127,9 +140,13 @@ export const PatientSearch = memo(function PatientSearch({
                 className={`cursor-pointer ${patient.id === selectedPatientId ? "bg-slate-100" : "hover:bg-slate-50"}`}
                 onClick={() => onSelect(patient.id)}
               >
-                <TableCell className="pl-3 text-xs sm:text-sm font-medium whitespace-nowrap">{patient.id}</TableCell>
+                <TableCell className="pl-3 text-xs sm:text-sm font-medium whitespace-nowrap">
+                  {patient.id}
+                </TableCell>
                 <TableCell className="text-xs sm:text-sm min-w-0">{fullName}</TableCell>
-                <TableCell className="text-xs sm:text-sm whitespace-nowrap">{patient.contactNumber}</TableCell>
+                <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                  {patient.contactNumber}
+                </TableCell>
                 <TableCell className="text-right pr-3 text-xs sm:text-sm whitespace-nowrap">
                   {patient.archived ? "Archived" : "Active"}
                 </TableCell>
@@ -152,13 +169,15 @@ export const PatientSearch = memo(function PatientSearch({
     <div className={embedded ? `space-y-3 min-w-0 ${className ?? ""}` : "space-y-4 min-w-0"}>
       <div className="space-y-1 min-w-0">
         {!embedded && <Label className="text-xs text-muted-foreground">Search patient</Label>}
-        {embedded && label && (
-          <Label className="text-xs text-muted-foreground">{label}</Label>
-        )}
+        {embedded && label && <Label className="text-xs text-muted-foreground">{label}</Label>}
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={layout === "list" ? "Name, ID, contact, or PIN…" : "Search by name, patient ID, contact, or PhilHealth PIN"}
+          placeholder={
+            layout === "list"
+              ? "Name, ID, contact, or PIN…"
+              : "Search by name, patient ID, contact, or PhilHealth PIN"
+          }
           className="h-9 min-w-0"
         />
       </div>

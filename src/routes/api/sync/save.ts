@@ -17,7 +17,7 @@ export const Route = createFileRoute("/api/sync/save")({
           if (!payload || typeof payload !== "object") {
             return Response.json(
               { success: false, message: "Invalid clinical payload." },
-              { status: 400 }
+              { status: 400 },
             );
           }
 
@@ -25,14 +25,13 @@ export const Route = createFileRoute("/api/sync/save")({
           return Response.json(result);
         } catch (error) {
           console.error("[api/sync/save]", error);
-          const message =
-            error instanceof Error ? error.message : "Database save failed.";
+          const message = error instanceof Error ? error.message : "Database save failed.";
           return Response.json(
             {
               success: false,
               message: `Unable to save to database. ${message} Ensure MariaDB is running and run database/install_all.sql.`,
             },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

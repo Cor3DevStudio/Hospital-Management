@@ -50,7 +50,7 @@ export function syncOpdToConsultation(state: AppState, opd: OPDRecord): AppState
       return {
         ...next,
         opdRecords: next.opdRecords.map((r) =>
-          r.id === opd.id ? { ...r, consultationId: existing.id } : r
+          r.id === opd.id ? { ...r, consultationId: existing.id } : r,
         ),
       };
     }
@@ -61,7 +61,7 @@ export function syncOpdToConsultation(state: AppState, opd: OPDRecord): AppState
   return {
     ...next,
     opdRecords: next.opdRecords.map((r) =>
-      r.id === opd.id ? { ...r, consultationId: consultation.id } : r
+      r.id === opd.id ? { ...r, consultationId: consultation.id } : r,
     ),
   };
 }

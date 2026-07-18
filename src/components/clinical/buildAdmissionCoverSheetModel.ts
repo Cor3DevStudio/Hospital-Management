@@ -112,11 +112,8 @@ export function buildAdmissionCoverSheetModel(input: {
       ? stays.reduce(
           (sum, stay) =>
             sum +
-            billableDays(
-              stay.startDate,
-              stay.endDate ?? admission.dischargeDate ?? stay.startDate
-            ),
-          0
+            billableDays(stay.startDate, stay.endDate ?? admission.dischargeDate ?? stay.startDate),
+          0,
         )
       : admission.dischargeDate
         ? billableDays(admission.admissionDate, admission.dischargeDate)

@@ -54,7 +54,7 @@ type CreateUserBody = {
 };
 
 export async function createUserViaApi(
-  body: CreateUserBody
+  body: CreateUserBody,
 ): Promise<{ success: boolean; user?: User; message?: string }> {
   try {
     const response = await fetchWithAuth("/api/users", {
@@ -74,7 +74,7 @@ export async function createUserViaApi(
 
 export async function updateUserActiveViaApi(
   id: string,
-  active: boolean
+  active: boolean,
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const response = await fetchWithAuth(`/api/users/${id}`, {
@@ -94,7 +94,7 @@ export async function updateUserActiveViaApi(
 
 export async function updateUserPageAccessViaApi(
   id: string,
-  pageAccess: string[]
+  pageAccess: string[],
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const response = await fetchWithAuth(`/api/users/${id}`, {
@@ -112,10 +112,7 @@ export async function updateUserPageAccessViaApi(
   }
 }
 
-export async function updateUserDarkModeViaApi(
-  id: string,
-  darkMode: boolean
-): Promise<void> {
+export async function updateUserDarkModeViaApi(id: string, darkMode: boolean): Promise<void> {
   try {
     await fetchWithAuth(`/api/users/${id}`, {
       method: "PATCH",
@@ -128,7 +125,7 @@ export async function updateUserDarkModeViaApi(
 }
 
 export async function deleteUserViaApi(
-  id: string
+  id: string,
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const response = await fetchWithAuth(`/api/users/${id}`, { method: "DELETE" });

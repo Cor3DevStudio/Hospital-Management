@@ -170,9 +170,13 @@ export function StandardBillingSoaDocument({
                         </td>
                         <td className="money">{moneyCell(pf.row.actual)}</td>
                         <td className="money">—</td>
-                        <td className="money">{moneyCell(pf.row.phicFirst, pf.row.phicFirst === 0)}</td>
+                        <td className="money">
+                          {moneyCell(pf.row.phicFirst, pf.row.phicFirst === 0)}
+                        </td>
                         <td className="money">—</td>
-                        <td className="money">{moneyCell(pf.row.outOfPocket, pf.row.outOfPocket === 0)}</td>
+                        <td className="money">
+                          {moneyCell(pf.row.outOfPocket, pf.row.outOfPocket === 0)}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -200,7 +204,9 @@ export function StandardBillingSoaDocument({
                   {model.firstCaseRate || "—"}
                 </p>
                 <p>
-                  <span className="standard-billing-soa__field-label">Second Case Description:</span>{" "}
+                  <span className="standard-billing-soa__field-label">
+                    Second Case Description:
+                  </span>{" "}
                   {model.secondCaseDescription || model.secondCaseRate || "—"}
                 </p>
               </div>
@@ -225,8 +231,10 @@ export function StandardBillingSoaDocument({
                       {moneyCell(
                         Math.max(
                           0,
-                          model.total.actual - model.total.discountScPwd - model.total.discountAgency
-                        )
+                          model.total.actual -
+                            model.total.discountScPwd -
+                            model.total.discountAgency,
+                        ),
                       )}
                     </td>
                     <td className="money">{moneyCell(model.total.phicFirst)}</td>

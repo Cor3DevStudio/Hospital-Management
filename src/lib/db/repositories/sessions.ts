@@ -29,9 +29,7 @@ export async function deleteAuthSession(token: string): Promise<void> {
   await db.delete(authSessions).where(eq(authSessions.token, token));
 }
 
-export async function findValidSession(
-  token: string
-): Promise<{ userId: string } | null> {
+export async function findValidSession(token: string): Promise<{ userId: string } | null> {
   const db = getDb();
   const rows = await db
     .select({ userId: authSessions.userId })

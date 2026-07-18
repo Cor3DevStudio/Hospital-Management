@@ -10,8 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
@@ -45,7 +58,7 @@ function SuppliesPage() {
           secondary: [m.unit, "Supplies"].filter(Boolean).join(" · "),
           meta: `stock ${m.stock}`,
         })),
-    [state.medicines]
+    [state.medicines],
   );
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const records = state.suppliesRecords ?? [];
@@ -109,7 +122,10 @@ function SuppliesPage() {
               <TableBody>
                 {records.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No records yet
                     </TableCell>
                   </TableRow>
@@ -121,9 +137,7 @@ function SuppliesPage() {
                       </TableCell>
                       <TableCell className="text-xs">{item.itemName}</TableCell>
                       <TableCell className="text-xs">{item.quantity}</TableCell>
-                      <TableCell className="text-xs">
-                        ₱{(item.unitPrice ?? 0).toFixed(2)}
-                      </TableCell>
+                      <TableCell className="text-xs">₱{(item.unitPrice ?? 0).toFixed(2)}</TableCell>
                       <TableCell className="text-xs">{item.issueDate}</TableCell>
                       <TableCell className="text-xs">
                         ₱{(item.totalAmount ?? 0).toLocaleString()}
@@ -213,7 +227,10 @@ function SuppliesPage() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Issued By (optional)</Label>
-              <Select value={issuedBy || "none"} onValueChange={(v) => setIssuedBy(v === "none" ? "" : v)}>
+              <Select
+                value={issuedBy || "none"}
+                onValueChange={(v) => setIssuedBy(v === "none" ? "" : v)}
+              >
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select staff" />
                 </SelectTrigger>

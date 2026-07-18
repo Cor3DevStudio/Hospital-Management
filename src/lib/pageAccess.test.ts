@@ -35,14 +35,14 @@ function run() {
       authedUser: "cashier1",
       users: [{ username: "cashier1", role: "Cashier", pageAccess: ["/cashier"] }],
     },
-    null
+    null,
   );
   assert.ok(fromStore);
   assert.ok(userCanAccessPage(fromStore, "/cashier"));
 
   const fromSession = resolveAccessUser(
     { authedUser: "cashier1", users: [] },
-    { username: "cashier1", role: "Cashier", pageAccess: ["/cashier"] }
+    { username: "cashier1", role: "Cashier", pageAccess: ["/cashier"] },
   );
   assert.ok(fromSession);
   assert.ok(userCanAccessPage(fromSession, "/cashier"));

@@ -32,7 +32,7 @@ export type PatientAdmissionSummary = {
 export function getPatientAdmissionSummary(
   state: AppState,
   patientId: string,
-  options?: { excludeAdmissionId?: string }
+  options?: { excludeAdmissionId?: string },
 ): PatientAdmissionSummary {
   const admissions = getPatientAdmissions(state, patientId);
   const prior = options?.excludeAdmissionId
@@ -78,7 +78,9 @@ export function getAdmissionStatusLabel(state: AppState, patientId: string): str
   return latest.status;
 }
 
-function withRoomDefaults(form: Omit<Admission, "id"> | Admission): Admission | Omit<Admission, "id"> {
+function withRoomDefaults(
+  form: Omit<Admission, "id"> | Admission,
+): Admission | Omit<Admission, "id"> {
   const roomTypeId = form.roomTypeId ?? "";
   const roomWard = form.roomWard || "";
   const roomStays =
@@ -95,9 +97,12 @@ function withRoomDefaults(form: Omit<Admission, "id"> | Admission): Admission | 
   };
 }
 
-function syncRoomCharges(state: AppState, prev: Admission | undefined, nextAdmission: Admission): AppState {
-  const isDischarged =
-    nextAdmission.status === "Discharged" || !!nextAdmission.dischargeDate;
+function syncRoomCharges(
+  state: AppState,
+  prev: Admission | undefined,
+  nextAdmission: Admission,
+): AppState {
+  const isDischarged = nextAdmission.status === "Discharged" || !!nextAdmission.dischargeDate;
   const wasDischarged = !!prev && (prev.status === "Discharged" || !!prev.dischargeDate);
 
   if (isDischarged && nextAdmission.dischargeDate) {
@@ -105,12 +110,10 @@ function syncRoomCharges(state: AppState, prev: Admission | undefined, nextAdmis
       {
         ...nextAdmission,
         roomStays: (nextAdmission.roomStays ?? []).map((stay, index, arr) =>
-          index === arr.length - 1
-            ? { ...stay, endDate: nextAdmission.dischargeDate }
-            : stay
+          index === arr.length - 1 ? { ...stay, endDate: nextAdmission.dischargeDate } : stay,
         ),
       },
-      state
+      state,
     );
     const next: AppState = {
       ...state,
@@ -173,7 +176,11 @@ export function deleteAdmission(state: AppState, admissionId: string): AppState 
   };
 }
 
-export function dischargePatient(state: AppState, admissionId: string, dischargeDate = todayISO()): AppState {
+export function dischargePatient(
+  state: AppState,
+  admissionId: string,
+  dischargeDate = todayISO(),
+): AppState {
   const admission = state.admissions.find((a) => a.id === admissionId);
   if (!admission) return state;
   return updateAdmission(state, {
@@ -187,7 +194,7 @@ export function cancelDischarge(state: AppState, admissionId: string): AppState 
   const admission = state.admissions.find((a) => a.id === admissionId);
   if (!admission) return state;
   const roomStays = (admission.roomStays ?? []).map((stay, index, arr) =>
-    index === arr.length - 1 ? { ...stay, endDate: undefined } : stay
+    index === arr.length - 1 ? { ...stay, endDate: undefined } : stay,
   );
   return updateAdmission(state, {
     ...admission,
@@ -200,7 +207,7 @@ export function cancelDischarge(state: AppState, admissionId: string): AppState 
 export function transferRoom(
   state: AppState,
   admissionId: string,
-  input: { roomTypeId: string; roomWard: string; transferDate: string }
+  input: { roomTypeId: string; roomWard: string; transferDate: string },
 ): AppState {
   return transferRoomStay(state, admissionId, input);
 }

@@ -20,7 +20,8 @@ export function filterPriceItems(prices: PriceItem[], filter: PriceListFilter): 
   const q = (filter.query ?? "").trim().toLowerCase();
   return prices
     .filter((p) => {
-      if (filter.category && filter.category !== "All" && p.category !== filter.category) return false;
+      if (filter.category && filter.category !== "All" && p.category !== filter.category)
+        return false;
       if (!q) return true;
       return (
         p.code.toLowerCase().includes(q) ||
@@ -36,7 +37,7 @@ function appendPriceHistory(
   itemId: string,
   amount: number,
   effectiveDate: string,
-  note: string
+  note: string,
 ): AppState["priceHistories"] {
   return [
     ...state.priceHistories,
@@ -59,7 +60,13 @@ export function createPriceItem(state: AppState, form: Omit<PriceItem, "id">): A
   return {
     ...state,
     prices: [...state.prices, item],
-    priceHistories: appendPriceHistory(state, itemId, form.caseRate, effectiveDate, "Initial price item"),
+    priceHistories: appendPriceHistory(
+      state,
+      itemId,
+      form.caseRate,
+      effectiveDate,
+      "Initial price item",
+    ),
   };
 }
 
@@ -86,10 +93,10 @@ export function deletePriceItem(state: AppState, priceItemId: string): AppState 
     ...state,
     prices: state.prices.filter((p) => p.id !== priceItemId),
     priceHistories: state.priceHistories.filter(
-      (h) => !(h.itemType === "priceItem" && h.itemId === priceItemId)
+      (h) => !(h.itemType === "priceItem" && h.itemId === priceItemId),
     ),
     medicines: state.medicines.map((m) =>
-      m.priceItemId === priceItemId ? { ...m, priceItemId: undefined } : m
+      m.priceItemId === priceItemId ? { ...m, priceItemId: undefined } : m,
     ),
   };
 }
@@ -98,7 +105,7 @@ export function syncLinkedMedicinePrices(
   state: AppState,
   priceItemId: string,
   amount: number,
-  effectiveDate: string
+  effectiveDate: string,
 ): AppState {
   const linked = state.medicines.filter((m) => m.priceItemId === priceItemId);
   if (linked.length === 0) return state;
@@ -107,9 +114,7 @@ export function syncLinkedMedicinePrices(
     next = {
       ...next,
       medicines: next.medicines.map((m) =>
-        m.id === med.id
-          ? { ...m, unitPrice: amount, priceEffectiveDate: effectiveDate }
-          : m
+        m.id === med.id ? { ...m, unitPrice: amount, priceEffectiveDate: effectiveDate } : m,
       ),
       priceHistories: [
         ...next.priceHistories,

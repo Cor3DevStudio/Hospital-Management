@@ -39,7 +39,7 @@ function buildSoa() {
 
   soa = soa.replace(
     'left:0pt">                                                    </span>',
-    'left:0pt">__PATIENT_NAME__</span>'
+    'left:0pt">__PATIENT_NAME__</span>',
   );
 
   for (const [from, to] of replacements) {
@@ -48,18 +48,18 @@ function buildSoa() {
 
   soa = replaceAll(
     soa,
-    'Hospital Fees</span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: \'QLTVDV+Helvetica\'; color:#000000; font-weight:bold; left:159.25pt">0.00</span>',
-    'Hospital Fees</span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: \'QLTVDV+Helvetica\'; color:#000000; font-weight:bold; left:159.25pt">__HF_ACTUAL__</span>'
+    "Hospital Fees</span><span style=\"position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:159.25pt\">0.00</span>",
+    "Hospital Fees</span><span style=\"position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:159.25pt\">__HF_ACTUAL__</span>",
   );
   soa = replaceAll(
     soa,
-    'Professional Fees</span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: \'QLTVDV+Helvetica\'; color:#000000; font-weight:bold; left:159.25pt">0.00</span>',
-    'Professional Fees</span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: \'QLTVDV+Helvetica\'; color:#000000; font-weight:bold; left:159.25pt">__PF_ACTUAL__</span>'
+    "Professional Fees</span><span style=\"position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:159.25pt\">0.00</span>",
+    "Professional Fees</span><span style=\"position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:159.25pt\">__PF_ACTUAL__</span>",
   );
   soa = replaceAll(
     soa,
-    '  TOTAL</span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: \'QLTVDV+Helvetica\'; color:#000000; font-weight:bold; left:159.25pt">0.00</span>',
-    '  TOTAL</span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: \'QLTVDV+Helvetica\'; color:#000000; font-weight:bold; left:159.25pt">__TOTAL_ACTUAL__</span>'
+    "  TOTAL</span><span style=\"position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:159.25pt\">0.00</span>",
+    "  TOTAL</span><span style=\"position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:159.25pt\">__TOTAL_ACTUAL__</span>",
   );
 
   const phicRight = [
@@ -74,7 +74,7 @@ function buildSoa() {
     (_m, top) => {
       const t = phicRight[idx++] ?? ["0.00", "0.00", "0.00", "0.00"];
       return `left:320.85pt; top:${top}pt;"><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:0pt">${t[0]} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:71.65pt">${t[1]}</span>`;
-    }
+    },
   );
 
   idx = 0;
@@ -83,7 +83,7 @@ function buildSoa() {
     (_m, top) => {
       const t = phicRight[idx++] ?? ["0.00", "0.00", "0.00", "0.00"];
       return `left:464.15pt; top:${top}pt;"><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:0pt">${t[2]} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:87.45pt">${t[3]}</span>`;
-    }
+    },
   );
 
   const feeRows = [
@@ -115,7 +115,7 @@ function buildSoa() {
     (_m, top) => {
       const r = feeRows[idx++] ?? feeRows[0];
       return `left:166.7pt; top:${top}pt;"><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:2.2pt">${r.actual} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:20pt">               </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:53.2pt; letter-spacing:1pt"> </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:56.85pt">${r.vat} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:74.6pt">               </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:107.85pt; letter-spacing:1pt"> </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:111.45pt">${r.disc}</span>`;
-    }
+    },
   );
 
   idx = 0;
@@ -124,7 +124,7 @@ function buildSoa() {
     (_m, top) => {
       const r = feeRows[idx++] ?? feeRows[0];
       return `left:330.55pt; top:${top}pt;"><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:2.2pt">${r.cr1} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:19.95pt">               </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:53.2pt; letter-spacing:1pt"> </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:56.8pt">${r.cr2}</span>`;
-    }
+    },
   );
 
   idx = 0;
@@ -133,7 +133,7 @@ function buildSoa() {
     (_m, top) => {
       const r = feeRows[idx++] ?? feeRows[0];
       return `left:439.85pt; top:${top}pt;"><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:2.2pt">${r.assist} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:20pt">               </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:53.2pt; letter-spacing:1pt"> </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:56.85pt">${r.pay} </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:74.6pt">               </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; font-weight:bold; left:107.85pt; letter-spacing:1pt"> </span><span style="position:absolute; white-space:pre; font-size:8pt; font-family: 'QLTVDV+Helvetica'; color:#000000; font-weight:bold; left:111.45pt">${r.bal}</span>`;
-    }
+    },
   );
 
   fs.writeFileSync(path.join(formsDir, "SOA.template.html"), soa);
@@ -150,18 +150,15 @@ function buildEsoa() {
     ["MEDICAL CENTER", "__HOSPITAL_NAME__"],
     ["COMPANY ADDRESS", "__HOSPITAL_ADDRESS__"],
     [
-      "left:49.95pt\">_________________________________________</span>",
-      "left:49.95pt\">__PATIENT_NAME__</span>",
+      'left:49.95pt">_________________________________________</span>',
+      'left:49.95pt">__PATIENT_NAME__</span>',
     ],
     [
-      "left:37.95pt\">_______________________________________</span>",
-      "left:37.95pt\">__PATIENT_ADDRESS__</span>",
+      'left:37.95pt">_______________________________________</span>',
+      'left:37.95pt">__PATIENT_ADDRESS__</span>',
     ],
     ["Final Diagnosis (ICD-10/RVS):  ()", "Final Diagnosis (ICD-10/RVS): __DIAGNOSIS__"],
-    [
-      "Date and Time Admitted: 01/01/1970 08:00:00 AM",
-      "Date and Time Admitted: __ADMIT_DT__",
-    ],
+    ["Date and Time Admitted: 01/01/1970 08:00:00 AM", "Date and Time Admitted: __ADMIT_DT__"],
     [
       "Date and Time Discharged: 01/01/1970 08:00:00 AM",
       "Date and Time Discharged: __DISCHARGE_DT__",
@@ -176,13 +173,13 @@ function buildEsoa() {
   esoa = replaceAll(
     esoa,
     'left:0pt"> Total </span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:175.75pt">0.00</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:245.75pt">0.00</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:315.75pt">0.00</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:380.4pt">0.00</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:515.05pt">0.00</span>',
-    'left:0pt"> Total </span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:175.75pt">__FEE_AMOUNT__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:245.75pt">__FEE_MANDATORY__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:315.75pt">__FEE_PHIC__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:380.4pt">__FEE_OTHER__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:515.05pt">__FEE_BALANCE__</span>'
+    'left:0pt"> Total </span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:175.75pt">__FEE_AMOUNT__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:245.75pt">__FEE_MANDATORY__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:315.75pt">__FEE_PHIC__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:380.4pt">__FEE_OTHER__</span><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:515.05pt">__FEE_BALANCE__</span>',
   );
 
   esoa = replaceAll(
     esoa,
     'left:545.35pt; top:533.95pt;"><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:0pt">0.00</span>',
-    'left:545.35pt; top:533.95pt;"><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:0pt">__ITEMIZED_TOTAL__</span>'
+    'left:545.35pt; top:533.95pt;"><span style="position:absolute; white-space:pre; font-size:9pt; font-family: \'RXTMEF+Helvetica\'; color:#000000; font-weight:bold; left:0pt">__ITEMIZED_TOTAL__</span>',
   );
 
   fs.writeFileSync(path.join(formsDir, "ESOA.template.html"), esoa);

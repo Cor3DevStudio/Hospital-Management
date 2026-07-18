@@ -21,7 +21,7 @@ export function getAdmissionStatus(patientId: string, admissions: Admission[]): 
 export function filterPatients(
   patients: Patient[],
   query: string,
-  status: PatientFilter
+  status: PatientFilter,
 ): Patient[] {
   const q = query.trim().toLowerCase();
   return patients
@@ -46,7 +46,7 @@ export function isDuplicatePatient(patients: Patient[], form: Patient): boolean 
     (p) =>
       p.id !== form.id &&
       p.firstName.toLowerCase() === form.firstName.toLowerCase() &&
-      p.lastName.toLowerCase() === form.lastName.toLowerCase()
+      p.lastName.toLowerCase() === form.lastName.toLowerCase(),
   );
 }
 
@@ -87,7 +87,7 @@ function normalizePatientForm(form: Patient): Patient {
 
 export function createPatient(
   state: AppState,
-  form: Patient
+  form: Patient,
 ): { state: AppState; patient: Patient } {
   const normalized = normalizePatientForm(form);
   const patient: Patient = {

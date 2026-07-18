@@ -57,13 +57,15 @@ export function SoaOfficialHeader({ model }: { model: HospitalSoaModel }) {
         <div className="standard-billing-soa__field">
           <span className="standard-billing-soa__field-label">Age:</span>
           <span className="standard-billing-soa__field-value">
-            {model.ageYears || model.age} yrs., {model.ageMonths || "0"} mons., {model.ageDays || "0"}{" "}
-            days old
+            {model.ageYears || model.age} yrs., {model.ageMonths || "0"} mons.,{" "}
+            {model.ageDays || "0"} days old
           </span>
         </div>
         <div className="standard-billing-soa__field">
           <span className="standard-billing-soa__field-label">Date/Time Discharged:</span>
-          <span className="standard-billing-soa__field-value">{model.dischargeDateTime || "—"}</span>
+          <span className="standard-billing-soa__field-value">
+            {model.dischargeDateTime || "—"}
+          </span>
         </div>
         <div className="standard-billing-soa__field">
           <span className="standard-billing-soa__field-label">PHIC Membership:</span>
@@ -71,11 +73,15 @@ export function SoaOfficialHeader({ model }: { model: HospitalSoaModel }) {
         </div>
         <div className="standard-billing-soa__field">
           <span className="standard-billing-soa__field-label">Attending Physician:</span>
-          <span className="standard-billing-soa__field-value">{model.attendingPhysician || "—"}</span>
+          <span className="standard-billing-soa__field-value">
+            {model.attendingPhysician || "—"}
+          </span>
         </div>
         <div className="standard-billing-soa__field standard-billing-soa__field--full">
           <span className="standard-billing-soa__field-label">Admitting Diagnosis:</span>
-          <span className="standard-billing-soa__field-value">{model.admittingDiagnosis || "—"}</span>
+          <span className="standard-billing-soa__field-value">
+            {model.admittingDiagnosis || "—"}
+          </span>
         </div>
       </div>
     </>

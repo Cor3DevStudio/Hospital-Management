@@ -11,8 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ChargeItemPicker } from "@/components/ChargeItemPicker";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
@@ -54,7 +67,7 @@ function MiscellaneousPage() {
         secondary: f.code ? `Code ${f.code}` : "Miscellaneous",
         meta: f.caseRate > 0 ? `₱${f.caseRate.toLocaleString()}` : undefined,
       })),
-    [state.prices, state.priceHistories]
+    [state.prices, state.priceHistories],
   );
   const patientMap = useMemo(() => buildPatientMap(state.patients), [state.patients]);
   const records = state.miscellaneousRecords ?? [];
@@ -123,7 +136,10 @@ function MiscellaneousPage() {
               <TableBody>
                 {records.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No miscellaneous charges yet
                     </TableCell>
                   </TableRow>
@@ -226,7 +242,10 @@ function MiscellaneousPage() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Ordered By (optional)</Label>
-              <Select value={orderedBy || "none"} onValueChange={(v) => setOrderedBy(v === "none" ? "" : v)}>
+              <Select
+                value={orderedBy || "none"}
+                onValueChange={(v) => setOrderedBy(v === "none" ? "" : v)}
+              >
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Provider" />
                 </SelectTrigger>

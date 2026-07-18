@@ -20,7 +20,7 @@ export function PageLoader() {
 
 /** Wraps a dynamic import in Suspense for route-level code splitting. */
 export function lazyPage<P extends object>(
-  factory: () => Promise<{ default: ComponentType<P> }>
+  factory: () => Promise<{ default: ComponentType<P> }>,
 ): ComponentType<P> {
   const LazyComponent = lazy(factory);
   return function LazyPage(props: P) {

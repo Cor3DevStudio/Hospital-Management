@@ -96,7 +96,9 @@ export function OfficialCF1Sheet({ bill, patient }: OfficialCF1SheetProps) {
 
         <PartBar>
           PART II - PATIENT INFORMATION{" "}
-          <span className="cf-part-note">(To be filled-out only if the patient is a dependent)</span>
+          <span className="cf-part-note">
+            (To be filled-out only if the patient is a dependent)
+          </span>
         </PartBar>
 
         <DependentBlock d={d} />
@@ -110,17 +112,33 @@ export function OfficialCF1Sheet({ bill, patient }: OfficialCF1SheetProps) {
 
         <div className="cf-grid cf-grid--sig">
           <div>
-            <LineField label="Signature Over Printed Name of Member" value={d.memSignatureName} tall />
+            <LineField
+              label="Signature Over Printed Name of Member"
+              value={d.memSignatureName}
+              tall
+            />
             <div className="mt-2">
               <span className="cf-mini-label">Date Signed</span>
-              <DigitBoxes chars={Array(8).fill("")} groups={[2, 2, 4]} labels={["month", "day", "year"]} />
+              <DigitBoxes
+                chars={Array(8).fill("")}
+                groups={[2, 2, 4]}
+                labels={["month", "day", "year"]}
+              />
             </div>
           </div>
           <div>
-            <LineField label="Signature Over Printed Name of Member's Representative" value="" tall />
+            <LineField
+              label="Signature Over Printed Name of Member's Representative"
+              value=""
+              tall
+            />
             <div className="mt-2">
               <span className="cf-mini-label">Date Signed</span>
-              <DigitBoxes chars={Array(8).fill("")} groups={[2, 2, 4]} labels={["month", "day", "year"]} />
+              <DigitBoxes
+                chars={Array(8).fill("")}
+                groups={[2, 2, 4]}
+                labels={["month", "day", "year"]}
+              />
             </div>
           </div>
         </div>
@@ -139,13 +157,16 @@ export function OfficialCF1Sheet({ bill, patient }: OfficialCF1SheetProps) {
           <LineField label="3. Business Name of Employer" value="" />
         </div>
         <p className="cf-employer-cert">
-          4. CERTIFICATION OF EMPLOYER: &quot;This is to certify that the member&apos;s contributions
-          prior to the first day of confinement have been deducted and remitted, or will be
-          remitted on or before the due date; and that the information supplied by the member or
-          his/her representative are consistent with our existing records.&quot;
+          4. CERTIFICATION OF EMPLOYER: &quot;This is to certify that the member&apos;s
+          contributions prior to the first day of confinement have been deducted and remitted, or
+          will be remitted on or before the due date; and that the information supplied by the
+          member or his/her representative are consistent with our existing records.&quot;
         </p>
         <div className="cf-grid cf-grid--sig mt-2">
-          <LineField label="Signature Over Printed Name of Employer/Authorized Representative" value="" />
+          <LineField
+            label="Signature Over Printed Name of Employer/Authorized Representative"
+            value=""
+          />
           <LineField label="Official Capacity/Designation" value="" />
         </div>
 
@@ -158,7 +179,9 @@ export function OfficialCF1Sheet({ bill, patient }: OfficialCF1SheetProps) {
           </div>
           <div>
             <span className="cf-mini-label">By:</span>
-            <div className="cf-phic-box cf-phic-box--wide">LHIO/PRO Signature Over Printed Name</div>
+            <div className="cf-phic-box cf-phic-box--wide">
+              LHIO/PRO Signature Over Printed Name
+            </div>
           </div>
         </div>
       </div>

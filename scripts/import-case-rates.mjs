@@ -14,7 +14,7 @@ config();
 
 const DEFAULT_DUMP = resolve(
   process.env.USERPROFILE ?? process.env.HOME ?? "",
-  "OneDrive/Documents/dwa.sql"
+  "OneDrive/Documents/dwa.sql",
 );
 
 async function main() {
@@ -31,7 +31,8 @@ async function main() {
 
   // Extract CREATE TABLE for philhealth_records (optional — we use our schema)
   const insertBlocks = [];
-  const insertRe = /INSERT INTO `philhealth_records`[\s\S]*?;(?=\s*(?:INSERT INTO|\/\*!|CREATE |DROP |--|UNLOCK|LOCK|$))/gi;
+  const insertRe =
+    /INSERT INTO `philhealth_records`[\s\S]*?;(?=\s*(?:INSERT INTO|\/\*!|CREATE |DROP |--|UNLOCK|LOCK|$))/gi;
   let match;
   while ((match = insertRe.exec(sql)) !== null) {
     insertBlocks.push(match[0]);
@@ -43,7 +44,12 @@ async function main() {
     for (const part of parts) {
       if (!part.trim().toUpperCase().startsWith("INSERT INTO")) continue;
       const end = part.indexOf(";\n");
-      const stmt = end >= 0 ? part.slice(0, end + 1) : part.trim().endsWith(";") ? part.trim() : `${part.trim()};`;
+      const stmt =
+        end >= 0
+          ? part.slice(0, end + 1)
+          : part.trim().endsWith(";")
+            ? part.trim()
+            : `${part.trim()};`;
       if (stmt.includes("philhealth_records")) insertBlocks.push(stmt);
     }
   }
@@ -95,7 +101,10 @@ CREATE TABLE IF NOT EXISTS \`philhealth_records\` (
   let imported = 0;
   for (let i = 0; i < insertBlocks.length; i++) {
     const stmt = insertBlocks[i]
-      .replace(/INSERT INTO `philhealth_records`/gi, "INSERT INTO `medical_center`.`philhealth_records`")
+      .replace(
+        /INSERT INTO `philhealth_records`/gi,
+        "INSERT INTO `medical_center`.`philhealth_records`",
+      )
       // Descriptions may contain newlines inside quoted strings — keep as-is
       .trim();
 
@@ -111,7 +120,7 @@ CREATE TABLE IF NOT EXISTS \`philhealth_records\` (
   }
 
   const [countRows] = await connection.query(
-    "SELECT COUNT(*) AS n FROM `medical_center`.`philhealth_records`"
+    "SELECT COUNT(*) AS n FROM `medical_center`.`philhealth_records`",
   );
   const total = countRows[0]?.n ?? imported;
 

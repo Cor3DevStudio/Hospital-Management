@@ -9,12 +9,12 @@ This app uses **MariaDB** as the real database. Browser `localStorage` is still 
 
 Default local settings (adjust if yours differ):
 
-| Setting  | Value            |
-|----------|------------------|
-| Host     | `localhost`      |
-| Port     | `3306`           |
-| User     | `root`           |
-| Password | *(your password)* |
+| Setting  | Value             |
+| -------- | ----------------- |
+| Host     | `localhost`       |
+| Port     | `3306`            |
+| User     | `root`            |
+| Password | _(your password)_ |
 
 ## 2. Open HeidiSQL
 
@@ -51,13 +51,13 @@ Test the connection: open `http://localhost:5173/api/health/db` — you should s
 
 ## Default login accounts
 
-| Username       | Password          | Role            |
-|----------------|-------------------|-----------------|
-| admin          | admin123          | Administrator   |
-| dr.santos      | dr.santos123      | Doctor          |
-| dr.reyes       | dr.reyes123       | Doctor          |
-| receptionist   | receptionist123   | Receptionist    |
-| cashier        | cashier123        | Cashier         |
+| Username     | Password        | Role          |
+| ------------ | --------------- | ------------- |
+| admin        | admin123        | Administrator |
+| dr.santos    | dr.santos123    | Doctor        |
+| dr.reyes     | dr.reyes123     | Doctor        |
+| receptionist | receptionist123 | Receptionist  |
+| cashier      | cashier123      | Cashier       |
 
 ## Seed from Node (optional)
 

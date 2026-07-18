@@ -1,5 +1,9 @@
 import type { Admission, Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
-import { getClaimDeadlineFromDates, getClaimAgeDays, resolveClaimDates } from "@/lib/services/eclaimService";
+import {
+  getClaimDeadlineFromDates,
+  getClaimAgeDays,
+  resolveClaimDates,
+} from "@/lib/services/eclaimService";
 
 export type EClaimsRegistryFilters = {
   startDate?: string;
@@ -36,9 +40,7 @@ function formatPatientName(patient: Patient | undefined): string {
 function filterSummary(filters: EClaimsRegistryFilters): string {
   const parts: string[] = [];
   if (filters.startDate || filters.endDate) {
-    parts.push(
-      `Discharge: ${filters.startDate || "…"} – ${filters.endDate || "…"}`
-    );
+    parts.push(`Discharge: ${filters.startDate || "…"} – ${filters.endDate || "…"}`);
   }
   if (filters.patientType && filters.patientType !== "All") {
     parts.push(`Type: ${filters.patientType}`);
@@ -92,7 +94,9 @@ export function EClaimsRegistryDocument({
     return (
       <div className="eclaims-doc eclaims-page bg-white text-black">
         <DocumentHeader hospital={hospital} showHeader={showHeader} />
-        <p className="mt-8 text-center text-sm text-slate-500">No claims match the current filters.</p>
+        <p className="mt-8 text-center text-sm text-slate-500">
+          No claims match the current filters.
+        </p>
       </div>
     );
   }
@@ -157,10 +161,16 @@ export function EClaimsRegistryDocument({
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Type</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Admission</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Discharge</th>
-                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold text-center">Age (Days)</th>
-                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">PH Filing Deadline</th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold text-center">
+                    Age (Days)
+                  </th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">
+                    PH Filing Deadline
+                  </th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Room/Ward</th>
-                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">PhilHealth</th>
+                  <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">
+                    PhilHealth
+                  </th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Case Rate</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Bill</th>
                   <th className="border border-slate-700 px-1.5 py-1.5 font-semibold">Status</th>
@@ -205,7 +215,12 @@ export function EClaimsRegistryDocument({
                         {deadline ? (
                           <>
                             <div>{deadline.deadlineDate}</div>
-                            <div className="font-semibold" style={{ color: deadlineTone(deadline.daysRemaining, claim.claimStatus) }}>
+                            <div
+                              className="font-semibold"
+                              style={{
+                                color: deadlineTone(deadline.daysRemaining, claim.claimStatus),
+                              }}
+                            >
                               {deadlineLabel(deadline.daysRemaining)}
                             </div>
                           </>
@@ -242,7 +257,9 @@ export function EClaimsRegistryDocument({
                 <div>
                   <p className="font-semibold text-slate-900">Prepared by</p>
                   <div className="mt-8 border-b border-slate-400" />
-                  <p className="mt-1 text-slate-500">{preparedBy || "Signature over printed name"}</p>
+                  <p className="mt-1 text-slate-500">
+                    {preparedBy || "Signature over printed name"}
+                  </p>
                 </div>
                 <div>
                   <p className="font-semibold text-slate-900">Reviewed by</p>
@@ -262,13 +279,7 @@ export function EClaimsRegistryDocument({
   );
 }
 
-function DocumentHeader({
-  hospital,
-  showHeader,
-}: {
-  hospital: HospitalInfo;
-  showHeader: boolean;
-}) {
+function DocumentHeader({ hospital, showHeader }: { hospital: HospitalInfo; showHeader: boolean }) {
   if (!showHeader) return null;
   return (
     <header className="border-b border-slate-300 pb-3 text-center">

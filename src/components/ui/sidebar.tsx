@@ -346,19 +346,19 @@ const SidebarTrigger = React.forwardRef<
       const el = document.querySelector('[data-sidebar="sidebar"]');
       if (!el) return false;
       // Check nearest ancestor with data-state attribute.
-      const stateAttr = el.closest('[data-state]')?.getAttribute('data-state');
-      return stateAttr === 'collapsed';
+      const stateAttr = el.closest("[data-state]")?.getAttribute("data-state");
+      return stateAttr === "collapsed";
     };
 
     setHideByDom(getCollapsed());
 
-    const root = document.querySelector('[data-sidebar="sidebar"]')?.closest('[data-state]');
+    const root = document.querySelector('[data-sidebar="sidebar"]')?.closest("[data-state]");
     if (!root) return;
 
     const observer = new MutationObserver(() => {
       setHideByDom(getCollapsed());
     });
-    observer.observe(root, { attributes: true, attributeFilter: ['data-state'] });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-state"] });
     return () => observer.disconnect();
   }, []);
 

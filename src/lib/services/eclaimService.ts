@@ -1,6 +1,14 @@
 import { buildBillMap, buildPatientMap } from "@/lib/stateIndexes";
 import { getCaseRateByCode } from "@/lib/caseRateService";
-import { uid, type Admission, type AppState, type Bill, type EClaim, type EClaimStatus, type Patient } from "@/lib/store";
+import {
+  uid,
+  type Admission,
+  type AppState,
+  type Bill,
+  type EClaim,
+  type EClaimStatus,
+  type Patient,
+} from "@/lib/store";
 
 export type EClaimFilter = {
   startDate?: string;
@@ -11,7 +19,9 @@ export type EClaimFilter = {
   query?: string;
 };
 
-export function getPatientPhilhealthStatus(patient: Patient | undefined): EClaim["philhealthStatus"] {
+export function getPatientPhilhealthStatus(
+  patient: Patient | undefined,
+): EClaim["philhealthStatus"] {
   if (!patient?.philhealth?.memberNumber?.trim()) return "Not a Member";
   const type = patient.philhealth.memberType?.toLowerCase() ?? "";
   if (type.includes("dependent")) return "Dependent";
@@ -29,7 +39,7 @@ function admissionIdFromBill(bill: Bill): string | undefined {
 export function resolveClaimAdmission(
   state: Pick<AppState, "admissions">,
   claim: Pick<EClaim, "patientId" | "admissionDate">,
-  bill?: Bill
+  bill?: Bill,
 ): Admission | undefined {
   const patientAdmissions = (state.admissions ?? []).filter((a) => a.patientId === claim.patientId);
 
@@ -82,7 +92,9 @@ function parseCalendarDateUTC(dateStr: string): number {
  * Dates are treated as plain calendar days (UTC) to match how they're stored elsewhere
  * in the app (e.g. `todayISO`), avoiding off-by-one drift across timezones.
  */
-export function getClaimFilingDeadline(baseDate: string | undefined): ClaimDeadlineInfo | undefined {
+export function getClaimFilingDeadline(
+  baseDate: string | undefined,
+): ClaimDeadlineInfo | undefined {
   if (!baseDate) return undefined;
   const baseMs = parseCalendarDateUTC(baseDate);
   if (Number.isNaN(baseMs)) return undefined;
@@ -99,7 +111,9 @@ export function getClaimFilingDeadline(baseDate: string | undefined): ClaimDeadl
 }
 
 /** Convenience: resolve a claim's filing deadline from its resolved dates (discharge, else admission). */
-export function getClaimDeadlineFromDates(dates: ResolvedClaimDates): ClaimDeadlineInfo | undefined {
+export function getClaimDeadlineFromDates(
+  dates: ResolvedClaimDates,
+): ClaimDeadlineInfo | undefined {
   return getClaimFilingDeadline(dates.dischargeDate || dates.admissionDate);
 }
 
@@ -116,7 +130,7 @@ export function getClaimAgeDays(dates: ResolvedClaimDates): number | undefined {
 export function resolveClaimDates(
   state: Pick<AppState, "admissions">,
   claim: EClaim,
-  bill?: Bill
+  bill?: Bill,
 ): ResolvedClaimDates {
   const admission = resolveClaimAdmission(state, claim, bill);
   return {
@@ -128,7 +142,7 @@ export function resolveClaimDates(
 
 export function createEClaim(
   state: AppState,
-  input: Omit<EClaim, "id" | "createdAt" | "updatedAt">
+  input: Omit<EClaim, "id" | "createdAt" | "updatedAt">,
 ): AppState {
   const now = new Date().toISOString();
   const claim: EClaim = {
@@ -153,12 +167,16 @@ export function deleteEClaim(state: AppState, claimId: string): AppState {
     ...state,
     eClaims: (state.eClaims ?? []).filter((c) => c.id !== claimId),
     attachments: (state.attachments ?? []).filter(
-      (a) => !(a.refType === "eclaim" && a.refId === claimId)
+      (a) => !(a.refType === "eclaim" && a.refId === claimId),
     ),
   };
 }
 
-export function updateEClaimStatus(state: AppState, claimId: string, status: EClaimStatus): AppState {
+export function updateEClaimStatus(
+  state: AppState,
+  claimId: string,
+  status: EClaimStatus,
+): AppState {
   const claim = (state.eClaims ?? []).find((c) => c.id === claimId);
   if (!claim) return state;
   return updateEClaim(state, { ...claim, claimStatus: status });
@@ -169,7 +187,7 @@ export function syncEClaimFromBill(state: AppState, bill: Bill): AppState {
   const admission = resolveClaimAdmission(
     state,
     { patientId: bill.patientId, admissionDate: "" },
-    bill
+    bill,
   );
 
   const existing = (state.eClaims ?? []).find((c) => c.billId === bill.id);
@@ -194,9 +212,7 @@ export function syncEClaimFromBill(state: AppState, bill: Bill): AppState {
   });
 }
 
-function mapBillEclaimStatus(
-  status?: Bill["eclaimStatus"]
-): EClaimStatus {
+function mapBillEclaimStatus(status?: Bill["eclaimStatus"]): EClaimStatus {
   switch (status) {
     case "Transmitted":
       return "Submitted";
@@ -217,7 +233,7 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
     state.admissions
       .slice()
       .sort((a, b) => b.admissionDate.localeCompare(a.admissionDate))
-      .map((admission) => [admission.patientId, admission] as const)
+      .map((admission) => [admission.patientId, admission] as const),
   );
 
   const searchBlobForPatient = (patientId: string): string => {
@@ -231,13 +247,7 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
     const er = (state.erRecords ?? [])
       .filter((item) => item.patientId === patientId)
       .map((item) => `${item.chiefComplaint ?? ""} ${item.notes ?? ""}`);
-    return [
-      admission?.notes ?? "",
-      admission?.roomWard ?? "",
-      ...consultations,
-      ...opd,
-      ...er,
-    ]
+    return [admission?.notes ?? "", admission?.roomWard ?? "", ...consultations, ...opd, ...er]
       .join(" ")
       .toLowerCase();
   };
@@ -250,7 +260,11 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
 
       if (filter.startDate && filterDischarge < filter.startDate) return false;
       if (filter.endDate && filterDischarge > filter.endDate) return false;
-      if (filter.patientType && filter.patientType !== "All" && bill?.patientType !== filter.patientType)
+      if (
+        filter.patientType &&
+        filter.patientType !== "All" &&
+        bill?.patientType !== filter.patientType
+      )
         return false;
       if (
         filter.caseRateFilter &&
@@ -268,12 +282,10 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
       }
       if (q) {
         const patient = patientMap.get(claim.patientId);
-        const name = patient
-          ? `${patient.firstName} ${patient.lastName}`.toLowerCase()
-          : "";
+        const name = patient ? `${patient.firstName} ${patient.lastName}`.toLowerCase() : "";
         const diagnosisBlob = searchBlobForPatient(claim.patientId);
         const caseRateDescription = claim.caseRateCode
-          ? getCaseRateByCode(state, claim.caseRateCode)?.description ?? ""
+          ? (getCaseRateByCode(state, claim.caseRateCode)?.description ?? "")
           : "";
         const claimBlob = [
           claim.id,
@@ -292,10 +304,7 @@ export function filterEClaims(state: AppState, filter: EClaimFilter): EClaim[] {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-export function getEClaimStats(
-  state: Pick<AppState, "admissions" | "bills">,
-  claims: EClaim[]
-) {
+export function getEClaimStats(state: Pick<AppState, "admissions" | "bills">, claims: EClaim[]) {
   const billMap = buildBillMap(state.bills ?? []);
   let pendingCount = 0;
   let submittedCount = 0;

@@ -79,10 +79,13 @@ function run() {
       status: "Pending",
       notes: "",
     },
-    true
+    true,
   );
 
-  assert.ok(!("error" in labResult), `lab should succeed: ${"error" in labResult ? labResult.error : ""}`);
+  assert.ok(
+    !("error" in labResult),
+    `lab should succeed: ${"error" in labResult ? labResult.error : ""}`,
+  );
   assert.ok(labResult.record.billId, "lab should have billId");
   assert.equal(labResult.state.bills.length, 1);
   assert.equal(labResult.state.bills[0].items[0].category, "Lab");
@@ -109,14 +112,20 @@ function run() {
       status: "Pending",
       notes: "",
     },
-    true
+    true,
   );
 
-  assert.ok(!("error" in radResult), `rad should succeed: ${"error" in radResult ? radResult.error : ""}`);
+  assert.ok(
+    !("error" in radResult),
+    `rad should succeed: ${"error" in radResult ? radResult.error : ""}`,
+  );
   assert.equal(radResult.state.bills[0].items.length, 2);
 
   const discharged = dischargedPatientState(radResult.state);
-  assert.ok(canPostCharges(discharged, "P1").allowed, "outpatient charges allowed after prior discharge");
+  assert.ok(
+    canPostCharges(discharged, "P1").allowed,
+    "outpatient charges allowed after prior discharge",
+  );
 
   const postDischargeLab = createLabOrder(
     discharged,
@@ -130,11 +139,11 @@ function run() {
       status: "Pending",
       notes: "",
     },
-    true
+    true,
   );
   assert.ok(
     !("error" in postDischargeLab),
-    `discharged outpatient lab should bill: ${"error" in postDischargeLab ? postDischargeLab.error : ""}`
+    `discharged outpatient lab should bill: ${"error" in postDischargeLab ? postDischargeLab.error : ""}`,
   );
   assert.ok(postDischargeLab.record.billId, "new bill should be created for outpatient lab");
 
@@ -170,9 +179,12 @@ function run() {
       status: "Pending",
       notes: "",
     },
-    true
+    true,
   );
-  assert.ok(!("error" in apiLab), `API price should work: ${"error" in apiLab ? apiLab.error : ""}`);
+  assert.ok(
+    !("error" in apiLab),
+    `API price should work: ${"error" in apiLab ? apiLab.error : ""}`,
+  );
 
   const seeded = ensureDefaultLabPrices(baseState());
   const seededPrice = seeded.prices[0];
@@ -188,11 +200,11 @@ function run() {
       status: "Pending",
       notes: "",
     },
-    true
+    true,
   );
   assert.ok(
     !("error" in retroLab),
-    `retroactive lab order should bill: ${"error" in retroLab ? retroLab.error : ""}`
+    `retroactive lab order should bill: ${"error" in retroLab ? retroLab.error : ""}`,
   );
 
   console.log("labRadCharge.test.ts: all passed");

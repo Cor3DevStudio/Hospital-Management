@@ -6,7 +6,7 @@ const normalizeDate = (date?: string) => date || "1900-01-01";
 export const getPriceHistoryForItem = (
   state: AppState,
   itemType: "priceItem" | "medicine",
-  itemId: string
+  itemId: string,
 ): PriceHistory[] => {
   return state.priceHistories
     .filter((h) => h.itemType === itemType && h.itemId === itemId)
@@ -17,18 +17,19 @@ export const getPriceAsOf = (
   state: AppState,
   itemType: "priceItem" | "medicine",
   itemId: string,
-  asOf?: string
+  asOf?: string,
 ): number | undefined => {
   const date = asOf || todayISO();
-  const history = getPriceHistoryForItem(state, itemType, itemId)
-    .filter((h) => normalizeDate(h.effectiveDate) <= date);
+  const history = getPriceHistoryForItem(state, itemType, itemId).filter(
+    (h) => normalizeDate(h.effectiveDate) <= date,
+  );
   return history[0]?.amount;
 };
 
 export const getLatestPrice = (
   state: AppState,
   itemType: "priceItem" | "medicine",
-  itemId: string
+  itemId: string,
 ): number | undefined => {
   return getPriceAsOf(state, itemType, itemId, todayISO());
 };

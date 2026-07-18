@@ -30,7 +30,16 @@ const bill: Bill = {
   id: "BILL-1",
   patientId: "P1",
   date: "2026-07-04",
-  items: [{ description: "Room", category: "Room", qty: 1, unitPrice: 800, amount: 800, admissionId: "ADM-1" }],
+  items: [
+    {
+      description: "Room",
+      category: "Room",
+      qty: 1,
+      unitPrice: 800,
+      amount: 800,
+      admissionId: "ADM-1",
+    },
+  ],
   philhealthDeduction: 0,
   amountPaid: 0,
   status: "Unpaid",
@@ -87,7 +96,9 @@ describe("filterEClaims", () => {
     ],
     bills: [],
     eClaims: [claim],
-    caseRates: [{ id: "CR-1", code: "90935", description: "Dialysis", amount: 2500, category: "Medical" }],
+    caseRates: [
+      { id: "CR-1", code: "90935", description: "Dialysis", amount: 2500, category: "Medical" },
+    ],
   } as unknown as AppState;
 
   it("searches clinical history without throwing", () => {

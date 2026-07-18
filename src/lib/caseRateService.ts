@@ -7,7 +7,11 @@ const normDate = (d?: string) => (d ? d : "1900-01-01");
 // Returns the case rate entry for `code` that was effective as of `asOf` date.
 // If `asOf` is omitted, uses today's date. When multiple entries exist for the same
 // `code`, the function selects the one with the latest `effectiveDate` that is <= asOf.
-export const getCaseRateByCode = (state: AppState, code: string, asOf?: string): CaseRate | undefined => {
+export const getCaseRateByCode = (
+  state: AppState,
+  code: string,
+  asOf?: string,
+): CaseRate | undefined => {
   const asOfDate = asOf ?? todayISO();
   const candidates = state.caseRates
     .filter((c) => c.code === code)
@@ -29,4 +33,5 @@ export const getCaseRatesMap = (state: AppState, asOf?: string): Record<string, 
   return map;
 };
 
-export const formatCaseRateLabel = (c: CaseRate) => `${c.code} — ${c.description} (₱${c.amount})${c.effectiveDate ? ` — effective ${c.effectiveDate}` : ''}`;
+export const formatCaseRateLabel = (c: CaseRate) =>
+  `${c.code} — ${c.description} (₱${c.amount})${c.effectiveDate ? ` — effective ${c.effectiveDate}` : ""}`;

@@ -40,8 +40,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/PageHeader";
 import { PatientSearchWithHistory } from "@/components/PatientSearchWithHistory";
@@ -72,13 +85,7 @@ function money(n: number) {
   return `₱${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function ReportTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: (string | number)[][];
-}) {
+function ReportTable({ headers, rows }: { headers: string[]; rows: (string | number)[][] }) {
   return (
     <table className="w-full border-collapse text-xs">
       <thead>
@@ -140,9 +147,7 @@ function ReportDocument({
         <h1 className="text-base font-bold uppercase tracking-wide">
           {hospitalName || "Hospital"}
         </h1>
-        {hospitalAddress ? (
-          <p className="text-[11px] text-slate-600">{hospitalAddress}</p>
-        ) : null}
+        {hospitalAddress ? <p className="text-[11px] text-slate-600">{hospitalAddress}</p> : null}
         <h2 className="mt-2 text-sm font-semibold">{title}</h2>
         <p className="text-[11px] text-slate-600">
           Status: {status}
@@ -155,9 +160,7 @@ function ReportDocument({
         </p>
       ) : null}
       {children}
-      <p className="pt-4 text-center text-[10px] text-slate-500">
-        Printed: {generatedAt}
-      </p>
+      <p className="pt-4 text-center text-[10px] text-slate-500">Printed: {generatedAt}</p>
     </div>
   );
 }
@@ -166,9 +169,7 @@ function ReportsPage() {
   const { state } = useStore();
   const today = todayISO();
   const [tab, setTab] = useState("dossier");
-  const [selectedPatientId, setSelectedPatientId] = useState<string>(
-    state.patients[0]?.id ?? ""
-  );
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(state.patients[0]?.id ?? "");
 
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -178,16 +179,15 @@ function ReportsPage() {
   const [dossierOptions, setDossierOptions] =
     useState<DossierReportOptions>(DEFAULT_DOSSIER_OPTIONS);
   const [incomeOptions, setIncomeOptions] = useState<IncomeReportOptions>(() =>
-    defaultIncomeOptions(today)
+    defaultIncomeOptions(today),
   );
   const [revenueOptions, setRevenueOptions] = useState<RevenueReportOptions>(() =>
-    defaultRevenueOptions(today)
+    defaultRevenueOptions(today),
   );
   const [clinicalOptions, setClinicalOptions] = useState<ClinicalReportOptions>(() =>
-    defaultClinicalOptions(today)
+    defaultClinicalOptions(today),
   );
-  const [rosterOptions, setRosterOptions] =
-    useState<RosterReportOptions>(DEFAULT_ROSTER_OPTIONS);
+  const [rosterOptions, setRosterOptions] = useState<RosterReportOptions>(DEFAULT_ROSTER_OPTIONS);
 
   const monthlyRevenue = useMemo(() => {
     return state.bills.reduce<Record<string, number>>((acc, b) => {
@@ -206,7 +206,7 @@ function ReportsPage() {
 
   const doctorNames = useMemo(
     () => Object.keys(consultationsByDoctor).sort(),
-    [consultationsByDoctor]
+    [consultationsByDoctor],
   );
 
   const activePatient = useMemo(() => {
@@ -233,7 +233,7 @@ function ReportsPage() {
     const totalConsultations = patientConsultations.length;
     const totalBilled = patientBills.reduce(
       (sum, b) => sum + b.amountPaid + b.philhealthDeduction,
-      0
+      0,
     );
     const totalPhilhealth = patientBills.reduce((sum, b) => sum + b.philhealthDeduction, 0);
     const totalPaid = patientBills.reduce((sum, b) => sum + b.amountPaid, 0);
@@ -380,12 +380,7 @@ function ReportsPage() {
             <h3 className="text-xs font-bold uppercase tracking-wide">Clinical Encounters</h3>
             <ReportTable
               headers={["Date", "Doctor", "Chief Complaint", "Diagnosis"]}
-              rows={consultations.map((c) => [
-                c.date,
-                c.doctor,
-                c.chiefComplaint,
-                c.diagnosis,
-              ])}
+              rows={consultations.map((c) => [c.date, c.doctor, c.chiefComplaint, c.diagnosis])}
             />
           </div>
         ) : null}
@@ -456,7 +451,7 @@ function ReportsPage() {
         net: acc.net + r.net,
         paid: acc.paid + r.paid,
       }),
-      { count: 0, gross: 0, deduction: 0, net: 0, paid: 0 }
+      { count: 0, gross: 0, deduction: 0, net: 0, paid: 0 },
     );
 
     const tableRows =
@@ -577,12 +572,7 @@ function ReportsPage() {
         .sort((a, b) => a.date.localeCompare(b.date))
         .map((c) => {
           const p = state.patients.find((x) => x.id === c.patientId);
-          return [
-            c.date,
-            c.doctor,
-            p ? `${p.lastName}, ${p.firstName}` : "—",
-            c.diagnosis,
-          ];
+          return [c.date, c.doctor, p ? `${p.lastName}, ${p.firstName}` : "—", c.diagnosis];
         });
     } else {
       const byDoctor = filtered.reduce<Record<string, number>>((acc, c) => {
@@ -638,12 +628,7 @@ function ReportsPage() {
         ? ["Name", "Gender", "DOB", "Contact", "PhilHealth PIN", "Status"]
         : ["Name", "Gender", "DOB", "Contact", "Status"];
       rows = patients.map((p) => {
-        const base = [
-          `${p.lastName}, ${p.firstName}`,
-          p.gender,
-          p.birthDate,
-          p.contactNumber,
-        ];
+        const base = [`${p.lastName}, ${p.firstName}`, p.gender, p.birthDate, p.contactNumber];
         if (opts.includePhilHealthPin) {
           base.push(p.philhealth?.memberNumber || "—");
         }
@@ -708,7 +693,7 @@ function ReportsPage() {
   const statusField = (
     opts: { status: ReportPrintStatus },
     set: (status: ReportPrintStatus) => void,
-    name: string
+    name: string,
   ) => (
     <OptionSection
       label="Status"
@@ -736,12 +721,9 @@ function ReportsPage() {
   const viewModeField = (
     opts: { viewMode: ReportViewMode },
     set: (viewMode: ReportViewMode) => void,
-    name: string
+    name: string,
   ) => (
-    <OptionSection
-      label="View Mode"
-      hint="Summary = totals only. Details = line-level rows."
-    >
+    <OptionSection label="View Mode" hint="Summary = totals only. Details = line-level rows.">
       <div className="space-y-1">
         <RadioRow
           name={name}
@@ -1222,7 +1204,11 @@ function ReportsPage() {
       >
         {activeKind === "dossier" && (
           <>
-            {statusField(dossierOptions, (status) => setDossierOptions({ ...dossierOptions, status }), "dossier-status")}
+            {statusField(
+              dossierOptions,
+              (status) => setDossierOptions({ ...dossierOptions, status }),
+              "dossier-status",
+            )}
             <OptionSection
               label="Sections"
               hint="Choose which dossier sections appear on the report."
@@ -1272,8 +1258,16 @@ function ReportsPage() {
 
         {activeKind === "income" && (
           <>
-            {statusField(incomeOptions, (status) => setIncomeOptions({ ...incomeOptions, status }), "income-status")}
-            {viewModeField(incomeOptions, (viewMode) => setIncomeOptions({ ...incomeOptions, viewMode }), "income-view")}
+            {statusField(
+              incomeOptions,
+              (status) => setIncomeOptions({ ...incomeOptions, status }),
+              "income-status",
+            )}
+            {viewModeField(
+              incomeOptions,
+              (viewMode) => setIncomeOptions({ ...incomeOptions, viewMode }),
+              "income-view",
+            )}
             <OptionSection label="Period Type">
               <div className="space-y-1">
                 {(["daily", "monthly", "yearly"] as const).map((periodType) => (
@@ -1421,8 +1415,16 @@ function ReportsPage() {
 
         {activeKind === "revenue" && (
           <>
-            {statusField(revenueOptions, (status) => setRevenueOptions({ ...revenueOptions, status }), "revenue-status")}
-            {viewModeField(revenueOptions, (viewMode) => setRevenueOptions({ ...revenueOptions, viewMode }), "revenue-view")}
+            {statusField(
+              revenueOptions,
+              (status) => setRevenueOptions({ ...revenueOptions, status }),
+              "revenue-status",
+            )}
+            {viewModeField(
+              revenueOptions,
+              (viewMode) => setRevenueOptions({ ...revenueOptions, viewMode }),
+              "revenue-view",
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Start Month</Label>
@@ -1452,8 +1454,16 @@ function ReportsPage() {
 
         {activeKind === "clinical" && (
           <>
-            {statusField(clinicalOptions, (status) => setClinicalOptions({ ...clinicalOptions, status }), "clinical-status")}
-            {viewModeField(clinicalOptions, (viewMode) => setClinicalOptions({ ...clinicalOptions, viewMode }), "clinical-view")}
+            {statusField(
+              clinicalOptions,
+              (status) => setClinicalOptions({ ...clinicalOptions, status }),
+              "clinical-status",
+            )}
+            {viewModeField(
+              clinicalOptions,
+              (viewMode) => setClinicalOptions({ ...clinicalOptions, viewMode }),
+              "clinical-view",
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Start Date</Label>
@@ -1504,8 +1514,16 @@ function ReportsPage() {
 
         {activeKind === "roster" && (
           <>
-            {statusField(rosterOptions, (status) => setRosterOptions({ ...rosterOptions, status }), "roster-status")}
-            {viewModeField(rosterOptions, (viewMode) => setRosterOptions({ ...rosterOptions, viewMode }), "roster-view")}
+            {statusField(
+              rosterOptions,
+              (status) => setRosterOptions({ ...rosterOptions, status }),
+              "roster-status",
+            )}
+            {viewModeField(
+              rosterOptions,
+              (viewMode) => setRosterOptions({ ...rosterOptions, viewMode }),
+              "roster-view",
+            )}
             <OptionSection label="Patient Status">
               <div className="space-y-1">
                 <RadioRow

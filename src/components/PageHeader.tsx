@@ -20,7 +20,15 @@ export function PageHeader({
   );
 }
 
-export function StatChip({ label, value, tone = "default" }: { label: string; value: string | number; tone?: "default" | "success" | "warning" | "destructive" | "info" }) {
+export function StatChip({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  tone?: "default" | "success" | "warning" | "destructive" | "info";
+}) {
   const toneClass = {
     default: "bg-muted text-foreground",
     success: "bg-success/10 text-success",

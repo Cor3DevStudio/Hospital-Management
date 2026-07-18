@@ -19,11 +19,7 @@ function getMetricsWithCache(state: ReturnType<typeof useStore>["state"]): Dashb
   const snapshot = buildDashboardSnapshotKey(state);
   const now = Date.now();
 
-  if (
-    metricsCache &&
-    metricsCache.snapshot === snapshot &&
-    now < metricsCache.expiresAt
-  ) {
+  if (metricsCache && metricsCache.snapshot === snapshot && now < metricsCache.expiresAt) {
     return metricsCache.metrics;
   }
 

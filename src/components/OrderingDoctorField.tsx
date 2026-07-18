@@ -24,7 +24,9 @@ export function OrderingDoctorField({
         list={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={doctors.length ? "Select or type physician name" : "Enter ordering physician name"}
+        placeholder={
+          doctors.length ? "Select or type physician name" : "Enter ordering physician name"
+        }
       />
       <datalist id={id}>
         {doctors.map((d) => (

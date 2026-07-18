@@ -1,8 +1,5 @@
 import type { Admission, Bill, EClaim, HospitalInfo, Patient } from "@/lib/store";
-import {
-  buildEsoaXmlPayload,
-  type EsoaHospital,
-} from "@/components/philhealth/buildEsoaValues";
+import { buildEsoaXmlPayload, type EsoaHospital } from "@/components/philhealth/buildEsoaValues";
 import {
   buildCf4FormData,
   buildCf4XmlPayload,
@@ -131,14 +128,14 @@ export function buildPhilHealthXmlFile(input: {
 export function findPhilHealthXmlAttachments(
   state: AppState,
   claimId: string,
-  form: PhilHealthXmlForm
+  form: PhilHealthXmlForm,
 ) {
   const filename = PHILHEALTH_XML_FILENAMES[form].toLowerCase();
   const tag = form.toUpperCase();
   return getClaimAttachments(state, claimId).filter(
     (a) =>
       a.filename.toLowerCase() === filename ||
-      (a.mime.includes("xml") && a.filename.toUpperCase().includes(tag))
+      (a.mime.includes("xml") && a.filename.toUpperCase().includes(tag)),
   );
 }
 

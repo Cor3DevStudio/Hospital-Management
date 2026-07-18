@@ -6,16 +6,20 @@ import {
   updateAdmission,
 } from "@/lib/services/admissionService";
 import { resolveClaimAdmission } from "@/lib/services/eclaimService";
-import {
-  applyRoomBoardCharges,
-  removeRoomBoardCharges,
-} from "@/lib/services/roomBoardService";
+import { applyRoomBoardCharges, removeRoomBoardCharges } from "@/lib/services/roomBoardService";
 import {
   resolveChargeCategory,
   type BillChargeCategory,
 } from "@/lib/services/billChargeCategories";
 import { deductMedicineStock, restoreMedicineStock } from "@/lib/services/inventoryService";
-import { todayISO, type AppState, type Bill, type BillItem, type CaseRate, type CashierTransaction } from "@/lib/store";
+import {
+  todayISO,
+  type AppState,
+  type Bill,
+  type BillItem,
+  type CaseRate,
+  type CashierTransaction,
+} from "@/lib/store";
 
 export type BillLineItem = {
   description: string;
@@ -36,12 +40,7 @@ export type BillLineItem = {
 /** Normalize a charge into a full itemized BillItem (qty, unit price, category, date). */
 export function normalizeBillLineItem(state: AppState, item: BillLineItem): BillItem {
   const qty = item.qty > 0 ? item.qty : 1;
-  const unitPrice =
-    item.unitPrice > 0
-      ? item.unitPrice
-      : item.amount > 0
-        ? item.amount / qty
-        : 0;
+  const unitPrice = item.unitPrice > 0 ? item.unitPrice : item.amount > 0 ? item.amount / qty : 0;
   const amount = item.amount > 0 ? item.amount : unitPrice * qty;
   return {
     description: item.description,
@@ -100,7 +99,7 @@ export function normalizeBillPaymentMethod(method: string): CashierTransaction["
 /** Cancel bill discharge only while the patient is still admitted (has not gone home). */
 export function canCancelBillDischarge(
   state: AppState,
-  bill: Bill
+  bill: Bill,
 ): { allowed: boolean; reason?: string } {
   if (!bill.dischargeDate) {
     return { allowed: false, reason: "This bill is not marked as discharged." };
@@ -123,7 +122,8 @@ export function validateInventoryForItems(state: AppState, items: BillLineItem[]
     if (!item.medicineId) continue;
     const med = state.medicines.find((m) => m.id === item.medicineId);
     if (!med) return `Medicine not found for charge: ${item.description}`;
-    if (med.stock < item.qty) return `Insufficient stock for ${med.name} (have ${med.stock}, need ${item.qty})`;
+    if (med.stock < item.qty)
+      return `Insufficient stock for ${med.name} (have ${med.stock}, need ${item.qty})`;
   }
   return null;
 }
@@ -155,7 +155,7 @@ export function createBill(
     items: BillLineItem[];
     patientType?: Bill["patientType"];
     date?: string;
-  }
+  },
 ): { state: AppState; bill: Bill } | { error: string } {
   if (!input.patientId) return { error: "Patient is required" };
   if (input.items.length === 0) return { error: "No charges to bill" };
@@ -207,7 +207,7 @@ export function updateBill(state: AppState, bill: Bill): AppState {
 export function setBillDischargeDate(
   state: AppState,
   billId: string,
-  dischargeDate?: string
+  dischargeDate?: string,
 ): { state: AppState; error?: string } {
   const bill = state.bills.find((b) => b.id === billId);
   if (!bill) return { state };
@@ -242,7 +242,7 @@ export function setBillDischargeDate(
       status: "Discharged",
       dischargeDate,
       roomStays: (admission.roomStays ?? []).map((stay, index, arr) =>
-        index === arr.length - 1 ? { ...stay, endDate: dischargeDate } : stay
+        index === arr.length - 1 ? { ...stay, endDate: dischargeDate } : stay,
       ),
     });
   }
@@ -256,18 +256,16 @@ export function applyCaseRateToBill(
   billId: string,
   caseRateCode: string,
   amount?: number,
-  caseRateOverride?: CaseRate | null
+  caseRateOverride?: CaseRate | null,
 ): AppState {
   const bill = state.bills.find((b) => b.id === billId);
   if (!bill) return state;
   const caseRate =
     caseRateCode === "none" || !caseRateCode
       ? undefined
-      : caseRateOverride ?? getCaseRateByCode(state, caseRateCode, bill.date);
+      : (caseRateOverride ?? getCaseRateByCode(state, caseRateCode, bill.date));
   const deduction =
-    caseRateCode === "none" || !caseRateCode
-      ? 0
-      : amount ?? caseRate?.amount ?? 0;
+    caseRateCode === "none" || !caseRateCode ? 0 : (amount ?? caseRate?.amount ?? 0);
   const pfFromCaseRate =
     caseRate?.professionalFeeAmount && caseRate.professionalFeeAmount > 0
       ? caseRate.professionalFeeAmount
@@ -275,17 +273,16 @@ export function applyCaseRateToBill(
         ? Math.round(caseRate.amount * ((caseRate.professionalFeePct ?? 30) / 100) * 100) / 100
         : 0;
   const hasManualPf = bill.items.some(
-    (item) => item.category === "PF" && item.source !== "case-rate-pf-auto"
+    (item) => item.category === "PF" && item.source !== "case-rate-pf-auto",
   );
   const nextItems = bill.items.filter((item) => item.source !== "case-rate-pf-auto");
   if (caseRate && pfFromCaseRate > 0 && !hasManualPf) {
     const admission = resolveClaimAdmission(
       state,
       { patientId: bill.patientId, admissionDate: bill.date },
-      bill
+      bill,
     );
-    const pfDescription =
-      admission?.attendingDoctor?.trim() || `PhilHealth PF - ${caseRate.code}`;
+    const pfDescription = admission?.attendingDoctor?.trim() || `PhilHealth PF - ${caseRate.code}`;
     nextItems.push({
       description: pfDescription,
       category: "PF",
@@ -310,7 +307,7 @@ export function recordPayment(
   state: AppState,
   billId: string,
   paymentAmount: number,
-  extras?: Partial<Pick<Bill, "paymentMethod" | "notes" | "dischargeDate">>
+  extras?: Partial<Pick<Bill, "paymentMethod" | "notes" | "dischargeDate">>,
 ): AppState {
   const bill = state.bills.find((b) => b.id === billId);
   if (!bill) return state;
@@ -331,7 +328,7 @@ export function resolveLineItemPrice(
     medicineId?: string;
     manualPrice?: number;
     asOfDate?: string;
-  }
+  },
 ): number {
   const asOf = input.asOfDate ?? todayISO();
   if (input.priceItemId) {
@@ -364,13 +361,15 @@ export function resolveLineItemPrice(
 }
 
 export function getPatientBills(state: AppState, patientId: string): Bill[] {
-  return state.bills.filter((b) => b.patientId === patientId).sort((a, b) => b.date.localeCompare(a.date));
+  return state.bills
+    .filter((b) => b.patientId === patientId)
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export function createEmptyBill(
   state: AppState,
   patientId: string,
-  patientType: Bill["patientType"] = "In-Patient"
+  patientType: Bill["patientType"] = "In-Patient",
 ): { state: AppState; bill: Bill } {
   const bill: Bill = {
     id: `BIL-${todayISO().replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,

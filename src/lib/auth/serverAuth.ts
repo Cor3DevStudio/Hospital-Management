@@ -1,10 +1,6 @@
 import type { LoginRequest, LoginResponse, UserRole } from "@/lib/auth/types";
 import { getDefaultPageAccessForRole, parsePageAccessJson } from "@/lib/pageAccess";
-import {
-  findUserByUsername,
-  verifyUserCredentials,
-  createUser,
-} from "@/lib/db/repositories/users";
+import { findUserByUsername, verifyUserCredentials, createUser } from "@/lib/db/repositories/users";
 import { createAuthSession } from "@/lib/db/repositories/sessions";
 
 function authUserFromRow(row: NonNullable<Awaited<ReturnType<typeof findUserByUsername>>>) {
@@ -19,9 +15,7 @@ function authUserFromRow(row: NonNullable<Awaited<ReturnType<typeof findUserByUs
   };
 }
 
-export async function loginWithDatabase(
-  request: LoginRequest
-): Promise<LoginResponse> {
+export async function loginWithDatabase(request: LoginRequest): Promise<LoginResponse> {
   const verified = await verifyUserCredentials(request.username, request.password);
   if (!verified) {
     return { success: false, message: "Invalid username or password" };

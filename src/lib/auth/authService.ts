@@ -1,10 +1,4 @@
-import type {
-  AuthSession,
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  UserRole,
-} from "./types";
+import type { AuthSession, LoginRequest, LoginResponse, RegisterRequest, UserRole } from "./types";
 
 const SESSION_KEY = "cms_auth_session";
 
@@ -142,8 +136,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     console.error("[authService.login]", error);
     return {
       success: false,
-      message:
-        "Unable to reach the server. Ensure the app is running and MariaDB is configured.",
+      message: "Unable to reach the server. Ensure the app is running and MariaDB is configured.",
     };
   }
 }
@@ -161,8 +154,7 @@ export async function register(request: RegisterRequest): Promise<LoginResponse>
     console.error("[authService.register]", error);
     return {
       success: false,
-      message:
-        "Unable to reach the server. Ensure the app is running and MariaDB is configured.",
+      message: "Unable to reach the server. Ensure the app is running and MariaDB is configured.",
     };
   }
 }

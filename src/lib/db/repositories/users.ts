@@ -2,7 +2,12 @@ import bcrypt from "bcryptjs";
 import { eq, sql } from "drizzle-orm";
 
 import type { AuthUser, UserRole } from "@/lib/auth/types";
-import { ALL_PAGE_PATHS, getDefaultPageAccessForRole, normalizePageAccess, parsePageAccessJson } from "@/lib/pageAccess";
+import {
+  ALL_PAGE_PATHS,
+  getDefaultPageAccessForRole,
+  normalizePageAccess,
+  parsePageAccessJson,
+} from "@/lib/pageAccess";
 import type { User } from "@/lib/store";
 
 import { getDb } from "../client";
@@ -35,9 +40,7 @@ function toAuthUser(row: DbUserRow): AuthUser {
 
 export type VerifiedUser = AuthUser & { id: string };
 
-export async function findUserByUsername(
-  username: string
-): Promise<DbUserRow | null> {
+export async function findUserByUsername(username: string): Promise<DbUserRow | null> {
   const db = getDb();
   const rows = await db
     .select()
@@ -50,7 +53,7 @@ export async function findUserByUsername(
 
 export async function verifyUserCredentials(
   username: string,
-  password: string
+  password: string,
 ): Promise<VerifiedUser | null> {
   const row = await findUserByUsername(username);
   if (!row || !row.active) return null;
@@ -99,10 +102,7 @@ export async function usernameExists(username: string): Promise<boolean> {
 
 export async function listActiveUsers(): Promise<AuthUser[]> {
   const db = getDb();
-  const rows = await db
-    .select()
-    .from(users)
-    .where(eq(users.active, true));
+  const rows = await db.select().from(users).where(eq(users.active, true));
 
   return rows.map(toAuthUser);
 }
@@ -123,10 +123,7 @@ export async function updateUserActive(id: string, active: boolean): Promise<boo
   return true;
 }
 
-export async function updateUserPageAccess(
-  id: string,
-  pageAccess: string[]
-): Promise<boolean> {
+export async function updateUserPageAccess(id: string, pageAccess: string[]): Promise<boolean> {
   const db = getDb();
   const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
   const row = rows[0];

@@ -211,10 +211,18 @@ export function AdmissionCoverSheetDocument({ model }: { model: AdmissionCoverSh
             <Cell label="OTHER DIAGNOSIS:" value={model.otherDiagnosis} colSpan={8} />
           </tr>
           <tr>
-            <Cell label="PRINCIPAL OPERATION/PROCEDURE:" value={model.principalOperation} colSpan={8} />
+            <Cell
+              label="PRINCIPAL OPERATION/PROCEDURE:"
+              value={model.principalOperation}
+              colSpan={8}
+            />
           </tr>
           <tr>
-            <Cell label="OTHER OPERATION(S)/PROCEDURE(S):" value={model.otherOperations} colSpan={8} />
+            <Cell
+              label="OTHER OPERATION(S)/PROCEDURE(S):"
+              value={model.otherOperations}
+              colSpan={8}
+            />
           </tr>
           <tr>
             <Cell label="ACCIDENT/INJURIES/POISONING:" value={model.accidentInjuries} colSpan={8} />

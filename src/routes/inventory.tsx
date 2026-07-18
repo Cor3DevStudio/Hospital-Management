@@ -9,9 +9,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader, StatChip } from "@/components/PageHeader";
 import {
   adjustMedicineStock,
@@ -64,15 +77,13 @@ function InventoryPage() {
 
   const filtered = useMemo(
     () => filterInventory(state.medicines, { query, category: categoryFilter, showArchived }),
-    [state.medicines, query, categoryFilter, showArchived]
+    [state.medicines, query, categoryFilter, showArchived],
   );
 
   const itemList = usePaginatedList(filtered, 50);
   useResetPageOnChange(itemList.resetPage, [query, categoryFilter, showArchived]);
 
-  const priceHistory = editId
-    ? getPriceHistoryForItem(state, "medicine", editId)
-    : [];
+  const priceHistory = editId ? getPriceHistoryForItem(state, "medicine", editId) : [];
 
   const save = () => {
     if (!form.name) return toast.error("Item name is required");
@@ -108,12 +119,23 @@ function InventoryPage() {
 
   return (
     <div className="h-[calc(100vh-3rem)] flex flex-col overflow-hidden bg-background">
-      <PageHeader title="Inventory" description="Pharmacy stock, reorder alerts, and expiry tracking." />
+      <PageHeader
+        title="Inventory"
+        description="Pharmacy stock, reorder alerts, and expiry tracking."
+      />
 
       <div className="px-4 pt-4 shrink-0 flex flex-wrap gap-2">
         <StatChip label="SKUs" value={state.medicines.filter((m) => !m.archived).length} />
-        <StatChip label="Low Stock" value={lowStock.length} tone={lowStock.length ? "destructive" : "success"} />
-        <StatChip label="Expiring Soon" value={expiringSoon.length} tone={expiringSoon.length ? "warning" : "success"} />
+        <StatChip
+          label="Low Stock"
+          value={lowStock.length}
+          tone={lowStock.length ? "destructive" : "success"}
+        />
+        <StatChip
+          label="Expiring Soon"
+          value={expiringSoon.length}
+          tone={expiringSoon.length ? "warning" : "success"}
+        />
         <StatChip label="Inventory Value" value={`₱${totalValue.toLocaleString()}`} tone="info" />
       </div>
 
@@ -138,7 +160,9 @@ function InventoryPage() {
                 <SelectContent>
                   <SelectItem value="All">All categories</SelectItem>
                   {INVENTORY_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -170,7 +194,10 @@ function InventoryPage() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No records yet
                     </TableCell>
                   </TableRow>
@@ -180,15 +207,23 @@ function InventoryPage() {
                     const expiring = isExpiringSoon(m);
                     return (
                       <TableRow key={m.id} className={m.archived ? "opacity-60" : ""}>
-                        <TableCell className="font-medium pl-4 text-xs sm:text-sm">{m.name}</TableCell>
+                        <TableCell className="font-medium pl-4 text-xs sm:text-sm">
+                          {m.name}
+                        </TableCell>
                         <TableCell className="text-xs">{m.category}</TableCell>
                         <TableCell className="text-right text-xs sm:text-sm">
-                          <span className={low ? "text-destructive font-semibold" : ""}>{m.stock}</span>
-                          {low && <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-destructive align-text-bottom" />}
+                          <span className={low ? "text-destructive font-semibold" : ""}>
+                            {m.stock}
+                          </span>
+                          {low && (
+                            <AlertTriangle className="ml-1 inline h-3.5 w-3.5 text-destructive align-text-bottom" />
+                          )}
                         </TableCell>
                         <TableCell className="text-xs">{m.unit || "pcs"}</TableCell>
                         <TableCell className="text-right text-xs">{m.reorderLevel}</TableCell>
-                        <TableCell className="text-right text-xs sm:text-sm">₱{m.unitPrice.toFixed(2)}</TableCell>
+                        <TableCell className="text-right text-xs sm:text-sm">
+                          ₱{m.unitPrice.toFixed(2)}
+                        </TableCell>
                         <TableCell className="text-xs">
                           {m.expiry ? (
                             <Badge
@@ -205,17 +240,64 @@ function InventoryPage() {
                           <div className="flex justify-end gap-1 flex-wrap">
                             {!m.archived && (
                               <>
-                                <Button size="sm" variant="outline" className="h-7 px-1.5 text-[10px]" onClick={() => setState((s) => adjustMedicineStock(s, m.id, 10))}>+10</Button>
-                                <Button size="sm" variant="outline" className="h-7 px-1.5 text-[10px]" onClick={() => setState((s) => adjustMedicineStock(s, m.id, -1))}>-1</Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-1.5 text-[10px]"
+                                  onClick={() => setState((s) => adjustMedicineStock(s, m.id, 10))}
+                                >
+                                  +10
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-1.5 text-[10px]"
+                                  onClick={() => setState((s) => adjustMedicineStock(s, m.id, -1))}
+                                >
+                                  -1
+                                </Button>
                               </>
                             )}
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setEditId(m.id); setForm(m); }}>Edit</Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => {
+                                setEditId(m.id);
+                                setForm(m);
+                              }}
+                            >
+                              Edit
+                            </Button>
                             {m.archived ? (
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => restore(m.id)} title="Restore"><RotateCcw className="h-3.5 w-3.5" /></Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => restore(m.id)}
+                                title="Restore"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              </Button>
                             ) : (
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => archive(m.id)} title="Archive"><Archive className="h-3.5 w-3.5" /></Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                onClick={() => archive(m.id)}
+                                title="Archive"
+                              >
+                                <Archive className="h-3.5 w-3.5" />
+                              </Button>
                             )}
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => remove(m.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => remove(m.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -224,7 +306,12 @@ function InventoryPage() {
                 )}
               </TableBody>
             </Table>
-            <ListPagination page={itemList.page} totalPages={itemList.totalPages} totalItems={itemList.totalItems} onPageChange={itemList.setPage} />
+            <ListPagination
+              page={itemList.page}
+              totalPages={itemList.totalPages}
+              totalItems={itemList.totalItems}
+              onPageChange={itemList.setPage}
+            />
           </CardContent>
         </Card>
 
@@ -236,46 +323,80 @@ function InventoryPage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Item Name</Label>
-                <Input className="h-9 text-sm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <Input
+                  className="h-9 text-sm"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Category</Label>
-                  <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <Select
+                    value={form.category}
+                    onValueChange={(v) => setForm({ ...form, category: v })}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {INVENTORY_CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Unit</Label>
-                  <Input className="h-9 text-sm" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="pcs, box, vial" />
+                  <Input
+                    className="h-9 text-sm"
+                    value={form.unit}
+                    onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                    placeholder="pcs, box, vial"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Quantity on Hand</Label>
-                  <Input className="h-9" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: +e.target.value })} />
+                  <Input
+                    className="h-9"
+                    type="number"
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: +e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Reorder Level</Label>
-                  <Input className="h-9" type="number" value={form.reorderLevel} onChange={(e) => setForm({ ...form, reorderLevel: +e.target.value })} />
+                  <Input
+                    className="h-9"
+                    type="number"
+                    value={form.reorderLevel}
+                    onChange={(e) => setForm({ ...form, reorderLevel: +e.target.value })}
+                  />
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Link to Hospital Prices (optional)</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Link to Hospital Prices (optional)
+                </Label>
                 <Select
                   value={form.priceItemId ?? "none"}
-                  onValueChange={(v) => setForm({ ...form, priceItemId: v === "none" ? undefined : v })}
+                  onValueChange={(v) =>
+                    setForm({ ...form, priceItemId: v === "none" ? undefined : v })
+                  }
                 >
-                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Manual pricing" /></SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Manual pricing" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Manual unit cost</SelectItem>
                     {state.prices.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.code} — {p.description}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.code} — {p.description}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -283,15 +404,32 @@ function InventoryPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Unit Cost</Label>
-                  <Input className="h-9" type="number" step="0.01" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: +e.target.value })} disabled={!!form.priceItemId} />
+                  <Input
+                    className="h-9"
+                    type="number"
+                    step="0.01"
+                    value={form.unitPrice}
+                    onChange={(e) => setForm({ ...form, unitPrice: +e.target.value })}
+                    disabled={!!form.priceItemId}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">As-of Date</Label>
-                  <Input className="h-9 text-xs" type="date" value={form.priceEffectiveDate || todayISO()} onChange={(e) => setForm({ ...form, priceEffectiveDate: e.target.value })} />
+                  <Input
+                    className="h-9 text-xs"
+                    type="date"
+                    value={form.priceEffectiveDate || todayISO()}
+                    onChange={(e) => setForm({ ...form, priceEffectiveDate: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Expiry Date</Label>
-                  <Input className="h-9 text-xs" type="date" value={form.expiry} onChange={(e) => setForm({ ...form, expiry: e.target.value })} />
+                  <Input
+                    className="h-9 text-xs"
+                    type="date"
+                    value={form.expiry}
+                    onChange={(e) => setForm({ ...form, expiry: e.target.value })}
+                  />
                 </div>
               </div>
               {priceHistory.length > 0 && (
@@ -308,8 +446,21 @@ function InventoryPage() {
             </div>
 
             <div className="flex flex-wrap justify-end gap-2 border-t pt-3 mt-auto shrink-0">
-              {editId && <Button variant="outline" size="sm" onClick={() => { setEditId(null); setForm(empty()); }}>Cancel</Button>}
-              <Button size="sm" onClick={save}><Save className="h-3.5 w-3.5" /> {editId ? "Update" : "Add"}</Button>
+              {editId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditId(null);
+                    setForm(empty());
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+              <Button size="sm" onClick={save}>
+                <Save className="h-3.5 w-3.5" /> {editId ? "Update" : "Add"}
+              </Button>
             </div>
           </CardContent>
         </Card>

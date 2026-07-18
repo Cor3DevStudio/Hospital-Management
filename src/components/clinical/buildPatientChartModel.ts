@@ -38,7 +38,10 @@ export function formatChartDateLong(dateStr?: string): string {
   return date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
-export function buildPatientChartModel(state: AppState, patientId: string): PatientChartModel | null {
+export function buildPatientChartModel(
+  state: AppState,
+  patientId: string,
+): PatientChartModel | null {
   const patient = state.patients.find((p) => p.id === patientId);
   if (!patient) return null;
 
@@ -55,22 +58,23 @@ export function buildPatientChartModel(state: AppState, patientId: string): Pati
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const latestConsultation = consultations[0];
-  const upcoming = appointments.find((a) => a.date >= new Date().toISOString().slice(0, 10)) ?? appointments[0];
+  const upcoming =
+    appointments.find((a) => a.date >= new Date().toISOString().slice(0, 10)) ?? appointments[0];
 
   const prescriptions = consultations.flatMap((c) =>
     c.prescriptions.map((p) => ({
       ...p,
       consultationDate: c.date,
       diagnosis: c.diagnosis,
-    }))
+    })),
   );
 
   const historySections = getPatientClinicalHistory(state, patientId).filter(
-    (section) => section.items.length > 0
+    (section) => section.items.length > 0,
   );
 
   const attachments = (state.attachments ?? []).filter(
-    (a) => a.refType === "patient" && a.refId === patientId
+    (a) => a.refType === "patient" && a.refId === patientId,
   );
 
   return {

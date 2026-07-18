@@ -29,9 +29,7 @@ export async function searchCaseRatesApi(params: {
 
 export async function fetchCaseRateByCode(code: string): Promise<CaseRate | null> {
   if (!code || code === "none") return null;
-  const response = await fetchWithAuth(
-    `/api/case-rates?code=${encodeURIComponent(code)}`
-  );
+  const response = await fetchWithAuth(`/api/case-rates?code=${encodeURIComponent(code)}`);
   if (!response.ok) return null;
   const result = (await response.json()) as { caseRate?: CaseRate | null };
   return result.caseRate ?? null;

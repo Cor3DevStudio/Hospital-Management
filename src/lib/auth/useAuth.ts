@@ -21,7 +21,7 @@ export function useAuth() {
           const authedUser = result.user.username;
           const { users, clinicalPayload } = await fetchAuthSessionData();
           setState((current) =>
-            mergeDatabaseIntoState({ ...current, authedUser, users }, clinicalPayload)
+            mergeDatabaseIntoState({ ...current, authedUser, users }, clinicalPayload),
           );
         }
 
@@ -30,7 +30,7 @@ export function useAuth() {
         setIsLoading(false);
       }
     },
-    [setState]
+    [setState],
   );
 
   const register = useCallback(
@@ -43,7 +43,7 @@ export function useAuth() {
           const authedUser = result.user.username;
           const { users, clinicalPayload } = await fetchAuthSessionData();
           setState((current) =>
-            mergeDatabaseIntoState({ ...current, authedUser, users }, clinicalPayload)
+            mergeDatabaseIntoState({ ...current, authedUser, users }, clinicalPayload),
           );
         }
 
@@ -52,7 +52,7 @@ export function useAuth() {
         setIsLoading(false);
       }
     },
-    [setState]
+    [setState],
   );
 
   const logout = useCallback(() => {

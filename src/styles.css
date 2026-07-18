@@ -6,7 +6,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans:
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -153,8 +155,17 @@
     height: 0;
   }
 
-  body { background-color: var(--color-background); color: var(--color-foreground); }
-  h1,h2,h3,h4 { font-weight: 600; letter-spacing: -0.01em; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 }
 
 /* Explicit utility if a component needs the class name for clarity */
@@ -179,7 +190,10 @@
 .dark :where(.bg-white\/50):not(.force-light) {
   background-color: color-mix(in oklch, var(--card) 50%, transparent);
 }
-.dark :where(.bg-slate-50, .bg-slate-100, .bg-slate-50\/50):not(.force-light):not(#print-area):not(#print-area *) {
+.dark
+  :where(.bg-slate-50, .bg-slate-100, .bg-slate-50\/50):not(.force-light):not(#print-area):not(
+    #print-area *
+  ) {
   background-color: var(--muted);
 }
 .dark :where(.bg-blue-50):not(.force-light) {
@@ -195,17 +209,24 @@
   background-color: color-mix(in oklch, var(--destructive) 18%, var(--card));
 }
 
-.dark :where(.text-slate-900, .text-slate-800, .text-slate-700):not(.force-light):not(#print-area):not(#print-area *) {
+.dark
+  :where(.text-slate-900, .text-slate-800, .text-slate-700):not(.force-light):not(#print-area):not(
+    #print-area *
+  ) {
   color: var(--foreground);
 }
-.dark :where(.text-slate-600, .text-slate-500):not(.force-light):not(#print-area):not(#print-area *) {
+.dark
+  :where(.text-slate-600, .text-slate-500):not(.force-light):not(#print-area):not(#print-area *) {
   color: var(--muted-foreground);
 }
 .dark :where(.text-slate-400):not(.force-light):not(#print-area):not(#print-area *) {
   color: color-mix(in oklch, var(--muted-foreground) 85%, transparent);
 }
 
-.dark :where(.border-slate-200, .border-slate-300, .border-slate-100):not(.force-light):not(#print-area):not(#print-area *) {
+.dark
+  :where(.border-slate-200, .border-slate-300, .border-slate-100):not(.force-light):not(
+    #print-area
+  ):not(#print-area *) {
   border-color: var(--border);
 }
 .dark :where(.border-blue-100, .border-blue-200):not(.force-light) {
@@ -828,4 +849,166 @@
 .cf5-official-sheet__page > div {
   margin-left: auto !important;
   margin-right: auto !important;
+}
+
+/* Glowing Row Styles for eClaims Monitoring Table — High-Impact Vercel Neon Super Glow */
+@keyframes super-glow-rose-bg {
+  0%,
+  100% {
+    background-color: color-mix(in oklch, var(--destructive) 4.5%, var(--card));
+  }
+  50% {
+    background-color: color-mix(in oklch, var(--destructive) 14%, var(--card));
+  }
+}
+@keyframes super-glow-rose-border {
+  0%,
+  100% {
+    border-left-color: oklch(0.6 0.22 25);
+    filter: drop-shadow(0 0 3px oklch(0.6 0.22 25 / 75%));
+  }
+  50% {
+    border-left-color: oklch(0.65 0.25 25);
+    filter: drop-shadow(0 0 10px oklch(0.6 0.22 25)) drop-shadow(0 0 2px oklch(0.6 0.22 25 / 90%));
+  }
+}
+
+@keyframes super-glow-orange-bg {
+  0%,
+  100% {
+    background-color: color-mix(in oklch, var(--warning) 4.5%, var(--card));
+  }
+  50% {
+    background-color: color-mix(in oklch, var(--warning) 14%, var(--card));
+  }
+}
+@keyframes super-glow-orange-border {
+  0%,
+  100% {
+    border-left-color: oklch(0.72 0.2 60);
+    filter: drop-shadow(0 0 3px oklch(0.72 0.2 60 / 75%));
+  }
+  50% {
+    border-left-color: oklch(0.78 0.22 60);
+    filter: drop-shadow(0 0 10px oklch(0.72 0.2 60)) drop-shadow(0 0 2px oklch(0.72 0.2 60 / 90%));
+  }
+}
+
+@keyframes super-glow-amber-bg {
+  0%,
+  100% {
+    background-color: color-mix(in oklch, var(--warning) 2.5%, var(--card));
+  }
+  50% {
+    background-color: color-mix(in oklch, var(--warning) 10.5%, var(--card));
+  }
+}
+@keyframes super-glow-amber-border {
+  0%,
+  100% {
+    border-left-color: oklch(0.78 0.16 75);
+    filter: drop-shadow(0 0 2px oklch(0.78 0.16 75 / 65%));
+  }
+  50% {
+    border-left-color: oklch(0.82 0.18 75);
+    filter: drop-shadow(0 0 8px oklch(0.78 0.16 75)) drop-shadow(0 0 1px oklch(0.78 0.16 75 / 80%));
+  }
+}
+
+@keyframes super-glow-emerald-bg {
+  0%,
+  100% {
+    background-color: color-mix(in oklch, var(--success) 2%, var(--card));
+  }
+  50% {
+    background-color: color-mix(in oklch, var(--success) 8.5%, var(--card));
+  }
+}
+@keyframes super-glow-emerald-border {
+  0%,
+  100% {
+    border-left-color: oklch(0.62 0.16 155);
+    filter: drop-shadow(0 0 2px oklch(0.62 0.16 155 / 60%));
+  }
+  50% {
+    border-left-color: oklch(0.68 0.18 155);
+    filter: drop-shadow(0 0 7px oklch(0.62 0.16 155))
+      drop-shadow(0 0 1px oklch(0.62 0.16 155 / 75%));
+  }
+}
+
+/* Rose Row Styling */
+.row-glow-rose td {
+  animation: super-glow-rose-bg 2.5s infinite ease-in-out;
+  transition:
+    background-color 0.3s ease,
+    text-shadow 0.3s ease;
+  text-shadow: 0 0 3px oklch(0.6 0.22 25 / 15%);
+}
+.row-glow-rose td:first-child {
+  animation: super-glow-rose-border 2.5s infinite ease-in-out;
+  border-left-width: 6px !important;
+  text-shadow: 0 0 6px oklch(0.6 0.22 25 / 45%);
+}
+.row-glow-rose:hover td {
+  animation: none !important;
+  background-color: color-mix(in oklch, var(--destructive) 18%, var(--card)) !important;
+  text-shadow: 0 0 8px oklch(0.6 0.22 25 / 60%);
+}
+
+/* Orange Row Styling */
+.row-glow-orange td {
+  animation: super-glow-orange-bg 2.5s infinite ease-in-out;
+  transition:
+    background-color 0.3s ease,
+    text-shadow 0.3s ease;
+  text-shadow: 0 0 3px oklch(0.72 0.2 60 / 15%);
+}
+.row-glow-orange td:first-child {
+  animation: super-glow-orange-border 2.5s infinite ease-in-out;
+  border-left-width: 6px !important;
+  text-shadow: 0 0 6px oklch(0.72 0.2 60 / 45%);
+}
+.row-glow-orange:hover td {
+  animation: none !important;
+  background-color: color-mix(in oklch, var(--warning) 18%, var(--card)) !important;
+  text-shadow: 0 0 8px oklch(0.72 0.2 60 / 60%);
+}
+
+/* Amber Row Styling */
+.row-glow-amber td {
+  animation: super-glow-amber-bg 3s infinite ease-in-out;
+  transition:
+    background-color 0.3s ease,
+    text-shadow 0.3s ease;
+  text-shadow: 0 0 2px oklch(0.78 0.16 75 / 10%);
+}
+.row-glow-amber td:first-child {
+  animation: super-glow-amber-border 3s infinite ease-in-out;
+  border-left-width: 6px !important;
+  text-shadow: 0 0 5px oklch(0.78 0.16 75 / 35%);
+}
+.row-glow-amber:hover td {
+  animation: none !important;
+  background-color: color-mix(in oklch, var(--warning) 14%, var(--card)) !important;
+  text-shadow: 0 0 7px oklch(0.78 0.16 75 / 50%);
+}
+
+/* Emerald Row Styling */
+.row-glow-emerald td {
+  animation: super-glow-emerald-bg 3.5s infinite ease-in-out;
+  transition:
+    background-color 0.3s ease,
+    text-shadow 0.3s ease;
+  text-shadow: 0 0 2px oklch(0.62 0.16 155 / 8%);
+}
+.row-glow-emerald td:first-child {
+  animation: super-glow-emerald-border 3.5s infinite ease-in-out;
+  border-left-width: 6px !important;
+  text-shadow: 0 0 4px oklch(0.62 0.16 155 / 30%);
+}
+.row-glow-emerald:hover td {
+  animation: none !important;
+  background-color: color-mix(in oklch, var(--success) 12%, var(--card)) !important;
+  text-shadow: 0 0 6px oklch(0.62 0.16 155 / 45%);
 }

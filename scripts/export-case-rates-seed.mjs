@@ -42,9 +42,7 @@ async function main() {
     database: process.env.DATABASE_NAME ?? "medical_center",
   });
 
-  const [countRows] = await connection.query(
-    "SELECT COUNT(*) AS n FROM philhealth_records"
-  );
+  const [countRows] = await connection.query("SELECT COUNT(*) AS n FROM philhealth_records");
   const total = Number(countRows[0]?.n ?? 0);
   if (total === 0) {
     console.error("philhealth_records is empty. Import a dump first:");
@@ -76,7 +74,7 @@ USE \`medical_center\`;
        FROM philhealth_records
        ORDER BY id
        LIMIT ? OFFSET ?`,
-      [BATCH, offset]
+      [BATCH, offset],
     );
 
     if (rows.length === 0) break;

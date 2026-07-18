@@ -2,13 +2,7 @@ import type { AppState, PriceCategory } from "@/lib/store";
 
 /** Canonical charge categories for itemized SOA line items. */
 export type BillChargeCategory =
-  | "Medicine"
-  | "Supplies"
-  | "Lab"
-  | "Radiology"
-  | "Room"
-  | "PF"
-  | "Other";
+  "Medicine" | "Supplies" | "Lab" | "Radiology" | "Room" | "PF" | "Other";
 
 export const BILL_CHARGE_CATEGORIES: BillChargeCategory[] = [
   "Medicine",
@@ -32,7 +26,7 @@ export const BILL_CHARGE_CATEGORY_LABELS: Record<BillChargeCategory, string> = {
 
 /** Map Price List categories to SOA charge categories. */
 export function priceCategoryToChargeCategory(
-  priceCategory?: PriceCategory | string
+  priceCategory?: PriceCategory | string,
 ): BillChargeCategory {
   switch (priceCategory) {
     case "Medicine":
@@ -126,7 +120,7 @@ export function resolveChargeCategory(
     priceItemId?: string;
     medicineId?: string;
     description?: string;
-  }
+  },
 ): BillChargeCategory {
   if (input.category && BILL_CHARGE_CATEGORIES.includes(input.category as BillChargeCategory)) {
     return input.category as BillChargeCategory;
@@ -142,9 +136,9 @@ export function resolveChargeCategory(
   return inferChargeCategoryFromDescription(input.description ?? "");
 }
 
-export function groupChargesByCategory<T extends { category?: string; amount: number; description: string }>(
-  items: T[]
-): { category: BillChargeCategory; label: string; total: number; items: T[] }[] {
+export function groupChargesByCategory<
+  T extends { category?: string; amount: number; description: string },
+>(items: T[]): { category: BillChargeCategory; label: string; total: number; items: T[] }[] {
   const map = new Map<BillChargeCategory, T[]>();
   for (const cat of BILL_CHARGE_CATEGORIES) map.set(cat, []);
 

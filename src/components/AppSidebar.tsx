@@ -74,7 +74,7 @@ const adminItems = [
 const labelMotion = (iconOnly: boolean) =>
   cn(
     "overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out",
-    iconOnly ? "pointer-events-none w-0 max-w-0 min-w-0 opacity-0" : "max-w-[12rem] opacity-100"
+    iconOnly ? "pointer-events-none w-0 max-w-0 min-w-0 opacity-0" : "max-w-[12rem] opacity-100",
   );
 
 export function AppSidebar() {
@@ -97,7 +97,7 @@ export function AppSidebar() {
 
   const sessionUser = getSession()?.user;
   const authedUserDetail = store.users.find(
-    (u) => u.username.toLowerCase() === store.authedUser?.toLowerCase()
+    (u) => u.username.toLowerCase() === store.authedUser?.toLowerCase(),
   );
   const accessUser = resolveAccessUser(store, sessionUser);
   const fullName =
@@ -121,50 +121,50 @@ export function AppSidebar() {
   const renderGroup = (label: string, items: typeof mainItems) => {
     if (items.length === 0) return null;
     return (
-    <SidebarGroup className={cn(iconOnly ? "w-auto items-center px-0 py-1" : "p-2")}>
-      <SidebarGroupLabel
-        className={cn(
-          "transition-[max-height,opacity,margin,padding] duration-300 ease-in-out",
-          iconOnly ? "pointer-events-none max-h-0 m-0 overflow-hidden p-0 opacity-0" : "max-h-8 opacity-100"
-        )}
-      >
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent className={cn(iconOnly && "flex flex-col items-center")}>
-        <SidebarMenu className={cn(iconOnly && "items-center")}>
-          {items.map((item) => (
-            <SidebarMenuItem
-              key={item.url}
-              className={cn(iconOnly && "flex w-full justify-center")}
-            >
-              <SidebarMenuButton
-                asChild
-                isActive={isActive(item.url)}
-                tooltip={item.title}
-                className={cn(
-                  iconOnly &&
-                    "!mx-auto !flex !size-8 !min-w-8 !max-w-8 !items-center !justify-center !gap-0 !p-0"
-                )}
+      <SidebarGroup className={cn(iconOnly ? "w-auto items-center px-0 py-1" : "p-2")}>
+        <SidebarGroupLabel
+          className={cn(
+            "transition-[max-height,opacity,margin,padding] duration-300 ease-in-out",
+            iconOnly
+              ? "pointer-events-none max-h-0 m-0 overflow-hidden p-0 opacity-0"
+              : "max-h-8 opacity-100",
+          )}
+        >
+          {label}
+        </SidebarGroupLabel>
+        <SidebarGroupContent className={cn(iconOnly && "flex flex-col items-center")}>
+          <SidebarMenu className={cn(iconOnly && "items-center")}>
+            {items.map((item) => (
+              <SidebarMenuItem
+                key={item.url}
+                className={cn(iconOnly && "flex w-full justify-center")}
               >
-                <Link
-                  to={item.url}
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive(item.url)}
+                  tooltip={item.title}
                   className={cn(
-                    "flex items-center",
-                    iconOnly ? "size-8 justify-center gap-0" : "w-full gap-2"
+                    iconOnly &&
+                      "!mx-auto !flex !size-8 !min-w-8 !max-w-8 !items-center !justify-center !gap-0 !p-0",
                   )}
-                  title={item.title}
                 >
-                  <item.icon className="h-4 w-4 shrink-0" strokeWidth={2} />
-                  {!iconOnly && (
-                    <span className={labelMotion(false)}>{item.title}</span>
-                  )}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+                  <Link
+                    to={item.url}
+                    className={cn(
+                      "flex items-center",
+                      iconOnly ? "size-8 justify-center gap-0" : "w-full gap-2",
+                    )}
+                    title={item.title}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    {!iconOnly && <span className={labelMotion(false)}>{item.title}</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
     );
   };
 
@@ -173,7 +173,7 @@ export function AppSidebar() {
       className={cn(
         "no-print shrink-0 overflow-hidden bg-sidebar transition-[width,box-shadow] duration-300 ease-in-out will-change-[width]",
         // Only overlay when fully expanded on hover; icon rail stays in-flow (connected).
-        overlayExpanded && "fixed inset-y-0 left-0 z-30 shadow-xl"
+        overlayExpanded && "fixed inset-y-0 left-0 z-30 shadow-xl",
       )}
       style={{ width: sidebarWidth }}
       onMouseEnter={() => {
@@ -188,13 +188,15 @@ export function AppSidebar() {
           <div
             className={cn(
               "flex items-center py-3 transition-[padding,justify-content] duration-300 ease-in-out",
-              iconOnly ? "justify-center px-0" : "justify-between gap-2 px-3"
+              iconOnly ? "justify-center px-0" : "justify-between gap-2 px-3",
             )}
           >
             <div
               className={cn(
                 "flex min-w-0 flex-col transition-[max-width,opacity] duration-300 ease-in-out",
-                iconOnly ? "pointer-events-none max-w-0 overflow-hidden opacity-0" : "max-w-[12rem] opacity-100"
+                iconOnly
+                  ? "pointer-events-none max-w-0 overflow-hidden opacity-0"
+                  : "max-w-[12rem] opacity-100",
               )}
             >
               <span className="truncate text-sm font-semibold leading-tight text-white">
@@ -205,16 +207,14 @@ export function AppSidebar() {
             <button
               type="button"
               onClick={toggleSidebar}
-              aria-label={
-                contentExpanded ? "Restore default layout" : "Expand main dashboard"
-              }
+              aria-label={contentExpanded ? "Restore default layout" : "Expand main dashboard"}
               title={contentExpanded ? "Restore default layout" : "Expand main dashboard"}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-300 transition-transform duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
               <span
                 className={cn(
                   "inline-flex transition-transform duration-300 ease-in-out",
-                  contentExpanded && "rotate-180"
+                  contentExpanded && "rotate-180",
                 )}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -232,19 +232,19 @@ export function AppSidebar() {
           <div
             className={cn(
               "flex flex-col transition-[padding,align-items,gap] duration-300 ease-in-out",
-              iconOnly ? "items-center gap-3 px-0 py-3" : "gap-3 p-3"
+              iconOnly ? "items-center gap-3 px-0 py-3" : "gap-3 p-3",
             )}
           >
             <div
               className={cn(
                 "flex items-center transition-[gap] duration-300 ease-in-out",
-                iconOnly ? "gap-0" : "gap-3"
+                iconOnly ? "gap-0" : "gap-3",
               )}
             >
               <div
                 className={cn(
                   "flex shrink-0 items-center justify-center rounded-full bg-[#1b5e20] font-bold text-white transition-[width,height,font-size] duration-300 ease-in-out",
-                  iconOnly ? "h-8 w-8 text-xs" : "h-10 w-10 text-sm"
+                  iconOnly ? "h-8 w-8 text-xs" : "h-10 w-10 text-sm",
                 )}
                 title={iconOnly ? `${fullName} (${role})` : undefined}
               >
@@ -253,7 +253,7 @@ export function AppSidebar() {
               <div
                 className={cn(
                   "flex min-w-0 flex-col transition-[max-width,opacity] duration-300 ease-in-out",
-                  iconOnly ? "max-w-0 overflow-hidden opacity-0" : "max-w-[10rem] opacity-100"
+                  iconOnly ? "max-w-0 overflow-hidden opacity-0" : "max-w-[10rem] opacity-100",
                 )}
               >
                 <span className="truncate text-sm font-semibold leading-snug text-white">
@@ -267,7 +267,7 @@ export function AppSidebar() {
               title="Sign out"
               className={cn(
                 "flex cursor-pointer items-center text-slate-400 transition-[gap] duration-300 ease-in-out focus:outline-none",
-                iconOnly ? "gap-0" : "mt-1 w-fit gap-1.5 text-xs font-medium"
+                iconOnly ? "gap-0" : "mt-1 w-fit gap-1.5 text-xs font-medium",
               )}
             >
               {iconOnly ? (

@@ -13,7 +13,7 @@ export function dispenseMedicine(
     prescribedBy: string;
     dispenseDate?: string;
     notes?: string;
-  }
+  },
 ): { state: AppState; record: PharmacyRecord } | { error: string } {
   const med = state.medicines.find((m) => m.id === input.medicineId);
   if (!med) return { error: "Medicine not found" };
@@ -85,9 +85,13 @@ export function updatePharmacyRecord(state: AppState, form: PharmacyRecord): App
   };
 }
 
-export function returnPharmacyDispense(state: AppState, recordId: string): AppState | { error: string } {
+export function returnPharmacyDispense(
+  state: AppState,
+  recordId: string,
+): AppState | { error: string } {
   const record = state.pharmacyRecords.find((r) => r.id === recordId);
-  if (!record || record.status !== "Dispensed") return { error: "Record not found or not dispensed" };
+  if (!record || record.status !== "Dispensed")
+    return { error: "Record not found or not dispensed" };
   if (!record.medicineId) return { error: "No medicine linked" };
 
   let next = restoreMedicineStock(state, record.medicineId, record.quantity);

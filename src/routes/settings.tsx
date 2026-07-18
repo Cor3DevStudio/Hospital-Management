@@ -1,6 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Save, Plus, Trash2, Database, RotateCcw, Building, Shield, Upload, FileText, UserPlus, Key, Percent, Coins, CheckCircle2, BedDouble, Layers, LayoutGrid } from "lucide-react";
+import {
+  Save,
+  Plus,
+  Trash2,
+  Database,
+  RotateCcw,
+  Building,
+  Shield,
+  Upload,
+  FileText,
+  UserPlus,
+  Key,
+  Percent,
+  Coins,
+  CheckCircle2,
+  BedDouble,
+  Layers,
+  LayoutGrid,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -8,15 +26,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { PageAccessModal } from "@/components/PageAccessModal";
 import { PageHeader } from "@/components/PageHeader";
 import { pageAccessSummary, normalizePageAccess } from "@/lib/pageAccess";
 import { hasValidSession, updateSessionPageAccess } from "@/lib/auth/authService";
-import { useStore, todayISO, persistStoreNow, type AppState, type PriceItem, type User } from "@/lib/store";
-import { loadAllFromDatabase, mergeDatabaseIntoState, saveAllToDatabase } from "@/lib/services/syncService";
+import {
+  useStore,
+  todayISO,
+  persistStoreNow,
+  type AppState,
+  type PriceItem,
+  type User,
+} from "@/lib/store";
+import {
+  loadAllFromDatabase,
+  mergeDatabaseIntoState,
+  saveAllToDatabase,
+} from "@/lib/services/syncService";
 import { pauseAutoSync, resumeAutoSync } from "@/lib/services/autoSyncService";
 import {
   createUserViaApi,
@@ -40,7 +82,13 @@ function SettingsPage() {
   const isAdmin = currentUser?.role === "Administrator";
   const { setDarkMode, isDark } = useStore();
   const [hospital, setHospital] = useState(state.hospital);
-  const [newUser, setNewUser] = useState<User>({ id: "", username: "", fullName: "", role: "Receptionist", active: true });
+  const [newUser, setNewUser] = useState<User>({
+    id: "",
+    username: "",
+    fullName: "",
+    role: "Receptionist",
+    active: true,
+  });
   const [newUserPhilhealthAccreditation, setNewUserPhilhealthAccreditation] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [pageAccessUser, setPageAccessUser] = useState<User | null>(null);
@@ -53,7 +101,9 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!state.authedUser || !hasValidSession()) return;
-    void fetchCaseRateCount().then(setCaseRateCount).catch(() => setCaseRateCount(0));
+    void fetchCaseRateCount()
+      .then(setCaseRateCount)
+      .catch(() => setCaseRateCount(0));
   }, [state.authedUser]);
   const [defaultPEN, setDefaultPEN] = useState<string>("PEN-12-89271821-3");
   const [dbSyncing, setDbSyncing] = useState(false);
@@ -91,7 +141,8 @@ function SettingsPage() {
 
   const saveRoomRate = () => {
     if (!isAdmin) return toast.error("Administrator access required.");
-    if (!roomForm.code || !roomForm.description) return toast.error("Code and room type name are required.");
+    if (!roomForm.code || !roomForm.description)
+      return toast.error("Code and room type name are required.");
     if (roomForm.caseRate < 0) return toast.error("Daily rate cannot be negative.");
     const payload = { ...roomForm, category: "Room Rate" as const };
     if (roomEditId) {
@@ -146,7 +197,8 @@ function SettingsPage() {
 
   const saveMiscFee = () => {
     if (!isAdmin) return toast.error("Administrator access required.");
-    if (!miscForm.code || !miscForm.description) return toast.error("Code and fee name are required.");
+    if (!miscForm.code || !miscForm.description)
+      return toast.error("Code and fee name are required.");
     if (miscForm.caseRate < 0) return toast.error("Rate cannot be negative.");
     const payload = { ...miscForm, category: "Miscellaneous" as const };
     if (miscEditId) {
@@ -215,18 +267,21 @@ function SettingsPage() {
       setLastDbSync(result.updatedAt ?? new Date().toISOString());
       toast.success("Hospital profile saved locally and to MariaDB.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Saved locally but database sync failed.");
+      toast.error(
+        error instanceof Error ? error.message : "Saved locally but database sync failed.",
+      );
     } finally {
       setDbSyncing(false);
     }
   };
 
   const addUser = async () => {
-    if (!newUser.username || !newUser.fullName) return toast.error("Username and full name are required.");
+    if (!newUser.username || !newUser.fullName)
+      return toast.error("Username and full name are required.");
     if (!newUserPassword || newUserPassword.length < 6) {
       return toast.error("Password is required (minimum 6 characters).");
     }
-    if (state.users.some(u => u.username.toLowerCase() === newUser.username.toLowerCase())) {
+    if (state.users.some((u) => u.username.toLowerCase() === newUser.username.toLowerCase())) {
       return toast.error("Username already exists.");
     }
 
@@ -260,13 +315,10 @@ function SettingsPage() {
       setState((s) => ({
         ...s,
         users: s.users.map((u) =>
-          u.id === pageAccessUser.id ? { ...u, pageAccess: normalized } : u
+          u.id === pageAccessUser.id ? { ...u, pageAccess: normalized } : u,
         ),
       }));
-      if (
-        state.authedUser &&
-        editedUsername.toLowerCase() === state.authedUser.toLowerCase()
-      ) {
+      if (state.authedUser && editedUsername.toLowerCase() === state.authedUser.toLowerCase()) {
         updateSessionPageAccess(normalized);
       }
       setPageAccessUser(null);
@@ -284,7 +336,7 @@ function SettingsPage() {
 
     setState((s) => ({
       ...s,
-      users: s.users.filter((u) => u.id !== id)
+      users: s.users.filter((u) => u.id !== id),
     }));
     toast.success("User account removed from database.");
   };
@@ -294,7 +346,7 @@ function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `hospital-cms-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `hospital-cms-backup-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("System backup configuration downloaded!");
@@ -369,21 +421,35 @@ function SettingsPage() {
 
   return (
     <div>
-      <PageHeader 
-        title="Settings & System Admin" 
-        description="Configure hospital demographics, user credentials, tax frameworks, and manage system database entries." 
+      <PageHeader
+        title="Settings & System Admin"
+        description="Configure hospital demographics, user credentials, tax frameworks, and manage system database entries."
       />
       <div className="p-6 space-y-6">
         <Tabs defaultValue="hospital" className="space-y-4">
-                  <TabsList className="grid grid-cols-2 md:grid-cols-7 max-w-5xl bg-muted p-1 rounded-lg text-muted-foreground">
-                    <TabsTrigger value="hospital" className="text-xs flex items-center gap-1.5"><Building className="h-3.5 w-3.5" /> Hospital Profile</TabsTrigger>
-                    <TabsTrigger value="users" className="text-xs flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Access Control</TabsTrigger>
-                    <TabsTrigger value="rooms" className="text-xs flex items-center gap-1.5"><BedDouble className="h-3.5 w-3.5" /> Room & Board</TabsTrigger>
-                    <TabsTrigger value="misc" className="text-xs flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Miscellaneous</TabsTrigger>
-                    <TabsTrigger value="billing" className="text-xs flex items-center gap-1.5"><Percent className="h-3.5 w-3.5" /> Billing & eClaims</TabsTrigger>
-                    <TabsTrigger value="security" className="text-xs flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Security</TabsTrigger>
-                    <TabsTrigger value="backup" className="text-xs flex items-center gap-1.5"><Database className="h-3.5 w-3.5" /> Maintenance</TabsTrigger>
-                  </TabsList>
+          <TabsList className="grid grid-cols-2 md:grid-cols-7 max-w-5xl bg-muted p-1 rounded-lg text-muted-foreground">
+            <TabsTrigger value="hospital" className="text-xs flex items-center gap-1.5">
+              <Building className="h-3.5 w-3.5" /> Hospital Profile
+            </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5" /> Access Control
+            </TabsTrigger>
+            <TabsTrigger value="rooms" className="text-xs flex items-center gap-1.5">
+              <BedDouble className="h-3.5 w-3.5" /> Room & Board
+            </TabsTrigger>
+            <TabsTrigger value="misc" className="text-xs flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5" /> Miscellaneous
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="text-xs flex items-center gap-1.5">
+              <Percent className="h-3.5 w-3.5" /> Billing & eClaims
+            </TabsTrigger>
+            <TabsTrigger value="security" className="text-xs flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5" /> Security
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="text-xs flex items-center gap-1.5">
+              <Database className="h-3.5 w-3.5" /> Maintenance
+            </TabsTrigger>
+          </TabsList>
 
           {/* HOSPITAL PROFILE TAB */}
           <TabsContent value="hospital">
@@ -392,35 +458,79 @@ function SettingsPage() {
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                   <Building className="h-4 w-4 text-blue-600" /> Hospital Demographic Profile
                 </CardTitle>
-                <CardDescription className="text-xs">Configure the general header details printed on SOAs and clinical prescriptions.</CardDescription>
+                <CardDescription className="text-xs">
+                  Configure the general header details printed on SOAs and clinical prescriptions.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2 pt-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Institution name</Label>
-                  <Input value={hospital.name} onChange={(e) => setHospital({ ...hospital, name: e.target.value })} className="h-9 text-xs" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Institution name
+                  </Label>
+                  <Input
+                    value={hospital.name}
+                    onChange={(e) => setHospital({ ...hospital, name: e.target.value })}
+                    className="h-9 text-xs"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Contact phone</Label>
-                  <Input value={hospital.phone} onChange={(e) => setHospital({ ...hospital, phone: e.target.value })} className="h-9 text-xs" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Contact phone
+                  </Label>
+                  <Input
+                    value={hospital.phone}
+                    onChange={(e) => setHospital({ ...hospital, phone: e.target.value })}
+                    className="h-9 text-xs"
+                  />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs text-muted-foreground font-semibold">Street / Mailing Address</Label>
-                  <Input value={hospital.address} onChange={(e) => setHospital({ ...hospital, address: e.target.value })} className="h-9 text-xs" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Street / Mailing Address
+                  </Label>
+                  <Input
+                    value={hospital.address}
+                    onChange={(e) => setHospital({ ...hospital, address: e.target.value })}
+                    className="h-9 text-xs"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Official Email address</Label>
-                  <Input value={hospital.email} onChange={(e) => setHospital({ ...hospital, email: e.target.value })} className="h-9 text-xs" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Official Email address
+                  </Label>
+                  <Input
+                    value={hospital.email}
+                    onChange={(e) => setHospital({ ...hospital, email: e.target.value })}
+                    className="h-9 text-xs"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Corporate Tax ID (TIN)</Label>
-                  <Input value={hospital.tin} onChange={(e) => setHospital({ ...hospital, tin: e.target.value })} className="h-9 text-xs font-mono" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Corporate Tax ID (TIN)
+                  </Label>
+                  <Input
+                    value={hospital.tin}
+                    onChange={(e) => setHospital({ ...hospital, tin: e.target.value })}
+                    className="h-9 text-xs font-mono"
+                  />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs text-muted-foreground font-semibold text-blue-600 font-sans">PhilHealth Institutional Accreditation No. (PAN)</Label>
-                  <Input value={hospital.philhealthAccreditation} onChange={(e) => setHospital({ ...hospital, philhealthAccreditation: e.target.value })} className="h-9 text-xs font-mono font-bold text-blue-700" />
+                  <Label className="text-xs text-muted-foreground font-semibold text-blue-600 font-sans">
+                    PhilHealth Institutional Accreditation No. (PAN)
+                  </Label>
+                  <Input
+                    value={hospital.philhealthAccreditation}
+                    onChange={(e) =>
+                      setHospital({ ...hospital, philhealthAccreditation: e.target.value })
+                    }
+                    className="h-9 text-xs font-mono font-bold text-blue-700"
+                  />
                 </div>
                 <div className="md:col-span-2 flex justify-end pt-2">
-                  <Button onClick={saveHospital} disabled={dbSyncing} className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9">
+                  <Button
+                    onClick={saveHospital}
+                    disabled={dbSyncing}
+                    className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9"
+                  >
                     <Save className="h-4 w-4 mr-1" /> {dbSyncing ? "Saving…" : "Save Profile"}
                   </Button>
                 </div>
@@ -435,11 +545,15 @@ function SettingsPage() {
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                   <Shield className="h-4 w-4 text-rose-600" /> Security & Session
                 </CardTitle>
-                <CardDescription className="text-xs">Configure automatic logout on inactivity and session timeout behaviors.</CardDescription>
+                <CardDescription className="text-xs">
+                  Configure automatic logout on inactivity and session timeout behaviors.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2 pt-4">
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs text-muted-foreground font-semibold">Inactivity Timeout (minutes)</Label>
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Inactivity Timeout (minutes)
+                  </Label>
                   <Input
                     type="number"
                     min={0}
@@ -461,10 +575,17 @@ function SettingsPage() {
                 <div className="space-y-1.5 md:col-span-2">
                   <Label className="text-xs text-muted-foreground font-semibold">Appearance</Label>
                   <div className="flex items-center gap-3">
-                    <Switch checked={!!isDark} onCheckedChange={(v) => setDarkMode(!!v)} disabled={!isAdmin} />
+                    <Switch
+                      checked={!!isDark}
+                      onCheckedChange={(v) => setDarkMode(!!v)}
+                      disabled={!isAdmin}
+                    />
                     <div>
                       <div className="text-sm font-medium">Dark mode</div>
-                      <div className="text-[11px] text-muted-foreground">Toggle application night mode. Preference is saved per account when signed in.</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Toggle application night mode. Preference is saved per account when signed
+                        in.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -478,7 +599,9 @@ function SettingsPage() {
                     <Save className="h-4 w-4 mr-1" /> Save Security Settings
                   </Button>
                   {!isAdmin && (
-                    <p className="text-xs text-muted-foreground mt-2">Only administrators may change session timeout settings.</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Only administrators may change session timeout settings.
+                    </p>
                   )}
                 </div>
               </CardContent>
@@ -492,32 +615,70 @@ function SettingsPage() {
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                   <UserPlus className="h-4 w-4 text-blue-600" /> Register User Account
                 </CardTitle>
-                <CardDescription className="text-xs">Create new user credentials to delegate receptionist, nursing, clinical, or billing tasks.</CardDescription>
+                <CardDescription className="text-xs">
+                  Create new user credentials to delegate receptionist, nursing, clinical, or
+                  billing tasks.
+                </CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="grid gap-3 md:grid-cols-6 items-end">
                   <div className="space-y-1.5 md:col-span-1">
                     <Label className="text-xs text-muted-foreground font-semibold">Username</Label>
-                    <Input placeholder="username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} className="h-9 text-xs font-mono" />
+                    <Input
+                      placeholder="username"
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                      className="h-9 text-xs font-mono"
+                    />
                   </div>
                   <div className="space-y-1.5 md:col-span-2">
-                    <Label className="text-xs text-muted-foreground font-semibold">Full Profile Name</Label>
-                    <Input placeholder="Dr. Sophia Cruz" value={newUser.fullName} onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })} className="h-9 text-xs" />
+                    <Label className="text-xs text-muted-foreground font-semibold">
+                      Full Profile Name
+                    </Label>
+                    <Input
+                      placeholder="Dr. Sophia Cruz"
+                      value={newUser.fullName}
+                      onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                      className="h-9 text-xs"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground font-semibold">Password</Label>
-                    <Input type="password" placeholder="min. 6 chars" value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)} className="h-9 text-xs font-mono" />
+                    <Input
+                      type="password"
+                      placeholder="min. 6 chars"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className="h-9 text-xs font-mono"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground font-semibold">Assigned Role</Label>
-                    <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v as User["role"] })}>
-                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <Label className="text-xs text-muted-foreground font-semibold">
+                      Assigned Role
+                    </Label>
+                    <Select
+                      value={newUser.role}
+                      onValueChange={(v) => setNewUser({ ...newUser, role: v as User["role"] })}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {(["Administrator", "Doctor", "Receptionist", "Cashier"] as const).map((r) => <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>)}
+                        {(["Administrator", "Doctor", "Receptionist", "Cashier"] as const).map(
+                          (r) => (
+                            <SelectItem key={r} value={r} className="text-xs">
+                              {r}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={addUser} disabled={!isAdmin} className="bg-slate-800 hover:bg-slate-700 text-white h-9 text-xs">
+                  <Button
+                    onClick={addUser}
+                    disabled={!isAdmin}
+                    className="bg-slate-800 hover:bg-slate-700 text-white h-9 text-xs"
+                  >
                     <Plus className="h-4 w-4 mr-1" /> Add Account
                   </Button>
                 </div>
@@ -526,8 +687,12 @@ function SettingsPage() {
 
             <Card>
               <CardHeader className="border-b pb-3">
-                <CardTitle className="text-sm font-bold text-foreground">Existing Accounts</CardTitle>
-                <CardDescription className="text-xs">List of configured user login profiles.</CardDescription>
+                <CardTitle className="text-sm font-bold text-foreground">
+                  Existing Accounts
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  List of configured user login profiles.
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
@@ -543,7 +708,9 @@ function SettingsPage() {
                   <TableBody>
                     {state.users.map((u) => (
                       <TableRow key={u.id}>
-                        <TableCell className="font-mono text-xs font-semibold">{u.username}</TableCell>
+                        <TableCell className="font-mono text-xs font-semibold">
+                          {u.username}
+                        </TableCell>
                         <TableCell className="font-medium text-xs">{u.fullName}</TableCell>
                         <TableCell className="text-xs">{u.role}</TableCell>
                         <TableCell>
@@ -565,10 +732,10 @@ function SettingsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right pr-6">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => removeUser(u.id)} 
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeUser(u.id)}
                             disabled={u.username === "admin"}
                             className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
@@ -591,7 +758,8 @@ function SettingsPage() {
                   <BedDouble className="h-4 w-4 text-blue-600" /> Room & Board Daily Rates
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Set daily rates per room/ward type. Rates are versioned by As of Date — past admissions keep the rate effective on each stay start date.
+                  Set daily rates per room/ward type. Rates are versioned by As of Date — past
+                  admissions keep the rate effective on each stay start date.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2 pt-4">
@@ -599,14 +767,18 @@ function SettingsPage() {
                   <Label className="text-xs text-muted-foreground font-semibold">Code</Label>
                   <Input
                     value={roomForm.code}
-                    onChange={(e) => setRoomForm({ ...roomForm, code: e.target.value.toUpperCase() })}
+                    onChange={(e) =>
+                      setRoomForm({ ...roomForm, code: e.target.value.toUpperCase() })
+                    }
                     className="h-9 text-xs font-mono"
                     placeholder="RB-WARD"
                     disabled={!isAdmin}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Room / Ward Type</Label>
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Room / Ward Type
+                  </Label>
                   <Input
                     value={roomForm.description}
                     onChange={(e) => setRoomForm({ ...roomForm, description: e.target.value })}
@@ -616,7 +788,9 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Daily Rate (₱)</Label>
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Daily Rate (₱)
+                  </Label>
                   <Input
                     type="number"
                     min={0}
@@ -657,7 +831,11 @@ function SettingsPage() {
                       Cancel Edit
                     </Button>
                   )}
-                  <Button onClick={saveRoomRate} disabled={!isAdmin} className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9">
+                  <Button
+                    onClick={saveRoomRate}
+                    disabled={!isAdmin}
+                    className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9"
+                  >
                     <Save className="h-4 w-4 mr-1" /> {roomEditId ? "Update Rate" : "Add Room Type"}
                   </Button>
                 </div>
@@ -667,7 +845,9 @@ function SettingsPage() {
             <Card>
               <CardHeader className="border-b">
                 <CardTitle className="text-sm font-bold">Configured Room Types</CardTitle>
-                <CardDescription className="text-xs">Current daily rates used for automatic Room & Board charging on discharge.</CardDescription>
+                <CardDescription className="text-xs">
+                  Current daily rates used for automatic Room & Board charging on discharge.
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
@@ -683,7 +863,10 @@ function SettingsPage() {
                   <TableBody>
                     {roomRates.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={5}
+                          className="py-8 text-center text-sm text-muted-foreground"
+                        >
                           No room rates configured yet.
                         </TableCell>
                       </TableRow>
@@ -692,13 +875,27 @@ function SettingsPage() {
                         <TableRow key={item.id}>
                           <TableCell className="pl-4 text-xs font-mono">{item.code}</TableCell>
                           <TableCell className="text-xs font-medium">{item.description}</TableCell>
-                          <TableCell className="text-xs text-right font-mono">₱{item.caseRate.toLocaleString()}</TableCell>
+                          <TableCell className="text-xs text-right font-mono">
+                            ₱{item.caseRate.toLocaleString()}
+                          </TableCell>
                           <TableCell className="text-xs">{item.effectiveDate}</TableCell>
                           <TableCell className="text-right pr-4">
-                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => editRoomRate(item)} disabled={!isAdmin}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => editRoomRate(item)}
+                              disabled={!isAdmin}
+                            >
                               Edit
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeRoomRate(item.id)} disabled={!isAdmin}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => removeRoomRate(item.id)}
+                              disabled={!isAdmin}
+                            >
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>
                           </TableCell>
@@ -713,13 +910,20 @@ function SettingsPage() {
             {roomEditId && roomHistory.length > 0 && (
               <Card>
                 <CardHeader className="border-b">
-                  <CardTitle className="text-sm font-bold">Rate History (As of Date versions)</CardTitle>
+                  <CardTitle className="text-sm font-bold">
+                    Rate History (As of Date versions)
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-2">
                   {roomHistory.map((h) => (
-                    <div key={h.id} className="flex justify-between text-xs rounded border px-3 py-2">
+                    <div
+                      key={h.id}
+                      className="flex justify-between text-xs rounded border px-3 py-2"
+                    >
                       <span>Effective {h.effectiveDate}</span>
-                      <span className="font-mono font-semibold">₱{h.amount.toLocaleString()}/day</span>
+                      <span className="font-mono font-semibold">
+                        ₱{h.amount.toLocaleString()}/day
+                      </span>
                     </div>
                   ))}
                 </CardContent>
@@ -735,7 +939,8 @@ function SettingsPage() {
                   <Layers className="h-4 w-4 text-blue-600" /> Miscellaneous Fee Types
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Configure Delivery Room Fee, Operating Room Fee, and other miscellaneous charges. Rates are versioned by As of Date.
+                  Configure Delivery Room Fee, Operating Room Fee, and other miscellaneous charges.
+                  Rates are versioned by As of Date.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2 pt-4">
@@ -743,7 +948,9 @@ function SettingsPage() {
                   <Label className="text-xs text-muted-foreground font-semibold">Code</Label>
                   <Input
                     value={miscForm.code}
-                    onChange={(e) => setMiscForm({ ...miscForm, code: e.target.value.toUpperCase() })}
+                    onChange={(e) =>
+                      setMiscForm({ ...miscForm, code: e.target.value.toUpperCase() })
+                    }
                     className="h-9 text-xs font-mono"
                     placeholder="MISC-DR"
                     disabled={!isAdmin}
@@ -794,7 +1001,11 @@ function SettingsPage() {
                       Cancel Edit
                     </Button>
                   )}
-                  <Button onClick={saveMiscFee} disabled={!isAdmin} className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9">
+                  <Button
+                    onClick={saveMiscFee}
+                    disabled={!isAdmin}
+                    className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9"
+                  >
                     <Save className="h-4 w-4 mr-1" /> {miscEditId ? "Update Fee" : "Add Fee Type"}
                   </Button>
                 </div>
@@ -822,7 +1033,10 @@ function SettingsPage() {
                   <TableBody>
                     {miscFees.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                        <TableCell
+                          colSpan={5}
+                          className="py-8 text-center text-sm text-muted-foreground"
+                        >
                           No miscellaneous fees configured yet.
                         </TableCell>
                       </TableRow>
@@ -831,13 +1045,27 @@ function SettingsPage() {
                         <TableRow key={item.id}>
                           <TableCell className="pl-4 text-xs font-mono">{item.code}</TableCell>
                           <TableCell className="text-xs font-medium">{item.description}</TableCell>
-                          <TableCell className="text-xs text-right font-mono">₱{item.caseRate.toLocaleString()}</TableCell>
+                          <TableCell className="text-xs text-right font-mono">
+                            ₱{item.caseRate.toLocaleString()}
+                          </TableCell>
                           <TableCell className="text-xs">{item.effectiveDate}</TableCell>
                           <TableCell className="text-right pr-4">
-                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => editMiscFee(item)} disabled={!isAdmin}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => editMiscFee(item)}
+                              disabled={!isAdmin}
+                            >
                               Edit
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeMiscFee(item.id)} disabled={!isAdmin}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => removeMiscFee(item.id)}
+                              disabled={!isAdmin}
+                            >
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>
                           </TableCell>
@@ -852,11 +1080,16 @@ function SettingsPage() {
             {miscEditId && miscHistory.length > 0 && (
               <Card>
                 <CardHeader className="border-b">
-                  <CardTitle className="text-sm font-bold">Rate History (As of Date versions)</CardTitle>
+                  <CardTitle className="text-sm font-bold">
+                    Rate History (As of Date versions)
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-2">
                   {miscHistory.map((h) => (
-                    <div key={h.id} className="flex justify-between text-xs rounded border px-3 py-2">
+                    <div
+                      key={h.id}
+                      className="flex justify-between text-xs rounded border px-3 py-2"
+                    >
                       <span>Effective {h.effectiveDate}</span>
                       <span className="font-mono font-semibold">₱{h.amount.toLocaleString()}</span>
                     </div>
@@ -873,21 +1106,40 @@ function SettingsPage() {
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                   <Percent className="h-4 w-4 text-emerald-600" /> Billing Frameworks
                 </CardTitle>
-                <CardDescription className="text-xs">Configure defaults for VAT calculation and transaction taxes.</CardDescription>
+                <CardDescription className="text-xs">
+                  Configure defaults for VAT calculation and transaction taxes.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2 pt-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Value Added Tax (VAT %)</Label>
-                  <Input type="number" value={taxPercent} onChange={(e) => setTaxPercent(Number(e.target.value))} className="h-9 text-xs" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Value Added Tax (VAT %)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={taxPercent}
+                    onChange={(e) => setTaxPercent(Number(e.target.value))}
+                    className="h-9 text-xs"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Withholding Tax Policy</Label>
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Withholding Tax Policy
+                  </Label>
                   <Select defaultValue="none">
-                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none" className="text-xs">None (Zero-rated)</SelectItem>
-                      <SelectItem value="1percent" className="text-xs">1% (Supplies withholding)</SelectItem>
-                      <SelectItem value="2percent" className="text-xs">2% (Professional fees withholding)</SelectItem>
+                      <SelectItem value="none" className="text-xs">
+                        None (Zero-rated)
+                      </SelectItem>
+                      <SelectItem value="1percent" className="text-xs">
+                        1% (Supplies withholding)
+                      </SelectItem>
+                      <SelectItem value="2percent" className="text-xs">
+                        2% (Professional fees withholding)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -899,20 +1151,40 @@ function SettingsPage() {
                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                   <Key className="h-4 w-4 text-blue-600" /> PhilHealth eClaims Credentials
                 </CardTitle>
-                <CardDescription className="text-xs">Manage software certification tags, series transmittals, and credential configurations.</CardDescription>
+                <CardDescription className="text-xs">
+                  Manage software certification tags, series transmittals, and credential
+                  configurations.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2 pt-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Default Employer PEN</Label>
-                  <Input value={defaultPEN} onChange={(e) => setDefaultPEN(e.target.value)} className="h-9 text-xs font-mono" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Default Employer PEN
+                  </Label>
+                  <Input
+                    value={defaultPEN}
+                    onChange={(e) => setDefaultPEN(e.target.value)}
+                    className="h-9 text-xs font-mono"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold">Software Certification Tag Key</Label>
-                  <Input value={softwareKey} onChange={(e) => setSoftwareKey(e.target.value)} className="h-9 text-xs font-mono" />
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Software Certification Tag Key
+                  </Label>
+                  <Input
+                    value={softwareKey}
+                    onChange={(e) => setSoftwareKey(e.target.value)}
+                    className="h-9 text-xs font-mono"
+                  />
                 </div>
                 <div className="md:col-span-2 flex justify-end pt-2">
-                  <Button onClick={saveBillingSettings} disabled={dbSyncing} className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9">
-                    <CheckCircle2 className="h-4 w-4 mr-1" /> {dbSyncing ? "Saving…" : "Save Credentials"}
+                  <Button
+                    onClick={saveBillingSettings}
+                    disabled={dbSyncing}
+                    className="bg-slate-800 hover:bg-slate-700 text-white text-xs h-9"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-1" />{" "}
+                    {dbSyncing ? "Saving…" : "Save Credentials"}
                   </Button>
                 </div>
               </CardContent>
@@ -929,7 +1201,9 @@ function SettingsPage() {
                     <Database className="h-4 w-4 text-blue-600" /> Save All Pages to MariaDB
                   </CardTitle>
                   <CardDescription className="text-xs text-blue-800/80">
-                    Persists every module — Patients, Appointments, Billing, Inventory, Admissions, ER, OPD, Pharmacy, Lab, Radiology, Miscellaneous, Cashier, Medical Records, and PhilHealth Case Rates — to the database.
+                    Persists every module — Patients, Appointments, Billing, Inventory, Admissions,
+                    ER, OPD, Pharmacy, Lab, Radiology, Miscellaneous, Cashier, Medical Records, and
+                    PhilHealth Case Rates — to the database.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
@@ -944,7 +1218,10 @@ function SettingsPage() {
                       ["Price items", state.prices.length],
                       ["Case rates (DB)", caseRateCount],
                     ].map(([label, count]) => (
-                      <div key={label as string} className="rounded border border-border bg-card px-3 py-2 flex justify-between text-card-foreground">
+                      <div
+                        key={label as string}
+                        className="rounded border border-border bg-card px-3 py-2 flex justify-between text-card-foreground"
+                      >
                         <span>{label as string}</span>
                         <span className="font-mono font-semibold">{count as number}</span>
                       </div>
@@ -975,7 +1252,9 @@ function SettingsPage() {
                     </Button>
                   </div>
                   {!isAdmin && (
-                    <p className="text-xs text-muted-foreground">Only administrators can sync clinical data to MariaDB.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Only administrators can sync clinical data to MariaDB.
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -986,28 +1265,39 @@ function SettingsPage() {
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                     <Database className="h-4 w-4 text-blue-600" /> Database Backup & Configuration
                   </CardTitle>
-                  <CardDescription className="text-xs">Download full snapshots of the clinical database or restore from a previously saved JSON file.</CardDescription>
+                  <CardDescription className="text-xs">
+                    Download full snapshots of the clinical database or restore from a previously
+                    saved JSON file.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-4">
                   <div className="p-4 border border-dashed border-border rounded-lg bg-muted/50 flex flex-col items-center justify-center text-center space-y-3">
                     <Upload className="h-8 w-8 text-slate-400" />
                     <div>
-                      <Label htmlFor="restore-file-input" className="cursor-pointer bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-3 py-1.5 rounded border border-blue-200 text-xs inline-block transition">
+                      <Label
+                        htmlFor="restore-file-input"
+                        className="cursor-pointer bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold px-3 py-1.5 rounded border border-blue-200 text-xs inline-block transition"
+                      >
                         Choose Backup File (.json)
                       </Label>
-                      <input 
-                        id="restore-file-input" 
-                        type="file" 
-                        accept=".json" 
-                        onChange={restoreBackup} 
-                        className="hidden" 
+                      <input
+                        id="restore-file-input"
+                        type="file"
+                        accept=".json"
+                        onChange={restoreBackup}
+                        className="hidden"
                       />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Uploading a backup will overwrite the current session database.</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Uploading a backup will overwrite the current session database.
+                    </p>
                   </div>
 
                   <div className="flex gap-2">
-                    <Button onClick={backup} className="flex-1 text-xs h-9 bg-slate-800 hover:bg-slate-700 text-white">
+                    <Button
+                      onClick={backup}
+                      className="flex-1 text-xs h-9 bg-slate-800 hover:bg-slate-700 text-white"
+                    >
                       <Database className="h-4 w-4 mr-1" /> Download Backup File
                     </Button>
                   </div>
@@ -1020,19 +1310,26 @@ function SettingsPage() {
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-800">
                     <RotateCcw className="h-4 w-4 text-red-600" /> Factory System Reset
                   </CardTitle>
-                  <CardDescription className="text-xs text-red-600">Clears all clinical data, bills, and registry records back to an empty state.</CardDescription>
+                  <CardDescription className="text-xs text-red-600">
+                    Clears all clinical data, bills, and registry records back to an empty state.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Warning: A factory reset completely deletes all custom configurations, uploaded backup records, and edits. This action is permanent and cannot be reversed.
+                    Warning: A factory reset completely deletes all custom configurations, uploaded
+                    backup records, and edits. This action is permanent and cannot be reversed.
                   </p>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => { 
-                      if (confirm("Are you absolutely sure you want to clear all clinical data? This deletes all records and cannot be reversed.")) { 
-                        resetAll(); 
-                        toast.success("All data cleared to empty state."); 
-                      } 
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Are you absolutely sure you want to clear all clinical data? This deletes all records and cannot be reversed.",
+                        )
+                      ) {
+                        resetAll();
+                        toast.success("All data cleared to empty state.");
+                      }
                     }}
                     className="w-full text-xs h-9 font-semibold"
                   >

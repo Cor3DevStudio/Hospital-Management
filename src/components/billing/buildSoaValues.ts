@@ -32,7 +32,10 @@ export type SoaHospital = {
 
 function cityFromAddress(address?: string): string {
   if (!address) return "";
-  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = address
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   return parts[parts.length - 1] || parts[0] || "";
 }
 
@@ -69,9 +72,7 @@ export function buildSoaValues(input: {
   const { bill, patient, hospital } = input;
   const items = normalizeItems(bill);
   const subtotal = items.reduce((s, i) => s + (i.amount || 0), 0);
-  const pfTotal = items
-    .filter((i) => i.category === "PF")
-    .reduce((s, i) => s + i.amount, 0);
+  const pfTotal = items.filter((i) => i.category === "PF").reduce((s, i) => s + i.amount, 0);
   const hciTotal = Math.max(0, subtotal - pfTotal);
   const phic = bill.philhealthDeduction || 0;
   const hciPhic = phic > 0 ? phic * 0.7 : 0;
@@ -83,8 +84,7 @@ export function buildSoaValues(input: {
     "SOA-" + bill.date.replace(/-/g, "") + "-" + (bill.id ? bill.id.split("-").pop() : "TEMP");
   const accountNo = bill.id || formNo;
   const isIndigent =
-    (patient?.philhealth?.memberType || "").toLowerCase().includes("indigent") ||
-    balance <= 0;
+    (patient?.philhealth?.memberType || "").toLowerCase().includes("indigent") || balance <= 0;
 
   const z = money2(0);
   const moneyOrZero = (n: number) => money2(n);
@@ -99,20 +99,23 @@ export function buildSoaValues(input: {
     DATE_TODAY: formatDateLong(new Date().toISOString().slice(0, 10)),
     SOA_NUMBER: formNo.replace(/\D/g, "").padStart(15, "0").slice(-15),
     ADMIT_DT: truncateSoaField(formatDateTime12(bill.date), 24),
-    DISCHARGE_DT: truncateSoaField(formatDateTime12(bill.dischargeDate || bill.date, "05:00:00 PM"), 24),
+    DISCHARGE_DT: truncateSoaField(
+      formatDateTime12(bill.dischargeDate || bill.date, "05:00:00 PM"),
+      24,
+    ),
     ACCOUNT_NO: truncateSoaField(accountNo, 18),
     ROOM: truncateSoaField(
       input.roomWard || (bill.patientType === "In-Patient" ? "" : "Out-Patient Department"),
-      22
+      22,
     ),
     AGE: age == null ? "" : truncateSoaField(`${age} y/o`, 10),
     PHIC_MEMBERSHIP: truncateSoaField(
       patient?.philhealth?.memberType || patient?.philhealth?.memberNumber || "",
-      26
+      26,
     ),
     FIRST_CASE_DESC: truncateSoaField(
       input.caseRateDescription || bill.caseRateCode || bill.notes || "",
-      38
+      38,
     ),
     ST_ACTUAL: moneyOrZero(hciTotal),
     ST_VAT: z,

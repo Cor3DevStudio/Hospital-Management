@@ -55,7 +55,12 @@ export function HospitalLetterhead({ hospital }: { hospital: HospitalInfo }) {
 export function PatientDemographicsGrid({ patient }: { patient: Patient | undefined }) {
   const age = patient?.birthDate ? computeAge(patient.birthDate) : null;
   const address = patient
-    ? [patient.address.street, patient.address.barangay, patient.address.city, patient.address.province]
+    ? [
+        patient.address.street,
+        patient.address.barangay,
+        patient.address.city,
+        patient.address.province,
+      ]
         .filter(Boolean)
         .join(", ")
     : "—";
@@ -65,7 +70,10 @@ export function PatientDemographicsGrid({ patient }: { patient: Patient | undefi
       <ClinicalPrintField label="Patient Name" value={formatPatientName(patient).toUpperCase()} />
       <ClinicalPrintField label="Patient ID" value={patient?.id ?? "—"} />
       <ClinicalPrintField label="Date of Birth" value={patient?.birthDate ?? "—"} />
-      <ClinicalPrintField label="Age / Sex" value={patient ? `${age ?? "—"} / ${patient.gender}` : "—"} />
+      <ClinicalPrintField
+        label="Age / Sex"
+        value={patient ? `${age ?? "—"} / ${patient.gender}` : "—"}
+      />
       <ClinicalPrintField
         label="PhilHealth PIN"
         value={patient?.philhealth?.memberNumber?.trim() || "—"}

@@ -15,15 +15,24 @@ export type OPDVisitDocumentProps = {
   preparedBy?: string;
 };
 
-function visitStatusTone(status: Consultation["status"]): { bg: string; fg: string; border: string } {
+function visitStatusTone(status: Consultation["status"]): {
+  bg: string;
+  fg: string;
+  border: string;
+} {
   if (status === "Seen") return { bg: "#ecfdf5", fg: "#166534", border: "#86efac" };
   return { bg: "#fffbeb", fg: "#92400e", border: "#fcd34d" };
 }
 
-export function OPDVisitDocument({ hospital, consultation, patient, preparedBy }: OPDVisitDocumentProps) {
+export function OPDVisitDocument({
+  hospital,
+  consultation,
+  patient,
+  preparedBy,
+}: OPDVisitDocumentProps) {
   const tone = visitStatusTone(consultation.status);
   const prescriptions = consultation.prescriptions.filter(
-    (rx) => rx.medicine.trim() || rx.dosage.trim() || rx.instructions.trim()
+    (rx) => rx.medicine.trim() || rx.dosage.trim() || rx.instructions.trim(),
   );
 
   return (
@@ -48,7 +57,11 @@ export function OPDVisitDocument({ hospital, consultation, patient, preparedBy }
           <ClinicalPrintField label="Diagnosis" value={consultation.diagnosis || "—"} />
           <ClinicalPrintField
             label="Discharge Status"
-            value={consultation.discharged ? `Seen${consultation.dischargeDate ? ` · ${consultation.dischargeDate}` : ""}` : "Pending"}
+            value={
+              consultation.discharged
+                ? `Seen${consultation.dischargeDate ? ` · ${consultation.dischargeDate}` : ""}`
+                : "Pending"
+            }
           />
         </div>
       </ClinicalPrintSection>

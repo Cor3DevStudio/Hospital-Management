@@ -12,17 +12,44 @@ import {
 config();
 
 const ALL_PAGE_PATHS = [
-  "/dashboard", "/patients", "/appointments", "/inventory", "/billing", "/philhealth",
-  "/eclaims-monitoring", "/pricelist", "/admission", "/er", "/opd", "/pharmacy", "/supplies",
-  "/laboratory", "/radiology", "/miscellaneous", "/cashier", "/medical-records", "/reports", "/settings",
+  "/dashboard",
+  "/patients",
+  "/appointments",
+  "/inventory",
+  "/billing",
+  "/philhealth",
+  "/eclaims-monitoring",
+  "/pricelist",
+  "/admission",
+  "/er",
+  "/opd",
+  "/pharmacy",
+  "/supplies",
+  "/laboratory",
+  "/radiology",
+  "/miscellaneous",
+  "/cashier",
+  "/medical-records",
+  "/reports",
+  "/settings",
 ];
 
 const ROLE_DEFAULT_PAGE_ACCESS = {
   Administrator: ALL_PAGE_PATHS,
   Doctor: ALL_PAGE_PATHS,
   Receptionist: [
-    "/dashboard", "/patients", "/appointments", "/admission", "/er", "/opd",
-    "/pharmacy", "/supplies", "/laboratory", "/radiology", "/miscellaneous", "/medical-records",
+    "/dashboard",
+    "/patients",
+    "/appointments",
+    "/admission",
+    "/er",
+    "/opd",
+    "/pharmacy",
+    "/supplies",
+    "/laboratory",
+    "/radiology",
+    "/miscellaneous",
+    "/medical-records",
   ],
   Cashier: ["/cashier", "/billing", "/patients", "/medical-records"],
 };
@@ -32,11 +59,41 @@ function defaultPageAccessForRole(role) {
 }
 
 const users = [
-  { id: "u-admin", username: "admin", password: "admin123", fullName: "System Administrator", role: "Administrator" },
-  { id: "u-santos", username: "dr.santos", password: "dr.santos123", fullName: "Dr. Maria Santos", role: "Doctor" },
-  { id: "u-reyes", username: "dr.reyes", password: "dr.reyes123", fullName: "Dr. Juan Reyes", role: "Doctor" },
-  { id: "u-receptionist", username: "receptionist", password: "receptionist123", fullName: "Jane Doe", role: "Receptionist" },
-  { id: "u-cashier", username: "cashier", password: "cashier123", fullName: "John Smith", role: "Cashier" },
+  {
+    id: "u-admin",
+    username: "admin",
+    password: "admin123",
+    fullName: "System Administrator",
+    role: "Administrator",
+  },
+  {
+    id: "u-santos",
+    username: "dr.santos",
+    password: "dr.santos123",
+    fullName: "Dr. Maria Santos",
+    role: "Doctor",
+  },
+  {
+    id: "u-reyes",
+    username: "dr.reyes",
+    password: "dr.reyes123",
+    fullName: "Dr. Juan Reyes",
+    role: "Doctor",
+  },
+  {
+    id: "u-receptionist",
+    username: "receptionist",
+    password: "receptionist123",
+    fullName: "Jane Doe",
+    role: "Receptionist",
+  },
+  {
+    id: "u-cashier",
+    username: "cashier",
+    password: "cashier123",
+    fullName: "John Smith",
+    role: "Cashier",
+  },
 ];
 
 function patientToSqlParams(p) {
@@ -79,7 +136,7 @@ async function main() {
   // Upgrade older patients tables that predate extended_data
   try {
     await connection.query(
-      `ALTER TABLE \`${databaseName}\`.patients ADD COLUMN \`extended_data\` JSON NULL AFTER \`philhealth_no\``
+      `ALTER TABLE \`${databaseName}\`.patients ADD COLUMN \`extended_data\` JSON NULL AFTER \`philhealth_no\``,
     );
     console.log("  Added patients.extended_data column.");
   } catch (error) {
@@ -91,7 +148,7 @@ async function main() {
   // Page-level access permissions per user
   try {
     await connection.query(
-      `ALTER TABLE \`${databaseName}\`.users ADD COLUMN \`page_access\` JSON NULL AFTER \`dark_mode\``
+      `ALTER TABLE \`${databaseName}\`.users ADD COLUMN \`page_access\` JSON NULL AFTER \`dark_mode\``,
     );
     console.log("  Added users.page_access column.");
   } catch (error) {
@@ -108,12 +165,12 @@ async function main() {
       `INSERT INTO \`${databaseName}\`.users (id, username, password_hash, full_name, role, active, dark_mode, page_access)
        VALUES (?, ?, ?, ?, ?, 1, 0, ?)
        ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), full_name = VALUES(full_name), role = VALUES(role), active = 1, page_access = VALUES(page_access)`,
-      [user.id, user.username, hash, user.fullName, user.role, pageAccess]
+      [user.id, user.username, hash, user.fullName, user.role, pageAccess],
     );
   }
 
   const [countRows] = await connection.query(
-    `SELECT COUNT(*) AS n FROM \`${databaseName}\`.philhealth_records`
+    `SELECT COUNT(*) AS n FROM \`${databaseName}\`.philhealth_records`,
   );
   console.log(`  philhealth_records: ${countRows[0]?.n ?? 0} case rates loaded.`);
 
@@ -126,7 +183,7 @@ async function main() {
     `INSERT INTO \`${databaseName}\`.app_clinical_state (id, payload)
      VALUES ('default', ?)
      ON DUPLICATE KEY UPDATE payload = VALUES(payload)`,
-    [JSON.stringify(payload)]
+    [JSON.stringify(payload)],
   );
 
   for (const patient of payload.patients) {
@@ -157,7 +214,7 @@ async function main() {
          philhealth_no = VALUES(philhealth_no),
          extended_data = VALUES(extended_data),
          archived = VALUES(archived)`,
-      patientToSqlParams(patient)
+      patientToSqlParams(patient),
     );
   }
 
@@ -168,7 +225,9 @@ async function main() {
 
   await connection.end();
   console.log("Database seeded successfully.");
-  console.log("Log in as admin / admin123, then use Load from Database (Settings) if data is not visible yet.");
+  console.log(
+    "Log in as admin / admin123, then use Load from Database (Settings) if data is not visible yet.",
+  );
 }
 
 main().catch((error) => {

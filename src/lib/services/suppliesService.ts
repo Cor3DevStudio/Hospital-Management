@@ -13,7 +13,7 @@ export function issueSupply(
     issuedBy?: string;
     issueDate?: string;
     notes?: string;
-  }
+  },
 ): { state: AppState; record: SuppliesRecord } | { error: string } {
   const item = state.medicines.find((m) => m.id === input.medicineId);
   if (!item) return { error: "Supply item not found" };

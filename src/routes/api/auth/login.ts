@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/auth/login")({
           if (!body?.username?.trim() || !body?.password) {
             return Response.json(
               { success: false, message: "Username and password are required" },
-              { status: 400 }
+              { status: 400 },
             );
           }
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/auth/login")({
               message:
                 "Unable to connect to the database. Check MariaDB is running and .env is configured.",
             },
-            { status: 503 }
+            { status: 503 },
           );
         }
       },

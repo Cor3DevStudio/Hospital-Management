@@ -81,11 +81,19 @@ export function OfficialCSFSheet({ bill, patient, admission }: OfficialCSFSheetP
             <div className="cf-grid cf-grid--2">
               <div>
                 <span className="cf-mini-label">a. Date Admitted</span>
-                <DigitBoxes chars={d.admitDob} groups={[2, 2, 4]} labels={["month", "day", "year"]} />
+                <DigitBoxes
+                  chars={d.admitDob}
+                  groups={[2, 2, 4]}
+                  labels={["month", "day", "year"]}
+                />
               </div>
               <div>
                 <span className="cf-mini-label">c. Date Discharged</span>
-                <DigitBoxes chars={d.dischargeDob} groups={[2, 2, 4]} labels={["month", "day", "year"]} />
+                <DigitBoxes
+                  chars={d.dischargeDob}
+                  groups={[2, 2, 4]}
+                  labels={["month", "day", "year"]}
+                />
               </div>
             </div>
           </div>
@@ -102,14 +110,22 @@ export function OfficialCSFSheet({ bill, patient, admission }: OfficialCSFSheetP
 
         <div className="cf-grid cf-grid--sig">
           <div>
-            <LineField label="Signature Over Printed Name of Member" value={d.memSignatureName} tall />
+            <LineField
+              label="Signature Over Printed Name of Member"
+              value={d.memSignatureName}
+              tall
+            />
             <div className="mt-2">
               <span className="cf-mini-label">Date Signed</span>
               <DigitBoxes chars={emptyDate} groups={[2, 2, 4]} labels={["month", "day", "year"]} />
             </div>
           </div>
           <div>
-            <LineField label="Signature Over Printed Name of Member's Representative" value="" tall />
+            <LineField
+              label="Signature Over Printed Name of Member's Representative"
+              value=""
+              tall
+            />
             <div className="mt-2">
               <span className="cf-mini-label">Date Signed</span>
               <DigitBoxes chars={emptyDate} groups={[2, 2, 4]} labels={["month", "day", "year"]} />
@@ -170,7 +186,11 @@ export function OfficialCSFSheet({ bill, patient, admission }: OfficialCSFSheetP
           consistent with our available records.
         </p>
         <div className="cf-grid cf-grid--sig mt-2">
-          <LineField label="Signature Over Printed Name of Employer / Authorized Representative" value="" tall />
+          <LineField
+            label="Signature Over Printed Name of Employer / Authorized Representative"
+            value=""
+            tall
+          />
           <LineField label="Official Capacity / Designation" value="" />
         </div>
         <div className="mt-2">
@@ -245,7 +265,11 @@ export function OfficialCSFSheet({ bill, patient, admission }: OfficialCSFSheetP
           institution records and that the herein information given are true and correct.
         </p>
         <div className="cf-grid cf-grid--sig">
-          <LineField label="Signature Over Printed Name of Authorized HCI Representative" value={d.hciRepName} tall />
+          <LineField
+            label="Signature Over Printed Name of Authorized HCI Representative"
+            value={d.hciRepName}
+            tall
+          />
           <LineField label="Official Capacity / Designation" value="" />
         </div>
         <div className="mt-2">

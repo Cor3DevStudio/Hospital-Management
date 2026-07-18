@@ -24,7 +24,15 @@ function statusStyle(status: EClaim["claimStatus"]): { bg: string; fg: string; b
   return { bg: "#fffbeb", fg: "#92400e", border: "#fcd34d" };
 }
 
-function Field({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+function Field({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+}) {
   return (
     <div className="min-w-0">
       <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
@@ -39,7 +47,10 @@ function Field({ label, value, valueColor }: { label: string; value: string; val
 }
 
 /** Filing-deadline urgency only matters while a claim is still Pending — once submitted the clock stops. */
-function deadlineTone(daysRemaining: number, claimStatus: EClaim["claimStatus"]): string | undefined {
+function deadlineTone(
+  daysRemaining: number,
+  claimStatus: EClaim["claimStatus"],
+): string | undefined {
   if (claimStatus !== "Pending") return undefined;
   if (daysRemaining < 0) return "#991b1b";
   if (daysRemaining <= 15) return "#92400e";
@@ -104,10 +115,7 @@ export function EClaimSlipDocument({
           <Field label="Patient Name" value={formatPatientName(patient)} />
           <Field label="PhilHealth PIN" value={philhealthNo} />
           <Field label="Membership" value={claim.philhealthStatus} />
-          <Field
-            label="Patient Type"
-            value={bill?.patientType ?? "—"}
-          />
+          <Field label="Patient Type" value={bill?.patientType ?? "—"} />
         </div>
       </section>
 
@@ -124,7 +132,9 @@ export function EClaimSlipDocument({
           <Field
             label="Days Remaining"
             value={daysRemainingLabel}
-            valueColor={deadline ? deadlineTone(deadline.daysRemaining, claim.claimStatus) : undefined}
+            valueColor={
+              deadline ? deadlineTone(deadline.daysRemaining, claim.claimStatus) : undefined
+            }
           />
           <Field label="Room / Ward" value={dates.roomWard || "—"} />
           <Field label="Case Rate Code" value={claim.caseRateCode || "—"} />
@@ -136,8 +146,14 @@ export function EClaimSlipDocument({
                 : "—"
             }
           />
-          <Field label="Created" value={claim.createdAt ? new Date(claim.createdAt).toLocaleString() : "—"} />
-          <Field label="Last Updated" value={claim.updatedAt ? new Date(claim.updatedAt).toLocaleString() : "—"} />
+          <Field
+            label="Created"
+            value={claim.createdAt ? new Date(claim.createdAt).toLocaleString() : "—"}
+          />
+          <Field
+            label="Last Updated"
+            value={claim.updatedAt ? new Date(claim.updatedAt).toLocaleString() : "—"}
+          />
         </div>
       </section>
 

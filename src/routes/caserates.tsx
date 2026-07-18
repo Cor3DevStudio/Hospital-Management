@@ -8,13 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { todayISO, type CaseRate } from "@/lib/store";
-import {
-  persistCaseRate,
-  persistDeleteCaseRate,
-} from "@/lib/services/caseRateCrudService";
+import { persistCaseRate, persistDeleteCaseRate } from "@/lib/services/caseRateCrudService";
 import { searchCaseRatesApi } from "@/lib/services/caseRateApi";
 
 export const Route = createFileRoute("/caserates")({
@@ -121,17 +125,25 @@ function CaseRatesPage() {
       <div className="space-y-4 p-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{editId ? "Edit Case Rate" : "Add Case Rate"}</CardTitle>
+            <CardTitle className="text-base">
+              {editId ? "Edit Case Rate" : "Add Case Rate"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-6">
               <div className="space-y-1.5">
                 <Label className="text-xs">Code</Label>
-                <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+                <Input
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value })}
+                />
               </div>
               <div className="md:col-span-2 space-y-1.5">
                 <Label className="text-xs">Description</Label>
-                <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <Input
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Case Type</Label>
@@ -146,7 +158,11 @@ function CaseRatesPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Case Rate (₱)</Label>
-                <Input type="number" value={form.amount} onChange={(e) => onAmountChange(+e.target.value)} />
+                <Input
+                  type="number"
+                  value={form.amount}
+                  onChange={(e) => onAmountChange(+e.target.value)}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Effective Date</Label>
@@ -190,7 +206,13 @@ function CaseRatesPage() {
               </div>
               <div className="md:col-span-6 flex justify-end gap-2">
                 {editId && (
-                  <Button variant="outline" onClick={() => { setEditId(null); setForm(empty()); }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditId(null);
+                      setForm(empty());
+                    }}
+                  >
                     Cancel
                   </Button>
                 )}
@@ -245,13 +267,19 @@ function CaseRatesPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       No records found. Run: npm run db:seed
                     </TableCell>
                   </TableRow>
@@ -259,12 +287,17 @@ function CaseRatesPage() {
                   items.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-mono text-xs">{p.code}</TableCell>
-                      <TableCell className="font-medium text-xs max-w-[280px] truncate" title={p.description}>
+                      <TableCell
+                        className="font-medium text-xs max-w-[280px] truncate"
+                        title={p.description}
+                      >
                         {p.description}
                       </TableCell>
                       <TableCell className="text-xs">{p.category}</TableCell>
                       <TableCell className="text-xs">{p.effectiveDate || "N/A"}</TableCell>
-                      <TableCell className="text-right text-xs">₱{p.amount.toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-xs">
+                        ₱{p.amount.toLocaleString()}
+                      </TableCell>
                       <TableCell className="text-right text-xs">
                         ₱{(p.healthFacilityFee ?? 0).toLocaleString()}
                       </TableCell>

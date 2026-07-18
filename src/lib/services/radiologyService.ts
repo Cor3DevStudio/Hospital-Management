@@ -6,7 +6,14 @@ import { uid, todayISO, type AppState, type PriceItem, type RadiologyRecord } fr
 /** Seed effective date so default catalog items price on any order date. */
 const DEFAULT_PRICE_EFFECTIVE_DATE = "1900-01-01";
 
-export const RADIOLOGY_EXAM_TYPES = ["X-ray", "CT Scan", "Ultrasound", "MRI", "Mammography", "Other"];
+export const RADIOLOGY_EXAM_TYPES = [
+  "X-ray",
+  "CT Scan",
+  "Ultrasound",
+  "MRI",
+  "Mammography",
+  "Other",
+];
 
 /** Seed common imaging procedures when the Hospital Prices catalog has none yet. */
 export const DEFAULT_RAD_PROCEDURES: { code: string; description: string; amount: number }[] = [
@@ -49,7 +56,7 @@ export function ensureDefaultRadiologyPrices(state: AppState): AppState {
 export function createRadiologyOrder(
   state: AppState,
   form: Omit<RadiologyRecord, "id">,
-  postCharge = true
+  postCharge = true,
 ): { state: AppState; record: RadiologyRecord } | { error: string } {
   const working = ensureDefaultRadiologyPrices(state);
   const chargeDate = form.requestDate || todayISO();
@@ -102,7 +109,7 @@ export function createRadiologyOrder(
     next = {
       ...next,
       radiologyRecords: next.radiologyRecords.map((r) =>
-        r.id === record.id ? { ...record, billId: charge.bill.id } : r
+        r.id === record.id ? { ...record, billId: charge.bill.id } : r,
       ),
     };
   }

@@ -53,7 +53,7 @@ export function ChargeItemPicker({
 
   const selected = useMemo(
     () => (value && value !== "none" ? items.find((i) => i.id === value) : undefined),
-    [items, value]
+    [items, value],
   );
 
   const results = useMemo(() => {
@@ -118,11 +118,11 @@ export function ChargeItemPicker({
 
       {open && !disabled && (
         <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
-          {!query.trim() && (
-            <p className="px-3 py-2 text-xs text-muted-foreground">{emptyHint}</p>
-          )}
+          {!query.trim() && <p className="px-3 py-2 text-xs text-muted-foreground">{emptyHint}</p>}
           {query.trim() && results.length === 0 && (
-            <p className="px-3 py-2 text-xs text-muted-foreground">No matches for “{query.trim()}”</p>
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              No matches for “{query.trim()}”
+            </p>
           )}
           {results.map((item) => (
             <button
@@ -130,7 +130,7 @@ export function ChargeItemPicker({
               type="button"
               className={cn(
                 "flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted",
-                selected?.id === item.id && "bg-muted/80"
+                selected?.id === item.id && "bg-muted/80",
               )}
               onClick={() => {
                 onSelect(item.id, item);

@@ -120,9 +120,7 @@ export function CaseRatePicker({
           >
             — None —
           </button>
-          {loading && (
-            <p className="px-3 py-2 text-xs text-muted-foreground">Searching…</p>
-          )}
+          {loading && <p className="px-3 py-2 text-xs text-muted-foreground">Searching…</p>}
           {!loading && query.trim() && results.length === 0 && (
             <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
           )}

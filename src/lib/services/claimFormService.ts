@@ -15,24 +15,18 @@ const CF2_ACCOMMODATION_FIELDS = [
   "accommodationNonPrivate",
 ] as const satisfies readonly (keyof Cf2FormData)[];
 
-export function mergeCf2FormData(
-  base: Cf2FormData,
-  overrides?: Partial<Cf2FormData>
-): Cf2FormData {
+export function mergeCf2FormData(base: Cf2FormData, overrides?: Partial<Cf2FormData>): Cf2FormData {
   return overrides ? { ...base, ...overrides } : base;
 }
 
-export function mergeCf4FormData(
-  base: Cf4FormData,
-  overrides?: Partial<Cf4FormData>
-): Cf4FormData {
+export function mergeCf4FormData(base: Cf4FormData, overrides?: Partial<Cf4FormData>): Cf4FormData {
   return overrides ? { ...base, ...overrides } : base;
 }
 
 export function patchCf2Override(
   overrides: Partial<Cf2FormData> | undefined,
   field: keyof Cf2FormData,
-  value: string | boolean
+  value: string | boolean,
 ): Partial<Cf2FormData> {
   const next: Partial<Cf2FormData> = { ...overrides, [field]: value };
 
@@ -57,7 +51,7 @@ export function patchCf2Override(
 export function patchCf4Override(
   overrides: Partial<Cf4FormData> | undefined,
   field: keyof Cf4FormData,
-  value: string | boolean
+  value: string | boolean,
 ): Partial<Cf4FormData> {
   const next: Partial<Cf4FormData> = { ...overrides, [field]: value };
   if (value === true) {

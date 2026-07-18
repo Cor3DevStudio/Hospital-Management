@@ -15,11 +15,21 @@ function ChartSection({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-function FieldCell({ label, value, emphasize }: { label: string; value: string; emphasize?: boolean }) {
+function FieldCell({
+  label,
+  value,
+  emphasize,
+}: {
+  label: string;
+  value: string;
+  emphasize?: boolean;
+}) {
   return (
     <td>
       <span className="patient-chart-sheet__label">{label}</span>
-      <span className={`patient-chart-sheet__value${emphasize ? " patient-chart-sheet__value--name" : ""}`}>
+      <span
+        className={`patient-chart-sheet__value${emphasize ? " patient-chart-sheet__value--name" : ""}`}
+      >
         {value || "—"}
       </span>
     </td>
@@ -45,7 +55,9 @@ export function PatientChartDocument({ model }: { model: PatientChartModel }) {
         <div className="patient-chart-sheet__header-text">
           <p className="patient-chart-sheet__republic">Republic of the Philippines</p>
           <p className="patient-chart-sheet__hospital">{hospital.name || "Hospital"}</p>
-          {hospital.address ? <p className="patient-chart-sheet__address">{hospital.address}</p> : null}
+          {hospital.address ? (
+            <p className="patient-chart-sheet__address">{hospital.address}</p>
+          ) : null}
           {hospital.phone ? (
             <p className="patient-chart-sheet__address">
               Tel: {hospital.phone}
@@ -81,14 +93,15 @@ export function PatientChartDocument({ model }: { model: PatientChartModel }) {
         <table className="patient-chart-sheet__table">
           <tbody>
             <tr>
-              <FieldCell label="Patient Name" value={formatPatientName(patient).toUpperCase()} emphasize />
+              <FieldCell
+                label="Patient Name"
+                value={formatPatientName(patient).toUpperCase()}
+                emphasize
+              />
               <FieldCell label="Patient ID" value={patient.id} />
             </tr>
             <tr>
-              <FieldCell
-                label="Age / Sex"
-                value={`${age ?? "—"} / ${patient.gender}`}
-              />
+              <FieldCell label="Age / Sex" value={`${age ?? "—"} / ${patient.gender}`} />
               <FieldCell label="Birth Date" value={formatChartDateLong(patient.birthDate)} />
             </tr>
             <tr>
@@ -144,7 +157,9 @@ export function PatientChartDocument({ model }: { model: PatientChartModel }) {
               <tr>
                 <td>
                   <span className="patient-chart-sheet__label">Outstanding Balance</span>
-                  <span className="patient-chart-sheet__value">{String(model.outstandingBills)}</span>
+                  <span className="patient-chart-sheet__value">
+                    {String(model.outstandingBills)}
+                  </span>
                 </td>
               </tr>
               <tr>

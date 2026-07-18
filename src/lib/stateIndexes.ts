@@ -29,10 +29,7 @@ export function buildAdmissionStatusMap(admissions: Admission[]): Map<string, st
   return result;
 }
 
-export function getAdmissionStatusFromMap(
-  map: Map<string, string>,
-  patientId: string
-): string {
+export function getAdmissionStatusFromMap(map: Map<string, string>, patientId: string): string {
   return map.get(patientId) ?? "Outpatient";
 }
 
@@ -45,9 +42,7 @@ export function buildBillMap(bills: Bill[]): Map<string, Bill> {
 }
 
 /** Groups records by patientId in a single pass. */
-export function groupByPatientId<T extends { patientId: string }>(
-  records: T[]
-): Map<string, T[]> {
+export function groupByPatientId<T extends { patientId: string }>(records: T[]): Map<string, T[]> {
   const map = new Map<string, T[]>();
   for (const record of records) {
     const list = map.get(record.patientId);
