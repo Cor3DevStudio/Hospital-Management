@@ -18,13 +18,19 @@ export function getPatientPayments(state: AppState, patientId: string): CashierT
 export function getRevenueForDate(state: AppState, date: string): number {
   return state.cashierTransactions
     .filter((t) => t.status === "Paid" && t.transactionDate === date)
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => {
+      const amount = typeof t.amount === "number" ? t.amount : parseFloat(t.amount as any) || 0;
+      return sum + amount;
+    }, 0);
 }
 
 export function getRevenueForMonth(state: AppState, monthPrefix: string): number {
   return state.cashierTransactions
-    .filter((t) => t.status === "Paid" && t.transactionDate.startsWith(monthPrefix))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter((t) => t.status === "Paid" && t.transactionDate && t.transactionDate.startsWith(monthPrefix))
+    .reduce((sum, t) => {
+      const amount = typeof t.amount === "number" ? t.amount : parseFloat(t.amount as any) || 0;
+      return sum + amount;
+    }, 0);
 }
 
 export function getRevenueChartData(state: AppState, days = 7): { day: string; revenue: number }[] {

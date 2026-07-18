@@ -28,7 +28,9 @@ function buildRevenueByDate(transactions: AppState["cashierTransactions"]): Map<
   const map = new Map<string, number>();
   for (const t of transactions) {
     if (t.status !== "Paid") continue;
-    map.set(t.transactionDate, (map.get(t.transactionDate) ?? 0) + t.amount);
+    if (!t.transactionDate) continue;
+    const amount = typeof t.amount === "number" ? t.amount : parseFloat(t.amount as any) || 0;
+    map.set(t.transactionDate, (map.get(t.transactionDate) ?? 0) + amount);
   }
   return map;
 }
@@ -41,7 +43,9 @@ export function computeDashboardMetrics(state: AppState, today = todayISO()): Da
   let newPatientsMTD = 0;
   for (const p of state.patients) {
     if (!p.archived) activePatientCount += 1;
-    if (p.createdAt.startsWith(monthPrefix)) newPatientsMTD += 1;
+    if (p.createdAt && typeof p.createdAt === "string" && p.createdAt.startsWith(monthPrefix)) {
+      newPatientsMTD += 1;
+    }
   }
 
   const revenueByDate = buildRevenueByDate(state.cashierTransactions);
@@ -51,7 +55,9 @@ export function computeDashboardMetrics(state: AppState, today = todayISO()): Da
   let hasRevenue = false;
   for (const [date, amount] of revenueByDate) {
     if (amount > 0) hasRevenue = true;
-    if (date.startsWith(monthPrefix)) monthlyRevenue += amount;
+    if (date && typeof date === "string" && date.startsWith(monthPrefix)) {
+      monthlyRevenue += amount;
+    }
   }
 
   const avgDailyRevenue = daysInMonth ? Math.round(monthlyRevenue / daysInMonth) : 0;

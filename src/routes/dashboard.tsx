@@ -1,11 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Calendar, Stethoscope, Receipt, TrendingUp, AlertTriangle, ArrowRight } from "lucide-react";
+import {
+  Users,
+  Calendar,
+  Stethoscope,
+  Receipt,
+  TrendingUp,
+  AlertTriangle,
+  ArrowRight,
+} from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { useDashboardMetrics } from "@/lib/hooks/useDashboardMetrics";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Hospital CMS" }] }),
@@ -27,18 +36,24 @@ function Dashboard() {
       value: `₱${metrics.monthlyRevenue.toLocaleString()}`,
       note: metrics.hasRevenue ? "This month" : "No data yet",
       icon: TrendingUp,
+      className: "border-l-4 border-l-emerald-500 bg-emerald-500/[0.02] dark:bg-emerald-950/5",
+      iconBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
     },
     {
       label: "Today's Revenue",
       value: `₱${metrics.todayRevenue.toLocaleString()}`,
       note: metrics.todayRevenue ? "Collected today" : "No data yet",
       icon: Receipt,
+      className: "border-l-4 border-l-amber-500 bg-amber-500/[0.02] dark:bg-amber-950/5",
+      iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
     },
     {
       label: "Avg Daily Revenue",
       value: `₱${metrics.avgDailyRevenue.toLocaleString()}`,
       note: metrics.hasRevenue ? "Month-to-date avg" : "No data yet",
       icon: TrendingUp,
+      className: "border-l-4 border-l-rose-500 bg-rose-500/[0.02] dark:bg-rose-950/5",
+      iconBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
     },
     {
       label: "Today's Appointments",
@@ -71,19 +86,27 @@ function Dashboard() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Real-time overview of hospital operations and financials." />
+      <PageHeader
+        title="Dashboard"
+        description="Real-time overview of hospital operations and financials."
+      />
       <div className="space-y-6 p-6">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {kpis.map((k) => (
-            <Card key={k.label}>
+            <Card
+              key={k.label}
+              className={cn("transition-all duration-200 hover:shadow-sm", k.className)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{k.label}</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {k.label}
+                    </p>
                     <p className="mt-1 text-2xl font-semibold">{k.value}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{k.note}</p>
                   </div>
-                  <div className="rounded-md bg-accent/10 p-2 text-accent">
+                  <div className={cn("rounded-md p-2", k.iconBg || "bg-accent/10 text-accent")}>
                     <k.icon className="h-4 w-4" />
                   </div>
                 </div>
@@ -94,7 +117,9 @@ function Dashboard() {
 
         <div className="grid gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
-            <CardHeader><CardTitle className="text-base">7-Day Revenue</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">7-Day Revenue</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="h-64">
                 {metrics.hasChartData ? (
@@ -102,19 +127,31 @@ function Dashboard() {
                     <BarChart data={metrics.chartData}>
                       <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={12} />
                       <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                      <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
+                      <Tooltip
+                        contentStyle={{
+                          background: "var(--card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 8,
+                        }}
+                      />
                       <Bar dataKey="revenue" fill="var(--accent)" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No data yet</div>
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    No data yet
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-warning-foreground" /> Stock Alerts</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning-foreground" /> Stock Alerts
+              </CardTitle>
+            </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {!metrics.hasInventory ? (
                 <p className="text-muted-foreground">No data yet</p>
@@ -127,7 +164,10 @@ function Dashboard() {
                     ) : (
                       <ul className="mt-1 space-y-1">
                         {lowStock.map((m) => (
-                          <li key={m.id} className="flex justify-between"><span>{m.name}</span><span className="text-destructive">{m.stock}</span></li>
+                          <li key={m.id} className="flex justify-between">
+                            <span>{m.name}</span>
+                            <span className="text-destructive">{m.stock}</span>
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -139,7 +179,10 @@ function Dashboard() {
                     ) : (
                       <ul className="mt-1 space-y-1">
                         {expiringSoon.slice(0, 4).map((m) => (
-                          <li key={m.id} className="flex justify-between"><span>{m.name}</span><span className="text-warning-foreground">{m.expiry}</span></li>
+                          <li key={m.id} className="flex justify-between">
+                            <span>{m.name}</span>
+                            <span className="text-warning-foreground">{m.expiry}</span>
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -151,7 +194,9 @@ function Dashboard() {
         </div>
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Quick Actions</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Quick Actions</CardTitle>
+          </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
               { to: "/patients", label: "Patients", icon: Users },
@@ -161,7 +206,9 @@ function Dashboard() {
             ].map((q) => (
               <Button key={q.to} asChild variant="outline" className="justify-between h-12">
                 <Link to={q.to}>
-                  <span className="flex items-center gap-2"><q.icon className="h-4 w-4" /> {q.label}</span>
+                  <span className="flex items-center gap-2">
+                    <q.icon className="h-4 w-4" /> {q.label}
+                  </span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
