@@ -25,17 +25,22 @@ import { useStore, uid, todayISO, type Bill, type CaseRate } from "@/lib/store";
 import { fetchCaseRateByCode } from "@/lib/services/caseRateApi";
 import {
   applyCaseRateToBill,
+  applyMandatoryDiscount,
   canCancelBillDischarge,
   computeBillBalance,
   computeBillNetTotal,
   computeBillSubtotal,
   createBill,
   deleteBill,
+  hasMandatoryDiscountType,
+  MANDATORY_DISCOUNT_RATE,
   normalizeBillPaymentMethod,
   resolveLineItemPrice,
+  resolveMandatoryDiscountAmount,
   setBillDischargeDate,
   type BillLineItem,
 } from "@/lib/services/billingService";
+import type { MandatoryDiscountType } from "@/lib/store";
 import {
   priceCategoryToChargeCategory,
   resolveChargeCategory,
@@ -95,6 +100,8 @@ function BillingPage() {
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [notes, setNotes] = useState("");
   const [dischargeDate, setDischargeDate] = useState("");
+  const [mandatoryDiscountType, setMandatoryDiscountType] =
+    useState<MandatoryDiscountType>("none");
 
   // Preview SOA Modal State
   const [showPreview, setShowPreview] = useState(false);
@@ -131,6 +138,9 @@ function BillingPage() {
 
   // Selected Bill Stats
   const selectedBillSubtotal = selectedBill ? computeBillSubtotal(selectedBill) : 0;
+  const selectedBillMandatoryDiscount = selectedBill
+    ? resolveMandatoryDiscountAmount(selectedBill)
+    : 0;
   const selectedBillTotal = selectedBill ? computeBillNetTotal(selectedBill) : 0;
   const selectedBillBalance = selectedBill ? computeBillBalance(selectedBill) : 0;
 
@@ -169,6 +179,16 @@ function BillingPage() {
     setPaymentAmount("");
     setNotes("");
     setDischargeDate("");
+    setMandatoryDiscountType("none");
+  };
+
+  const suggestMandatoryDiscountType = (bill: Bill): MandatoryDiscountType => {
+    if (hasMandatoryDiscountType(bill.mandatoryDiscountType)) return bill.mandatoryDiscountType;
+    if (bill.mandatoryDiscountType === "none") return "none";
+    const p = state.patients.find((x) => x.id === bill.patientId);
+    if (p?.seniorCitizen?.flag) return "senior";
+    if (p?.pwd?.flag) return "pwd";
+    return "none";
   };
 
   const handleSelectBill = (bill: Bill) => {
@@ -179,6 +199,22 @@ function BillingPage() {
     setNotes(bill.notes || "");
     setPaymentMethod(bill.paymentMethod || "Cash");
     setDischargeDate(bill.dischargeDate || "");
+    const suggested = suggestMandatoryDiscountType(bill);
+    setMandatoryDiscountType(suggested);
+    // Persist suggested SC/PWD discount when bill has no type saved yet
+    if (
+      !bill.mandatoryDiscountType &&
+      hasMandatoryDiscountType(suggested) &&
+      (bill.mandatoryDiscountAmount || 0) === 0
+    ) {
+      let updated: Bill | undefined;
+      setState((s) => {
+        const next = applyMandatoryDiscount(s, bill.id, suggested);
+        updated = next.bills.find((b) => b.id === bill.id);
+        return next;
+      });
+      if (updated) setSelectedBill(updated);
+    }
     if (bill.caseRateCode) {
       void fetchCaseRateByCode(bill.caseRateCode).then((rate) => {
         if (rate) {
@@ -309,12 +345,23 @@ function BillingPage() {
         toast.error(result.error);
         return s;
       }
-      createdBill = result.bill;
-      return syncEClaimFromBill(result.state, result.bill);
+      let next = syncEClaimFromBill(result.state, result.bill);
+      const p = next.patients.find((x) => x.id === patientId);
+      const suggested: MandatoryDiscountType = p?.seniorCitizen?.flag
+        ? "senior"
+        : p?.pwd?.flag
+          ? "pwd"
+          : "none";
+      if (suggested !== "none") {
+        next = applyMandatoryDiscount(next, result.bill.id, suggested);
+      }
+      createdBill = next.bills.find((b) => b.id === result.bill.id) ?? result.bill;
+      return next;
     });
     if (!createdBill) return;
     setDraftItems([]);
     setSelectedBill(createdBill);
+    setMandatoryDiscountType(createdBill.mandatoryDiscountType || "none");
     toast.success("Billing statement created successfully!");
   };
 
@@ -359,6 +406,23 @@ function BillingPage() {
     );
   };
 
+  const handleMandatoryDiscountChange = (type: MandatoryDiscountType) => {
+    setMandatoryDiscountType(type);
+    if (!selectedBill) return;
+    let updated: Bill | undefined;
+    setState((s) => {
+      const next = applyMandatoryDiscount(s, selectedBill.id, type);
+      updated = next.bills.find((b) => b.id === selectedBill.id);
+      return next;
+    });
+    if (updated) setSelectedBill(updated);
+    toast.success(
+      type === "none"
+        ? "Mandatory discount cleared"
+        : `Mandatory discount applied (${Math.round(MANDATORY_DISCOUNT_RATE * 100)}% of gross)`,
+    );
+  };
+
   const handleCancelDischarge = () => {
     if (!selectedBill) return;
     const check = canCancelBillDischarge(state, selectedBill);
@@ -372,7 +436,7 @@ function BillingPage() {
       return result.state;
     });
     if (updated) setSelectedBill(updated);
-    toast.success("Discharge cancelled");
+    toast.success("Discharge cancelled — patient re-admitted; charging unblocked");
   };
 
   const handleApplyPhilHealthPay = () => {
@@ -893,6 +957,37 @@ function BillingPage() {
                     </div>
 
                     <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Mandatory Discount (SC / PWD / Pregnant)
+                      </Label>
+                      <Select
+                        value={mandatoryDiscountType}
+                        onValueChange={(v) =>
+                          handleMandatoryDiscountChange(v as MandatoryDiscountType)
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="senior">Senior Citizen (20%)</SelectItem>
+                          <SelectItem value="pwd">PWD (20%)</SelectItem>
+                          <SelectItem value="pregnant">Pregnant Women (20%)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {hasMandatoryDiscountType(mandatoryDiscountType) && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Discount amount: ₱
+                          {selectedBillMandatoryDiscount.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          (20% of gross)
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Notes</Label>
                       <Input
                         value={notes}
@@ -942,6 +1037,15 @@ function BillingPage() {
                         <span>
                           ₱
                           {selectedBillSubtotal.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Mandatory Discount</span>
+                        <span>
+                          − ₱
+                          {selectedBillMandatoryDiscount.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                           })}
                         </span>

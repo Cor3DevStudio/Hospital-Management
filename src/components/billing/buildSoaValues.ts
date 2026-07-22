@@ -78,7 +78,15 @@ export function buildSoaValues(input: {
   const hciPhic = phic > 0 ? phic * 0.7 : 0;
   const pfPhic = phic > 0 ? phic * 0.3 : 0;
   const paid = bill.amountPaid || 0;
-  const balance = Math.max(0, subtotal - phic - paid);
+  const mandatory =
+    bill.mandatoryDiscountAmount && bill.mandatoryDiscountAmount > 0
+      ? bill.mandatoryDiscountAmount
+      : bill.mandatoryDiscountType === "senior" ||
+          bill.mandatoryDiscountType === "pwd" ||
+          bill.mandatoryDiscountType === "pregnant"
+        ? Math.round(subtotal * 0.2 * 100) / 100
+        : 0;
+  const balance = Math.max(0, subtotal - mandatory - phic - paid);
   const age = getAgeYears(patient?.birthDate);
   const formNo =
     "SOA-" + bill.date.replace(/-/g, "") + "-" + (bill.id ? bill.id.split("-").pop() : "TEMP");
@@ -119,7 +127,7 @@ export function buildSoaValues(input: {
     ),
     ST_ACTUAL: moneyOrZero(hciTotal),
     ST_VAT: z,
-    ST_DISC: z,
+    ST_DISC: moneyOrZero(mandatory),
     ST_CR1: moneyOrZero(hciPhic),
     ST_CR2: z,
     ST_ASSIST: z,
@@ -127,7 +135,7 @@ export function buildSoaValues(input: {
     ST_BAL: moneyOrZero(balance),
     TOT_FEE_ACTUAL: moneyOrZero(subtotal),
     TOT_FEE_VAT: z,
-    TOT_FEE_DISC: z,
+    TOT_FEE_DISC: moneyOrZero(mandatory),
     TOT_FEE_CR1: moneyOrZero(phic),
     TOT_FEE_CR2: z,
     TOT_FEE_ASSIST: z,
@@ -146,7 +154,7 @@ export function buildSoaValues(input: {
     PF_BAL: moneyOrZero(Math.max(0, pfTotal - pfPhic)),
     TOT_CR1: moneyOrZero(phic),
     TOT_CR2: z,
-    TOT_AFTER: moneyOrZero(Math.max(0, subtotal - phic)),
+    TOT_AFTER: moneyOrZero(Math.max(0, subtotal - mandatory - phic)),
     TOT_BAL: moneyOrZero(balance),
     NBB: isIndigent ? "NBB" : "",
     PREPARED_BY: truncateSoaField(input.billingOfficerName || "", 32),

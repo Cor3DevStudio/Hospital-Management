@@ -304,6 +304,8 @@ export type BillItem = {
   doctorRole?: "Surgeon" | "Anesthesiologist";
 };
 
+export type MandatoryDiscountType = "none" | "senior" | "pwd" | "pregnant";
+
 export type Bill = {
   id: string;
   patientId: string;
@@ -319,6 +321,10 @@ export type Bill = {
   caseRateCode?: string;
   paymentMethod?: string;
   notes?: string;
+  /** Senior Citizen / PWD / Pregnant Women mandatory discount. */
+  mandatoryDiscountType?: MandatoryDiscountType;
+  /** Persisted 20% of gross when a mandatory discount type is active. */
+  mandatoryDiscountAmount?: number;
 };
 
 export type PriceItem = {

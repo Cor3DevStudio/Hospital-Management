@@ -1,6 +1,7 @@
 import { getCaseRateByCode } from "@/lib/caseRateService";
 import { getPriceAsOf } from "@/lib/priceService";
 import {
+  cancelDischarge,
   dischargePatient,
   getLatestAdmission,
   updateAdmission,
@@ -19,7 +20,44 @@ import {
   type BillItem,
   type CaseRate,
   type CashierTransaction,
+  type MandatoryDiscountType,
 } from "@/lib/store";
+
+export const MANDATORY_DISCOUNT_RATE = 0.2;
+
+export type { MandatoryDiscountType };
+
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** True when a mandatory discount type is selected (not none/undefined). */
+export function hasMandatoryDiscountType(
+  type: MandatoryDiscountType | undefined,
+): type is Exclude<MandatoryDiscountType, "none"> {
+  return type === "senior" || type === "pwd" || type === "pregnant";
+}
+
+/** Compute 20% of gross when a mandatory discount type is active. */
+export function computeMandatoryDiscount(bill: Bill): number {
+  if (!hasMandatoryDiscountType(bill.mandatoryDiscountType)) return 0;
+  return roundMoney(computeBillSubtotal(bill) * MANDATORY_DISCOUNT_RATE);
+}
+
+/** Recompute and attach mandatoryDiscountAmount from type + current items. */
+export function withRecomputedMandatoryDiscount(bill: Bill): Bill {
+  if (!hasMandatoryDiscountType(bill.mandatoryDiscountType)) {
+    return {
+      ...bill,
+      mandatoryDiscountType: bill.mandatoryDiscountType === "none" ? "none" : undefined,
+      mandatoryDiscountAmount: 0,
+    };
+  }
+  return {
+    ...bill,
+    mandatoryDiscountAmount: computeMandatoryDiscount(bill),
+  };
+}
 
 export type BillLineItem = {
   description: string;
@@ -61,8 +99,21 @@ export function computeBillSubtotal(bill: Bill): number {
   return bill.items.reduce((sum, i) => sum + (i.amount || 0), 0);
 }
 
+/** Resolved mandatory discount for totals (prefer live recompute when type is set). */
+export function resolveMandatoryDiscountAmount(bill: Bill): number {
+  if (!hasMandatoryDiscountType(bill.mandatoryDiscountType)) {
+    return bill.mandatoryDiscountAmount || 0;
+  }
+  return computeMandatoryDiscount(bill);
+}
+
 export function computeBillNetTotal(bill: Bill): number {
-  return Math.max(0, computeBillSubtotal(bill) - (bill.philhealthDeduction || 0));
+  return Math.max(
+    0,
+    computeBillSubtotal(bill) -
+      resolveMandatoryDiscountAmount(bill) -
+      (bill.philhealthDeduction || 0),
+  );
 }
 
 export function computeBillBalance(bill: Bill): number {
@@ -96,25 +147,31 @@ export function normalizeBillPaymentMethod(method: string): CashierTransaction["
   }
 }
 
-/** Cancel bill discharge only while the patient is still admitted (has not gone home). */
+/** Allow cancel whenever the bill is marked discharged (reverses billing discharge + re-admits). */
 export function canCancelBillDischarge(
-  state: AppState,
+  _state: AppState,
   bill: Bill,
 ): { allowed: boolean; reason?: string } {
   if (!bill.dischargeDate) {
     return { allowed: false, reason: "This bill is not marked as discharged." };
   }
-
-  const admission = getLatestAdmission(state, bill.patientId);
-  if (admission?.status === "Discharged" && admission.dischargeDate) {
-    return {
-      allowed: false,
-      reason:
-        "Patient has already been discharged from admission. Cancel discharge is not allowed once the patient has gone home.",
-    };
-  }
-
   return { allowed: true };
+}
+
+/** Apply Senior / PWD / Pregnant mandatory discount (20% of gross). */
+export function applyMandatoryDiscount(
+  state: AppState,
+  billId: string,
+  type: MandatoryDiscountType,
+): AppState {
+  const bill = state.bills.find((b) => b.id === billId);
+  if (!bill) return state;
+  const nextType = type === "none" ? "none" : type;
+  const updated = withRecomputedMandatoryDiscount({
+    ...bill,
+    mandatoryDiscountType: nextType,
+  });
+  return updateBill(state, updated);
 }
 
 export function validateInventoryForItems(state: AppState, items: BillLineItem[]): string | null {
@@ -193,7 +250,8 @@ export function deleteBill(state: AppState, billId: string): AppState {
 }
 
 export function updateBill(state: AppState, bill: Bill): AppState {
-  const withStatus = { ...bill, status: deriveBillStatus(bill) };
+  const withDiscount = withRecomputedMandatoryDiscount(bill);
+  const withStatus = { ...withDiscount, status: deriveBillStatus(withDiscount) };
   return {
     ...state,
     bills: state.bills.map((b) => (b.id === bill.id ? withStatus : b)),
@@ -203,6 +261,7 @@ export function updateBill(state: AppState, bill: Bill): AppState {
 /**
  * Set or clear bill discharge date. For in-patients, syncs admission discharge and
  * auto-posts Room & Board (days × daily rate from Settings) on the target bill.
+ * Clearing discharge also re-admits the patient when admission was discharged.
  */
 export function setBillDischargeDate(
   state: AppState,
@@ -217,7 +276,10 @@ export function setBillDischargeDate(
     if (!check.allowed) return { state, error: check.reason };
     let next = updateBill(state, { ...bill, dischargeDate: undefined });
     const admission = getLatestAdmission(next, bill.patientId);
-    if (admission) {
+    if (admission && (admission.status === "Discharged" || !!admission.dischargeDate)) {
+      // cancelDischarge → syncRoomCharges removes Room & Board when re-admitting
+      next = cancelDischarge(next, admission.id);
+    } else if (admission) {
       next = removeRoomBoardCharges(next, admission.id);
     }
     return { state: next };
@@ -298,7 +360,6 @@ export function applyCaseRateToBill(
     items: nextItems,
     caseRateCode: caseRateCode === "none" ? undefined : caseRateCode,
     philhealthDeduction: deduction,
-    status: deriveBillStatus({ ...bill, items: nextItems, philhealthDeduction: deduction }),
   };
   return updateBill(state, updated);
 }
@@ -391,7 +452,6 @@ export function appendBillLineItem(state: AppState, billId: string, item: BillLi
   const updated: Bill = {
     ...bill,
     items: [...bill.items, normalizeBillLineItem(state, item)],
-    status: deriveBillStatus(bill),
   };
   return updateBill(state, updated);
 }

@@ -1,7 +1,10 @@
 import { strict as assert } from "assert";
 import {
   applyCaseRateToBill,
+  applyMandatoryDiscount,
   canCancelBillDischarge,
+  computeBillNetTotal,
+  computeMandatoryDiscount,
   createBill,
   normalizeBillPaymentMethod,
   recordPayment,
@@ -10,6 +13,7 @@ import {
 } from "./billingService";
 import { processBillPayment } from "./cashierService";
 import { truncateSoaField } from "../../components/billing/buildSoaValues";
+import { isPatientDischarged } from "./admissionService";
 import type { AppState, Bill, CaseRate } from "../store";
 
 function baseState(): AppState {
@@ -90,7 +94,29 @@ function run() {
   });
   assert("error" in overpay, "processBillPayment should reject overpayment");
 
-  // canCancelBillDischarge
+  // mandatory discount — 20% of gross
+  const discountBill = sampleBill({
+    items: [{ description: "Meds", amount: 10000, qty: 1, unitPrice: 10000 }],
+    philhealthDeduction: 2000,
+  });
+  assert.equal(computeMandatoryDiscount(discountBill), 0);
+  const withSenior = applyMandatoryDiscount(
+    { ...baseState(), bills: [discountBill] },
+    discountBill.id,
+    "senior",
+  );
+  const seniorBill = withSenior.bills[0];
+  assert.equal(seniorBill.mandatoryDiscountType, "senior");
+  assert.equal(seniorBill.mandatoryDiscountAmount, 2000);
+  assert.equal(computeMandatoryDiscount(seniorBill), 2000);
+  // net = 10000 - 2000 (SC) - 2000 (PHIC) = 6000
+  assert.equal(computeBillNetTotal(seniorBill), 6000);
+
+  const cleared = applyMandatoryDiscount(withSenior, discountBill.id, "none");
+  assert.equal(cleared.bills[0].mandatoryDiscountAmount, 0);
+  assert.equal(computeBillNetTotal(cleared.bills[0]), 8000);
+
+  // canCancelBillDischarge — allowed whenever bill has dischargeDate
   const dischargedBill = sampleBill({ dischargeDate: "2026-07-05" });
   const admittedState = {
     ...baseState(),
@@ -116,11 +142,33 @@ function run() {
         admissionDate: "2026-07-01",
         dischargeDate: "2026-07-05",
         status: "Discharged",
+        roomStays: [
+          {
+            id: "stay-1",
+            roomTypeId: "room-600",
+            roomWard: "Ward",
+            startDate: "2026-07-01",
+            endDate: "2026-07-05",
+          },
+        ],
       },
     ],
   } as unknown as AppState;
-  const blocked = canCancelBillDischarge(goneHomeState, dischargedBill);
-  assert(!blocked.allowed, "Should block cancel after patient discharged from admission");
+  const canCancelAfterDischarge = canCancelBillDischarge(goneHomeState, dischargedBill);
+  assert(
+    canCancelAfterDischarge.allowed,
+    "Should allow cancel after admission discharge (billing reverse)",
+  );
+
+  // setBillDischargeDate cancel — clears bill and re-admits patient
+  const cancelResult = setBillDischargeDate(goneHomeState, dischargedBill.id, undefined);
+  assert(!cancelResult.error, "Cancel discharge should succeed");
+  const cancelledBill = cancelResult.state.bills.find((b) => b.id === dischargedBill.id);
+  assert(!cancelledBill?.dischargeDate, "Bill dischargeDate should be cleared");
+  const readmitted = cancelResult.state.admissions.find((a) => a.id === "ADM1");
+  assert.equal(readmitted?.status, "Admitted");
+  assert(!readmitted?.dischargeDate, "Admission dischargeDate should be cleared");
+  assert(!isPatientDischarged(cancelResult.state, "P1"), "Pharmacy gate should unblock");
 
   // setBillDischargeDate — auto Room & Board from admission stay
   const roomRateId = "room-600";

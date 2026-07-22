@@ -42,7 +42,15 @@ export function buildEsoaValues(input: {
   const subtotal = items.reduce((s, i) => s + (i.amount || 0), 0);
   const phic = bill.philhealthDeduction || 0;
   const paid = bill.amountPaid || 0;
-  const balance = Math.max(0, subtotal - phic - paid);
+  const mandatory =
+    bill.mandatoryDiscountAmount && bill.mandatoryDiscountAmount > 0
+      ? bill.mandatoryDiscountAmount
+      : bill.mandatoryDiscountType === "senior" ||
+          bill.mandatoryDiscountType === "pwd" ||
+          bill.mandatoryDiscountType === "pregnant"
+        ? Math.round(subtotal * 0.2 * 100) / 100
+        : 0;
+  const balance = Math.max(0, subtotal - mandatory - phic - paid);
   const age = getAgeYears(patient?.birthDate);
   const refBase =
     bill.date.replace(/-/g, "").slice(0, 4) +
@@ -65,7 +73,7 @@ export function buildEsoaValues(input: {
     ADMIT_DT: formatDateTime12(bill.date),
     DISCHARGE_DT: formatDateTime12(bill.dischargeDate || bill.date, "05:00:00 PM"),
     FEE_AMOUNT: money2(subtotal),
-    FEE_MANDATORY: money2(0),
+    FEE_MANDATORY: money2(mandatory),
     FEE_PHIC: money2(phic),
     FEE_OTHER: money2(paid),
     FEE_BALANCE: money2(balance),

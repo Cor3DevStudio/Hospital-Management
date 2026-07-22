@@ -340,4 +340,45 @@ assert.equal(noRoomModel.hciRows[0]?.label, "Room and Board");
 assert.equal(noRoomModel.hciRows[0]?.actual, 0);
 assert.equal(noRoomModel.itemizedLines[0]?.itemName, "Paracetamol");
 
+// Mandatory discount on TOTAL; PhilHealth must not appear in discountAgency / Mandatory Discount
+const withMandatoryBill: Bill = {
+  id: "bill-sc",
+  patientId: "p5",
+  date: "2026-07-09",
+  patientType: "Out-Patient",
+  items: [
+    { description: "CBC", amount: 10000, category: "Lab" },
+    { description: "X-Ray", amount: 5000, category: "Radiology" },
+  ],
+  philhealthDeduction: 3000,
+  amountPaid: 0,
+  mandatoryDiscountType: "senior",
+  mandatoryDiscountAmount: 3000, // 20% of 15000
+};
+
+const withMandatory = buildHospitalSoaModel({
+  bill: withMandatoryBill,
+  state: emptyState,
+  patient: {
+    id: "p5",
+    firstName: "Lola",
+    lastName: "Santos",
+    birthDate: "1940-01-01",
+    gender: "Female",
+    civilStatus: "Widowed",
+    contactNumber: "",
+    address: {},
+  },
+  hospital: { name: "Hospital", address: "Manila", phone: "" },
+});
+
+assert.equal(withMandatory.total.discountScPwd, 3000);
+assert.equal(withMandatory.total.discountAgency, 0);
+// PhilHealth stays in phicFirst only (HCI share of case-rate split when no case rate)
+assert.equal(withMandatory.total.phicFirst, 2100);
+assert.notEqual(withMandatory.total.discountScPwd, withMandatory.total.phicFirst);
+assert.equal(withMandatory.discountChecks.doh, false);
+// balance uses full bill.philhealthDeduction: 15000 - 3000 SC - 3000 PHIC = 9000
+assert.equal(withMandatory.total.outOfPocket, 9000);
+
 console.log("buildHospitalSoaModel.test.ts: all assertions passed");

@@ -22,7 +22,9 @@ export function CashierReceiptSheet({
   cashierName,
 }: CashierReceiptSheetProps) {
   const billTotal = bill
-    ? bill.items.reduce((s, i) => s + (i.amount || 0), 0) - (bill.philhealthDeduction || 0)
+    ? bill.items.reduce((s, i) => s + (i.amount || 0), 0) -
+      (bill.mandatoryDiscountAmount || 0) -
+      (bill.philhealthDeduction || 0)
     : null;
 
   return (

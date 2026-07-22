@@ -439,7 +439,16 @@ export function buildHospitalSoaModel(input: {
 
   const paid = bill.amountPaid || 0;
 
-  const balance = Math.max(0, subtotal - phic - paid);
+  const mandatoryDiscount =
+    bill.mandatoryDiscountAmount && bill.mandatoryDiscountAmount > 0
+      ? bill.mandatoryDiscountAmount
+      : bill.mandatoryDiscountType === "senior" ||
+          bill.mandatoryDiscountType === "pwd" ||
+          bill.mandatoryDiscountType === "pregnant"
+        ? Math.round(subtotal * 0.2 * 100) / 100
+        : 0;
+
+  const balance = Math.max(0, subtotal - mandatoryDiscount - phic - paid);
 
   const age = getAgeYears(patient?.birthDate);
   const ageParts = getAgeParts(patient?.birthDate);
@@ -642,7 +651,7 @@ export function buildHospitalSoaModel(input: {
     pfSubtotal,
 
     total: amountRow("TOTAL", subtotal, {
-      discountAgency: allocation.totalBenefit,
+      discountScPwd: mandatoryDiscount,
 
       phicFirst: allocation.totalBenefit,
 
@@ -654,7 +663,7 @@ export function buildHospitalSoaModel(input: {
 
       dswd: false,
 
-      doh: allocation.totalBenefit > 0,
+      doh: false,
 
       hmo: false,
 
@@ -674,7 +683,7 @@ export function buildHospitalSoaModel(input: {
             pfBenefit: allocation.pfBenefit,
             totalBenefit: allocation.totalBenefit,
             totalActual: subtotal,
-            patientExcess: Math.max(0, subtotal - allocation.totalBenefit),
+            patientExcess: Math.max(0, subtotal - mandatoryDiscount - allocation.totalBenefit),
             amountPaid: paid,
             balanceDue: balance,
           }
