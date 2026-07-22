@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildBatchTransmittalMeta,
   filterEClaims,
   getClaimDeadlineFromDates,
   getClaimFilingDeadline,
   resolveClaimAdmission,
   resolveClaimDates,
+  transmitEClaimsBatch,
 } from "./eclaimService";
 import type { Admission, AppState, Bill, EClaim } from "@/lib/store";
 
@@ -148,5 +150,47 @@ describe("getClaimDeadlineFromDates", () => {
   it("falls back to admission date when discharge date is empty (still admitted)", () => {
     const info = getClaimDeadlineFromDates({ admissionDate: daysFromToday(-5), dischargeDate: "" });
     expect(info?.daysRemaining).toBe(55);
+  });
+});
+
+describe("transmitEClaimsBatch", () => {
+  it("marks selected pending claims submitted and syncs bill status", () => {
+    const pending: EClaim = {
+      ...claim,
+      id: "ECL-A",
+      claimStatus: "Pending",
+      billId: "BILL-1",
+    };
+    const other: EClaim = {
+      ...claim,
+      id: "ECL-B",
+      claimStatus: "Pending",
+      billId: undefined,
+      patientId: "P2",
+    };
+    const state = {
+      eClaims: [pending, other],
+      bills: [{ ...bill, eclaimStatus: "Pending" as const }],
+    } as AppState;
+
+    const next = transmitEClaimsBatch(state, ["ECL-A"]);
+    expect(next.eClaims.find((c) => c.id === "ECL-A")?.claimStatus).toBe("Submitted");
+    expect(next.eClaims.find((c) => c.id === "ECL-B")?.claimStatus).toBe("Pending");
+    expect(next.bills.find((b) => b.id === "BILL-1")?.eclaimStatus).toBe("Transmitted");
+  });
+});
+
+describe("buildBatchTransmittalMeta", () => {
+  it("builds receipt control numbers from hospital accreditation", () => {
+    const meta = buildBatchTransmittalMeta(
+      { name: "Test Hospital", philhealthAccreditation: "820101", tin: "" },
+      3,
+      new Date("2026-07-22T08:15:00"),
+    );
+    expect(meta.facilityName).toBe("Test Hospital");
+    expect(meta.hospitalCode).toBe("820101");
+    expect(meta.totalClaims).toBe(3);
+    expect(meta.receivedDate).toBe("07-22-2026");
+    expect(meta.transmissionControlNumber).toMatch(/^8201-/);
   });
 });

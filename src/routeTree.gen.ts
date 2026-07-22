@@ -34,6 +34,7 @@ import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AppointmentsRouteImport } from './routes/appointments'
 import { Route as AdmissionRouteImport } from './routes/admission'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EclaimsMonitoringBatchTransmitRouteImport } from './routes/eclaims-monitoring_.batch-transmit'
 import { Route as ApiUsersIndexRouteImport } from './routes/api/users/index'
 import { Route as ApiCaseRatesIndexRouteImport } from './routes/api/case-rates/index'
 import { Route as ApiUsersIdRouteImport } from './routes/api/users/$id'
@@ -168,6 +169,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EclaimsMonitoringBatchTransmitRoute =
+  EclaimsMonitoringBatchTransmitRouteImport.update({
+    id: '/eclaims-monitoring_/batch-transmit',
+    path: '/eclaims-monitoring/batch-transmit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiUsersIndexRoute = ApiUsersIndexRouteImport.update({
   id: '/api/users/',
   path: '/api/users/',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/supplies': typeof SuppliesRoute
+  '/eclaims-monitoring/batch-transmit': typeof EclaimsMonitoringBatchTransmitRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/health/db': typeof ApiHealthDbRoute
@@ -270,6 +278,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/supplies': typeof SuppliesRoute
+  '/eclaims-monitoring/batch-transmit': typeof EclaimsMonitoringBatchTransmitRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/health/db': typeof ApiHealthDbRoute
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/supplies': typeof SuppliesRoute
+  '/eclaims-monitoring_/batch-transmit': typeof EclaimsMonitoringBatchTransmitRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/health/db': typeof ApiHealthDbRoute
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/supplies'
+    | '/eclaims-monitoring/batch-transmit'
     | '/api/auth/login'
     | '/api/auth/register'
     | '/api/health/db'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/supplies'
+    | '/eclaims-monitoring/batch-transmit'
     | '/api/auth/login'
     | '/api/auth/register'
     | '/api/health/db'
@@ -413,6 +425,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/supplies'
+    | '/eclaims-monitoring_/batch-transmit'
     | '/api/auth/login'
     | '/api/auth/register'
     | '/api/health/db'
@@ -449,6 +462,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   SuppliesRoute: typeof SuppliesRoute
+  EclaimsMonitoringBatchTransmitRoute: typeof EclaimsMonitoringBatchTransmitRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
   ApiHealthDbRoute: typeof ApiHealthDbRoute
@@ -636,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/eclaims-monitoring_/batch-transmit': {
+      id: '/eclaims-monitoring_/batch-transmit'
+      path: '/eclaims-monitoring/batch-transmit'
+      fullPath: '/eclaims-monitoring/batch-transmit'
+      preLoaderRoute: typeof EclaimsMonitoringBatchTransmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/users/': {
       id: '/api/users/'
       path: '/api/users'
@@ -721,6 +742,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   SuppliesRoute: SuppliesRoute,
+  EclaimsMonitoringBatchTransmitRoute: EclaimsMonitoringBatchTransmitRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthRegisterRoute: ApiAuthRegisterRoute,
   ApiHealthDbRoute: ApiHealthDbRoute,

@@ -182,6 +182,76 @@ export function updateEClaimStatus(
   return updateEClaim(state, { ...claim, claimStatus: status });
 }
 
+/** Mark multiple pending eClaims as Submitted and sync linked bill eclaimStatus. */
+export function transmitEClaimsBatch(state: AppState, claimIds: string[]): AppState {
+  const idSet = new Set(claimIds);
+  if (idSet.size === 0) return state;
+
+  const now = new Date().toISOString();
+  const billIds = new Set<string>();
+  const eClaims = (state.eClaims ?? []).map((claim) => {
+    if (!idSet.has(claim.id) || claim.claimStatus !== "Pending") return claim;
+    if (claim.billId) billIds.add(claim.billId);
+    return { ...claim, claimStatus: "Submitted" as const, updatedAt: now };
+  });
+
+  const bills =
+    billIds.size === 0
+      ? state.bills
+      : state.bills.map((b) =>
+          billIds.has(b.id) ? { ...b, eclaimStatus: "Transmitted" as const } : b,
+        );
+
+  return { ...state, eClaims, bills };
+}
+
+export type BatchTransmittalMeta = {
+  facilityName: string;
+  hospitalCode: string;
+  receivedDate: string;
+  receiptTicketNumber: string;
+  hospitalTransmittalNo: string;
+  transmissionControlNumber: string;
+  totalClaims: number;
+};
+
+/** Build receipt/control numbers for a batch transmittal (CMS template, not PhilHealth official). */
+export function buildBatchTransmittalMeta(
+  hospital: Pick<AppState["hospital"], "name" | "philhealthAccreditation" | "tin">,
+  claimCount: number,
+  receivedAt: Date = new Date(),
+): BatchTransmittalMeta {
+  const y = receivedAt.getFullYear();
+  const m = String(receivedAt.getMonth() + 1).padStart(2, "0");
+  const d = String(receivedAt.getDate()).padStart(2, "0");
+  const hh = String(receivedAt.getHours()).padStart(2, "0");
+  const mm = String(receivedAt.getMinutes()).padStart(2, "0");
+  const seq = uid().toUpperCase().slice(0, 4);
+  const hospitalCode = (hospital.philhealthAccreditation || hospital.tin || "0000")
+    .replace(/\D/g, "")
+    .slice(0, 6)
+    .padStart(4, "0");
+  const codePrefix = hospitalCode.slice(0, 4);
+
+  return {
+    facilityName: hospital.name || "Hospital Facility",
+    hospitalCode,
+    receivedDate: `${m}-${d}-${y}`,
+    receiptTicketNumber: `${m}${d}${String(y).slice(2)}${hh}${mm}${seq}`,
+    hospitalTransmittalNo: `${y}${m}${d}${seq}`,
+    transmissionControlNumber: `${codePrefix}-${m}${String(y).slice(2)}-${hh}${mm}-${seq}`,
+    totalClaims: claimCount,
+  };
+}
+
+/** Display claim series used on the batch receipt (derived from claim id). */
+export function formatClaimSeriesLhio(claimId: string): string {
+  const digits = claimId.replace(/\D/g, "");
+  if (digits.length >= 15) return digits.slice(0, 15);
+  const pad = uid().replace(/\D/g, "") || "0";
+  return (digits + pad + "000000000000000").slice(0, 15);
+}
+
 export function syncEClaimFromBill(state: AppState, bill: Bill): AppState {
   const patient = state.patients.find((p) => p.id === bill.patientId);
   const admission = resolveClaimAdmission(

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Send,
@@ -10,6 +10,7 @@ import {
   Paperclip,
   FileDown,
   FileCode,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -531,6 +532,11 @@ function EClaimsPage() {
             </Button>
             <Button size="sm" variant="outline" onClick={importFromBills}>
               Import from Bills
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/eclaims-monitoring/batch-transmit">
+                <Layers className="h-4 w-4" /> Transmit by Batch
+              </Link>
             </Button>
           </div>
 
