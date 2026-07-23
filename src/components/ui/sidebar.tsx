@@ -24,8 +24,6 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
-/** Must be >= the sidebar/main width-collapse transition duration (see AppSidebar's duration-300). */
-const SIDEBAR_OVERLAY_COLLAPSE_MS = 320;
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -34,19 +32,8 @@ type SidebarContextProps = {
   openMobile: boolean;
   setOpenMobile: (open: boolean) => void;
   isMobile: boolean;
+  /** Click toggle: expand ↔ collapse (icon rail). No hover/overlay behavior. */
   toggleSidebar: () => void;
-  /** Main dashboard expanded full-width (pinned by toggle). */
-  contentExpanded: boolean;
-  /** Cursor is over the sidebar (used only while contentExpanded). */
-  sidebarHovered: boolean;
-  setSidebarHovered: (hovered: boolean) => void;
-  /**
-   * Whether the sidebar should render as a fixed overlay (and the main content as
-   * full-width "behind" it). Mirrors `contentExpanded && sidebarHovered`, but on the
-   * way out it stays true until the collapse width transition finishes, so the
-   * sidebar and main content never desync mid-animation (no snap/bleed).
-   */
-  overlayActive: boolean;
 };
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null);
@@ -82,30 +69,6 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile();
     const [openMobile, setOpenMobile] = React.useState(false);
-    const [contentExpanded, setContentExpanded] = React.useState(false);
-    const [sidebarHovered, setSidebarHovered] = React.useState(false);
-
-    // Sequences the sidebar's fixed-overlay position with its own width transition so
-    // it never snaps back in-flow (and the main content never snaps to w-full/back)
-    // before the collapse animation has actually finished. See sidebar-dashboard-expand.mdc.
-    const [overlayActive, setOverlayActive] = React.useState(false);
-    const overlayCollapseTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    React.useLayoutEffect(() => {
-      const shouldOverlay = contentExpanded && sidebarHovered;
-      if (shouldOverlay) {
-        setOverlayActive(true);
-      } else {
-        overlayCollapseTimer.current = setTimeout(() => {
-          setOverlayActive(false);
-        }, SIDEBAR_OVERLAY_COLLAPSE_MS);
-      }
-      return () => {
-        if (overlayCollapseTimer.current) {
-          clearTimeout(overlayCollapseTimer.current);
-          overlayCollapseTimer.current = null;
-        }
-      };
-    }, [contentExpanded, sidebarHovered]);
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -126,26 +89,14 @@ const SidebarProvider = React.forwardRef<
       [setOpenProp, open],
     );
 
-    /**
-     * Toggle ON (expand mode, pinned): while hovered, full sidebar overlays and main sits
-     * behind; on leave, icon rail stays in-flow so main stays connected. Hover expands again.
-     * Toggle OFF: default side-by-side layout with full labels.
-     */
+    /** Click once to collapse (icon rail), click again to expand (full labels). */
     const toggleSidebar = React.useCallback(() => {
       if (isMobile) {
         setOpenMobile((prev) => !prev);
         return;
       }
-      setContentExpanded((prev) => {
-        if (!prev) {
-          // Cursor is on the toggle — keep full sidebar until mouse leaves.
-          setSidebarHovered(true);
-          return true;
-        }
-        setSidebarHovered(false);
-        return false;
-      });
-    }, [isMobile, setOpenMobile]);
+      setOpen((prev) => !prev);
+    }, [isMobile, setOpenMobile, setOpen]);
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -160,36 +111,19 @@ const SidebarProvider = React.forwardRef<
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [toggleSidebar]);
 
-    // Visual open: always full in default layout; in expand mode, full only while hovered.
-    const visualOpen = !contentExpanded || sidebarHovered;
-    const state = visualOpen ? "expanded" : "collapsed";
+    const state = open ? "expanded" : "collapsed";
 
     const contextValue = React.useMemo<SidebarContextProps>(
       () => ({
         state,
-        open: visualOpen,
+        open,
         setOpen,
         isMobile,
         openMobile,
         setOpenMobile,
         toggleSidebar,
-        contentExpanded,
-        sidebarHovered,
-        setSidebarHovered,
-        overlayActive,
       }),
-      [
-        state,
-        visualOpen,
-        setOpen,
-        isMobile,
-        openMobile,
-        setOpenMobile,
-        toggleSidebar,
-        contentExpanded,
-        sidebarHovered,
-        overlayActive,
-      ],
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
     );
 
     return (

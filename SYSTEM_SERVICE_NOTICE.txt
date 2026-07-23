@@ -1,0 +1,23 @@
+Good day!
+
+Please be informed of an important update regarding your system:
+
+Effective immediately after the recent Sidebar update, we will no longer be accepting free reworks or free revisions. Moving forward, all changes, customizations, and revisions to your system will be chargeable.
+
+We have also upgraded your system storage from 2GB to 5GB to maximize capacity, improve performance, and help prevent lagging. This upgrade ensures our optimizations continue to work properly on your current system.
+
+Kindly note that the 5GB storage limit must be observed. If the storage becomes overdue, or if additional data is added beyond 5GB, the system will enter maintenance mode.
+
+If 5GB is no longer enough for your operations, we recommend switching from MariaDB to a Hosted Database to avoid storage-related issues and ensure smoother, more scalable performance.
+
+FIXED SERVICE COSTING
+
+• Monthly Retainer — ₱15,000
+• Revisions / Changes — ₱5,000 each
+• Storage Overrun Recovery — ₱7,000
+• Hosted Database Migration — ₱40,000 (if we provide the hosted database)
+• Hosted Database Migration — ₱30,000 (if you provide the hosted database)
+
+Thank you for your understanding and continued trust. Should you have any questions, feel free to message us.
+
+Respectfully,

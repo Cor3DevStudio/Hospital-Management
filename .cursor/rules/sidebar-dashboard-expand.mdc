@@ -1,48 +1,24 @@
-# Sidebar / Main Dashboard Expand Toggle (DO NOT REMOVE)
+# Sidebar Collapse / Expand Toggle
 
-This behavior is intentional and must be retained. Do **not** delete or “simplify away” unless the user explicitly asks.
+Simple click toggle only. Do **not** reintroduce hover-to-expand or fixed overlay behavior unless the user explicitly asks.
 
-## Required behavior (toggle is on/off only for main dashboard)
+## Required behavior
 
-1. Sidebar header has an arrow toggle (`ChevronLeft`, rotates when expand mode is on).
+1. Sidebar header has an arrow toggle (`ChevronLeft`, rotates when collapsed).
 
-2. **Toggle ON (expand mode):**
-   - While the cursor is on the sidebar (including right after click): sidebar is **full** (labels visible) and a **fixed overlay** (`fixed inset-y-0 left-0 z-30`). Main dashboard is **full viewport width behind** the sidebar.
-   - When the cursor **leaves** the sidebar: it collapses to **icons only**, stays **in document flow**, and main dashboard stays **connected** beside the icon rail (not behind).
-   - When the cursor **enters** the sidebar again: full labels overlay and main goes **behind** again.
-   - Expand mode stays **pinned** by the toggle only — hover never turns expand mode off.
+2. **Click once (collapse):** sidebar shrinks to an **icon rail** in document flow. Main content stays beside it (connected). Labels hidden.
 
-3. **Toggle OFF:** restore default side-by-side layout (sidebar in document flow, always full labels). No hover icon behavior.
+3. **Click again (expand):** sidebar returns to **full width** with labels. Still in document flow — no overlay, no hover expand.
+
+4. Hover must **not** change sidebar width or main layout. Toggle state is controlled only by the button (and Ctrl/Cmd+B).
 
 ## Implementation locations
 
-- `src/components/ui/sidebar.tsx` — `contentExpanded`, `sidebarHovered`, `setSidebarHovered`, `toggleSidebar`, `overlayActive`
-- `src/components/AppSidebar.tsx` — toggle UI; `iconOnly = contentExpanded && !sidebarHovered`; fixed overlay only when `overlayActive`; mouse enter/leave
-- `src/routes/__root.tsx` — `AuthenticatedLayout` sets main content `w-full` only when `overlayActive` (dashboard behind)
-
-## Sync fix: `overlayActive` (do not remove)
-
-The sidebar's fixed-vs-in-flow position and the main content's `w-full`/normal width must
-flip at the exact same instant, and only once the collapse *width* transition has actually
-finished — otherwise the sidebar snaps back in-flow (at its still-expanded width) while main
-content's width transition is still animating against it, causing overlap/bleed for a frame.
-
-`overlayActive` in `sidebar.tsx` is the single source of truth both `AppSidebar.tsx` and
-`__root.tsx` read from:
-- Entering hover (`contentExpanded && sidebarHovered` → true): `overlayActive` flips true
-  immediately (via `useLayoutEffect`, before paint) — sidebar becomes a fixed overlay and
-  main goes `w-full` in the same frame, before the sidebar's width starts growing.
-- Leaving hover: `overlayActive` stays true (sidebar stays a fixed overlay, main stays
-  `w-full`) for `SIDEBAR_OVERLAY_COLLAPSE_MS` (>= the width transition duration) so the
-  icon-rail shrink finishes fully out-of-flow, then both flip back together with nothing
-  left to animate.
-
-Do not read `contentExpanded && sidebarHovered` directly for the fixed-position/`w-full`
-decision in either file — use `overlayActive`. (`iconOnly` in `AppSidebar.tsx` should keep
-using the raw `contentExpanded && !sidebarHovered` — that one is meant to react instantly.)
+- `src/components/ui/sidebar.tsx` — `open`, `setOpen`, `toggleSidebar`, `state` (`expanded` | `collapsed`)
+- `src/components/AppSidebar.tsx` — toggle UI; `iconOnly = !open`; in-flow width transition
+- `src/routes/__root.tsx` — side-by-side layout; no `overlayActive` / dashboard-behind logic
 
 ## When editing sidebar or layout
 
-- Keep this UX contract working end-to-end.
-- Do not remove the header toggle or drop hover-only icon rail while expand mode is on.
-- Icon rail must remain in-flow (connected); only the full hovered sidebar overlays the dashboard.
+- Keep collapse/expand as a pure click toggle.
+- Do not add `sidebarHovered`, `contentExpanded` “expand mode”, or fixed overlay over the main dashboard.

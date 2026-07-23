@@ -8,6 +8,7 @@ import {
   searchCaseRates,
   upsertCaseRateToDatabase,
 } from "@/lib/db/repositories/caseRates";
+import { enforceMariaDbStorageQuota, MAX_MARIADB_STORAGE_BYTES } from "@/lib/db/storageSecurity";
 import type { CaseRate } from "@/lib/store";
 
 export const Route = createFileRoute("/api/case-rates/")({
@@ -55,6 +56,14 @@ export const Route = createFileRoute("/api/case-rates/")({
         if (isAuthError(authResult)) return authResult;
 
         try {
+          // Block writes when DB is already at/over 5GB; hard-reject oversized bodies.
+          const contentLength = Number(request.headers.get("content-length") ?? 0);
+          if (Number.isFinite(contentLength) && contentLength > MAX_MARIADB_STORAGE_BYTES) {
+            await enforceMariaDbStorageQuota(contentLength);
+          } else {
+            await enforceMariaDbStorageQuota(0);
+          }
+
           const body = (await request.json()) as CaseRate;
           if (!body?.code || !body?.description) {
             return Response.json(

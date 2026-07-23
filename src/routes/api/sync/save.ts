@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { isAuthError, requireAuth } from "@/lib/auth/apiAuth";
 import { saveClinicalStateToDatabase } from "@/lib/db/repositories/clinicalState";
+import {
+  enforceMariaDbStorageQuota,
+  MAX_MARIADB_STORAGE_BYTES,
+} from "@/lib/db/storageSecurity";
 import type { ClinicalPayload } from "@/lib/types/clinicalPayload";
 
 export const Route = createFileRoute("/api/sync/save")({
@@ -12,6 +16,12 @@ export const Route = createFileRoute("/api/sync/save")({
         if (isAuthError(authResult)) return authResult;
 
         try {
+          // Hard reject a single request body over the 5GB MariaDB security cap.
+          const contentLength = Number(request.headers.get("content-length") ?? 0);
+          if (Number.isFinite(contentLength) && contentLength > MAX_MARIADB_STORAGE_BYTES) {
+            await enforceMariaDbStorageQuota(contentLength);
+          }
+
           const payload = (await request.json()) as ClinicalPayload;
 
           if (!payload || typeof payload !== "object") {

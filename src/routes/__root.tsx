@@ -17,13 +17,12 @@ import { StoreProvider, useStore } from "../lib/store";
 import { mergeDatabaseIntoState } from "../lib/services/syncService";
 import { pauseAutoSync, resumeAutoSync } from "../lib/services/autoSyncService";
 import { fetchAuthSessionData } from "../lib/services/userService";
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { firstAllowedPage, resolveAccessUser, userCanAccessPage } from "@/lib/pageAccess";
 import { getSession } from "@/lib/auth/authService";
 import { SunMoon } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 function NotFoundComponent() {
   return (
@@ -168,12 +167,6 @@ function AppShell() {
 }
 
 function AuthenticatedLayout() {
-  // KEEP: main-dashboard expand. Do not remove — see .cursor/rules/sidebar-dashboard-expand.mdc
-  // Behind only while expand-mode sidebar is fully open (hovered); icon rail stays connected.
-  // Uses `overlayActive` (not the raw hover flag) so the main content switches back to
-  // its in-flow width at the exact same instant the sidebar switches back in-flow —
-  // never mid-collapse, which is what caused the sync/overlap glitch.
-  const { overlayActive: dashboardBehind } = useSidebar();
   const { state } = useStore();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const sessionUser = getSession()?.user;
@@ -200,7 +193,7 @@ function AuthenticatedLayout() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <AppSidebar />
-      <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col", dashboardBehind && "w-full")}>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="no-print sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-card/80 px-3 backdrop-blur">
           <span className="text-sm font-medium text-muted-foreground">Administrator Console</span>
           <div className="ml-auto flex items-center gap-2">

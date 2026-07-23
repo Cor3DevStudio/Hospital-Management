@@ -9,6 +9,10 @@ import {
 } from "@/lib/types/clinicalPayload";
 
 import { getDb } from "../client";
+import {
+  enforceMariaDbStorageQuota,
+  MAX_MARIADB_STORAGE_BYTES,
+} from "../storageSecurity";
 import { appClinicalState } from "../schema";
 import { countCaseRatesInDatabase } from "./caseRates";
 import { getHospitalSettings, upsertHospitalSettings } from "./hospital";
@@ -35,8 +39,24 @@ export async function saveClinicalStateToDatabase(
   // They are loaded on sync/load and saved via /api/case-rates — not the JSON blob.
   const forBlob: ClinicalPayload = { ...normalized, caseRates: [] };
   const json = JSON.stringify(forBlob);
+  const newBytes = Buffer.byteLength(json, "utf8");
 
   const db = getDb();
+
+  // Net growth vs existing clinical blob so replacements are not double-counted.
+  const existing = await db
+    .select({ payload: appClinicalState.payload })
+    .from(appClinicalState)
+    .where(eq(appClinicalState.id, REGISTRY_ID))
+    .limit(1);
+  const oldBytes = existing[0]?.payload
+    ? Buffer.byteLength(existing[0].payload, "utf8")
+    : 0;
+  const netGrowthBytes = Math.max(0, newBytes - oldBytes);
+  await enforceMariaDbStorageQuota(
+    newBytes > MAX_MARIADB_STORAGE_BYTES ? newBytes : netGrowthBytes,
+  );
+
   await db
     .insert(appClinicalState)
     .values({ id: REGISTRY_ID, payload: json })

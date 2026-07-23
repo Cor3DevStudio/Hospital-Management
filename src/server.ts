@@ -2,6 +2,11 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { assertNotInMaintenanceOrExit } from "./lib/db/storageSecurity";
+
+// Refuse to serve when MariaDB is still over the 5GB security cap
+// (deleting the lock file alone does not bypass this).
+await assertNotInMaintenanceOrExit();
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;

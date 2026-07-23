@@ -19,6 +19,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# MariaDB storage security / maintenance lock
+.data/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

@@ -78,19 +78,12 @@ const labelMotion = (iconOnly: boolean) =>
   );
 
 export function AppSidebar() {
-  const { contentExpanded, sidebarHovered, setSidebarHovered, toggleSidebar, overlayActive } =
-    useSidebar();
+  const { open, toggleSidebar } = useSidebar();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { logout, state: store } = useStore();
 
-  // KEEP: main-dashboard expand. See .cursor/rules/sidebar-dashboard-expand.mdc
-  // Expand mode + not hovered: icon rail in-flow (dashboard connected).
-  // Expand mode + hovered: full sidebar overlays (dashboard behind).
-  const iconOnly = contentExpanded && !sidebarHovered;
-  // `overlayActive` (not the raw hover flag) drives the fixed/in-flow switch — it stays
-  // true until the width-collapse transition finishes, so this never snaps back in-flow
-  // (revealing/overlapping main content) before the sidebar has visually finished shrinking.
-  const overlayExpanded = overlayActive;
+  // Click toggle only: expanded = full labels; collapsed = icon rail. Always in-flow.
+  const iconOnly = !open;
   const sidebarWidth = iconOnly ? "var(--sidebar-width-icon)" : "var(--sidebar-width)";
 
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
@@ -170,18 +163,8 @@ export function AppSidebar() {
 
   return (
     <div
-      className={cn(
-        "no-print shrink-0 overflow-hidden bg-sidebar transition-[width,box-shadow] duration-300 ease-in-out will-change-[width]",
-        // Only overlay when fully expanded on hover; icon rail stays in-flow (connected).
-        overlayExpanded && "fixed inset-y-0 left-0 z-30 shadow-xl",
-      )}
+      className="no-print shrink-0 overflow-hidden bg-sidebar transition-[width] duration-300 ease-in-out will-change-[width]"
       style={{ width: sidebarWidth }}
-      onMouseEnter={() => {
-        if (contentExpanded) setSidebarHovered(true);
-      }}
-      onMouseLeave={() => {
-        if (contentExpanded) setSidebarHovered(false);
-      }}
     >
       <Sidebar collapsible="none" className="h-full w-full">
         <SidebarHeader>
@@ -207,14 +190,14 @@ export function AppSidebar() {
             <button
               type="button"
               onClick={toggleSidebar}
-              aria-label={contentExpanded ? "Restore default layout" : "Expand main dashboard"}
-              title={contentExpanded ? "Restore default layout" : "Expand main dashboard"}
+              aria-label={iconOnly ? "Expand sidebar" : "Collapse sidebar"}
+              title={iconOnly ? "Expand sidebar" : "Collapse sidebar"}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-300 transition-transform duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
               <span
                 className={cn(
                   "inline-flex transition-transform duration-300 ease-in-out",
-                  contentExpanded && "rotate-180",
+                  iconOnly && "rotate-180",
                 )}
               >
                 <ChevronLeft className="h-4 w-4" />

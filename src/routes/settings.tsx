@@ -43,6 +43,10 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { PageAccessModal } from "@/components/PageAccessModal";
+import {
+  MAINTENANCE_FIX_FEE_LABEL,
+  SYSTEM_SERVICE_POLICY_SUMMARY,
+} from "@/lib/systemServicePolicy";
 import { PageHeader } from "@/components/PageHeader";
 import { pageAccessSummary, normalizePageAccess } from "@/lib/pageAccess";
 import { hasValidSession, updateSessionPageAccess } from "@/lib/auth/authService";
@@ -1194,6 +1198,42 @@ function SettingsPage() {
           {/* SYSTEM MAINTENANCE TAB */}
           <TabsContent value="backup">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Service & storage policy notice */}
+              <Card className="md:col-span-2 border-amber-200 bg-amber-50/40">
+                <CardHeader className="border-b border-amber-100">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2 text-amber-950">
+                    <Shield className="h-4 w-4 text-amber-700" /> Important System Notice
+                  </CardTitle>
+                  <CardDescription className="text-xs text-amber-900/80">
+                    Effective after the Sidebar update · Storage upgraded 2GB → 5GB
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3 text-sm text-amber-950">
+                  <p>{SYSTEM_SERVICE_POLICY_SUMMARY}</p>
+                  <ul className="list-disc space-y-1 pl-5 text-xs text-amber-900/90">
+                    <li>Free reworks and free revisions are no longer accepted.</li>
+                    <li>Every future change to your system is chargeable.</li>
+                    <li>
+                      Whole-system storage upgraded from 2GB to 5GB to maximize capacity and avoid
+                      lagging.
+                    </li>
+                    <li>
+                      If 5GB is overdue or you keep adding beyond 5GB, maintenance / fixing fee is{" "}
+                      <span className="font-semibold">{MAINTENANCE_FIX_FEE_LABEL}</span> (7,000
+                      Pesos).
+                    </li>
+                    <li>
+                      If 5GB is not enough, we recommend switching from MariaDB to a Hosted Database
+                      to avoid storage issues.
+                    </li>
+                    <li>
+                      Fixed costing: Retainer ₱15,000/mo · Revisions ₱5,000 each · Storage overrun
+                      ₱7,000 · Hosted DB migration ₱40,000 (we provide) / ₱30,000 (you provide).
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
               {/* MariaDB sync */}
               <Card className="md:col-span-2 border-blue-200 bg-blue-50/20">
                 <CardHeader className="border-b border-blue-100">
